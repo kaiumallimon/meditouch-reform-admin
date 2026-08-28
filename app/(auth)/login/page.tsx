@@ -1,41 +1,56 @@
-import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import Image from "next/image";
 import { LoginForm } from "@/components/auth/login-form";
-import { Stethoscope, ShieldCheck } from "lucide-react";
+import { ShieldCheck, Lock } from "lucide-react";
 
 export default function LoginPage() {
   return (
-    <Card className="w-full max-w-sm rounded-4xl">
-      <CardHeader className="items-center justify-items-center gap-4 text-center">
+    <div className="w-full max-w-sm neo-card rounded-[22px] p-7 transition-all">
+      {/* Top Brand & Status Indicator */}
+      <div className="flex items-center justify-between pb-3 border-b border-stone-200/80">
         <div className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-4xl bg-primary text-primary-foreground">
-            <Stethoscope className="size-5" />
-          </div>
-          <span className="font-heading text-xl font-semibold tracking-tight">MediTouch</span>
+          <span className="size-2.5 rounded-full bg-[#FF6B4A] ring-2 ring-[#FF6B4A]/20 animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wider text-stone-800">Admin Workspace</span>
         </div>
-        <div className="space-y-1">
-          <CardTitle className="text-xl font-semibold">Welcome back</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Sign in to the Admin Portal to continue
+        <div className="flex items-center gap-1 text-[11px] font-medium text-stone-500">
+          <Lock className="size-3 text-stone-600" />
+          <span>v1.0</span>
+        </div>
+      </div>
+
+      {/* Centered Logo & Header */}
+      <div className="pt-5 pb-3 text-center space-y-3">
+        <div className="flex items-center justify-center">
+          <Image
+            src="/logo.svg"
+            alt="MediTouch"
+            width={170}
+            height={55}
+            className="h-12 w-auto object-contain"
+            priority
+          />
+        </div>
+        <div>
+          <h1 className="font-heading text-xl font-bold tracking-tight text-stone-900">
+            Welcome back
+          </h1>
+          <p className="text-xs text-stone-500 mt-0.5">
+            Sign in to access your administrative controls
           </p>
         </div>
-      </CardHeader>
-      <CardContent className="pt-2">
-        <div className="space-y-4">
-          <LoginForm />
-        </div>
+      </div>
 
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <ShieldCheck className="size-3.5 text-primary" />
+      {/* Login Form */}
+      <div className="mt-3">
+        <LoginForm />
+      </div>
+
+      {/* Footer Note */}
+      <div className="mt-5 pt-3 border-t border-stone-200/80 text-center">
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-500 font-medium">
+          <ShieldCheck className="size-3.5 text-stone-700" />
           <span>Restricted to authorized MediTouch personnel</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
-

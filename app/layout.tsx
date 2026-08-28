@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Young_Serif } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -8,6 +8,14 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
+
+const youngSerif= Young_Serif({
+  subsets: ['latin'],
+  variable: "--font-young",
+  display: "swap",
+  weight: "400"
+});
+
 
 export const metadata: Metadata = {
   title: "MediTouch Admin Portal",

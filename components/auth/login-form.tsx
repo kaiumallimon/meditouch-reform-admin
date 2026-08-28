@@ -5,12 +5,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { saveSession } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { ShieldAlert, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, CheckCircle2, ArrowRight } from "lucide-react";
 
 export function LoginForm() {
   const router = useRouter();
@@ -45,7 +42,7 @@ export function LoginForm() {
 
       toast.success("Welcome back!", {
         description: `Signed in as ${data.name}`,
-        icon: <CheckCircle2 className="size-4 text-emerald-500" />,
+        icon: <CheckCircle2 className="size-4 text-emerald-600" />,
       });
 
       router.push("/admin");
@@ -54,7 +51,7 @@ export function LoginForm() {
       setError(msg);
       toast.error("Sign In Failed", {
         description: msg,
-        icon: <ShieldAlert className="size-4 text-rose-500" />,
+        icon: <ShieldAlert className="size-4 text-rose-600" />,
       });
     } finally {
       setLoading(false);
@@ -64,34 +61,35 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-4xl border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+        <div className="rounded-xl border-[1.5px] border-rose-900 bg-rose-50 p-2.5 text-xs font-medium text-rose-900 shadow-[2px_2px_0px_0px_#881337]">
           {error}
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="identifier" className="text-sm font-medium">
+      <div className="space-y-1.5">
+        <label htmlFor="identifier" className="block text-xs font-bold uppercase tracking-wider text-stone-800">
           Admin Email or Phone
-        </Label>
-        <Input
+        </label>
+        <input
           id="identifier"
           name="identifier"
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="admin@meditouch.com or +8801999999999"
+          placeholder="admin@meditouch.com"
           required
-          className="h-10"
+          className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 placeholder:text-stone-400 neo-input outline-hidden"
         />
+        <p className="text-[10px] text-stone-500 font-medium">Use your registered admin identifier</p>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password" className="text-sm font-medium">
+          <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-stone-800">
             Password
-          </Label>
+          </label>
         </div>
-        <Input
+        <input
           id="password"
           name="password"
           type="password"
@@ -99,15 +97,26 @@ export function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter password"
           required
-          className="h-10"
+          className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 placeholder:text-stone-400 neo-input outline-hidden"
         />
       </div>
 
-      <Button type="submit" className="h-10 w-full" disabled={loading}>
-        {loading ? <Spinner className="mr-2" /> : null}
-        Sign In to Admin Portal
-      </Button>
+      <div className="pt-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full h-10.5 rounded-xl bg-[#2D5A27] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 neo-button cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#254B20]"
+        >
+          {loading ? (
+            <Spinner className="size-4 text-white" />
+          ) : (
+            <>
+              <span>Sign In to Admin Portal</span>
+              <ArrowRight className="size-3.5" />
+            </>
+          )}
+        </button>
+      </div>
     </form>
   );
 }
-

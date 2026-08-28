@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -61,11 +62,15 @@ export function DashboardHeader() {
       <header className="flex h-14 items-center justify-between rounded-4xl border border-border bg-card px-4 shadow-xs">
         {/* Brand & Home */}
         <div className="flex items-center gap-6">
-          <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-4xl bg-primary text-primary-foreground">
-              <Stethoscope className="size-4" />
-            </div>
-            <span className="font-heading text-base font-bold tracking-tight">MediTouch</span>
+          <Link href="/admin" className="flex items-center gap-2">
+            <Image
+              src="/logo.svg"
+              alt="MediTouch"
+              width={120}
+              height={32}
+              className="h-7 w-auto object-contain"
+              priority
+            />
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
               Admin Portal
             </span>

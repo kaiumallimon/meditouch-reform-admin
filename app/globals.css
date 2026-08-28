@@ -100,9 +100,48 @@
 }
 
 .auth-bg {
-  background-color: var(--background);
-  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-color: #F8F5EE;
+  background-image: radial-gradient(circle, #E5E0D5 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+.cream-auth-bg {
+  background-color: #F7F4EE;
+  background-image: radial-gradient(circle, #E4DED4 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+.neo-card {
+  background-color: #FFFFFF;
+  border: 1.5px solid #1C1917;
+  box-shadow: 4px 4px 0px 0px #1C1917;
+}
+
+.neo-input {
+  border: 1.5px solid #292524;
+  box-shadow: 2px 2px 0px 0px #1C1917;
+  transition: all 0.15s ease;
+}
+
+.neo-input:focus {
+  border-color: #000000;
+  box-shadow: 0px 0px 0px 0px #1C1917;
+  transform: translate(1px, 1px);
+}
+
+.neo-button {
+  border: 1.5px solid #1C1917;
+  box-shadow: 3px 3px 0px 0px #1C1917;
+  transition: all 0.15s ease;
+}
+
+.neo-button:hover:not(:disabled) {
+  box-shadow: 4px 4px 0px 0px #1C1917;
+}
+
+.neo-button:active:not(:disabled) {
+  box-shadow: 0px 0px 0px 0px #1C1917;
+  transform: translate(2px, 2px);
 }
 
 /* Custom scrollbar */
