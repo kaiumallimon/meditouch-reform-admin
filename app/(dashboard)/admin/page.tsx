@@ -340,8 +340,11 @@ export default function AdminDashboardPage() {
           <p className="text-center py-6 text-xs text-stone-400 italic">No audit records logged yet.</p>
         ) : (
           <div className="divide-y divide-stone-100">
-            {auditLogs.map((log) => (
-              <div key={log.id} className="flex items-center justify-between py-2.5 text-xs">
+            {auditLogs.map((log, idx) => (
+              <div
+                key={log.id || log._id || `${log.action}-${log.created_at || idx}-${idx}`}
+                className="flex items-center justify-between py-2.5 text-xs"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-700 border border-stone-200">
                     <Activity className="size-3.5 text-[#5b15fc]" />
