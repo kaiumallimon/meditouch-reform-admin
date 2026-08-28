@@ -218,8 +218,10 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {pendingDoctors.map((doc) => (
               {pendingDoctors.map((doc, idx) => (
                 <div
+                  key={doc.id}
                   key={doc.id || doc._id || doc.bmdc_reg_number || `pending-doc-${idx}`}
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 transition-all hover:bg-stone-100"
                 >
@@ -340,6 +342,8 @@ export default function AdminDashboardPage() {
           <p className="text-center py-6 text-xs text-stone-400 italic">No audit records logged yet.</p>
         ) : (
           <div className="divide-y divide-stone-100">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="flex items-center justify-between py-2.5 text-xs">
             {auditLogs.map((log, idx) => (
               <div
                 key={log.id || log._id || `${log.action}-${log.created_at || idx}-${idx}`}
