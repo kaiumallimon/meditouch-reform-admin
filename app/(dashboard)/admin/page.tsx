@@ -223,16 +223,24 @@ export default function AdminDashboardPage() {
                   key={doc.id || doc._id || doc.bmdc_reg_number || `pending-doc-${idx}`}
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 transition-all hover:bg-stone-100"
                 >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-stone-900 truncate">{doc.name}</p>
-                      <span className="rounded border border-stone-300 bg-white px-1.5 py-0.5 text-[10px] font-mono font-bold text-stone-700">
-                        BMDC: {doc.bmdc_reg_number}
-                      </span>
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="size-10 shrink-0 rounded-full border border-stone-200 bg-white overflow-hidden flex items-center justify-center shadow-xs">
+                      {doc.avatar_url ? (
+                        <img src={doc.avatar_url} alt={doc.name} className="size-full object-cover" />
+                      ) : (
+                        <User className="size-5 text-stone-400" />
+                      )}
                     </div>
-                    <p className="text-xs text-stone-600">
-                      {doc.specialties?.join(", ") || "General Physician"} • {doc.experience_years} yrs exp • ৳{doc.consultation_fee} fee
-                    </p>
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-stone-900 truncate">{doc.name}</p>
+                        <span className="rounded border border-stone-300 bg-white px-1.5 py-0.5 text-[10px] font-mono font-bold text-stone-700">
+                          BMDC: {doc.bmdc_reg_number}
+                        </span>
+                      </div>
+                      <p className="text-xs text-stone-600">
+                        {doc.specialties?.join(", ") || "General Physician"} • {doc.experience_years} yrs exp • ৳{doc.consultation_fee} fee
+                      </p>
                     {doc.verification_documents && doc.verification_documents.length > 0 && (
                       <div className="flex items-center gap-2 pt-1">
                         {doc.verification_documents.map((d: any, idx: number) => (

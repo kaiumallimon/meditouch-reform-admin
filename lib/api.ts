@@ -223,6 +223,7 @@ export const adminApi = {
     experience_years: number;
     consultation_fee: number;
     bio?: string;
+    avatar_url?: string;
     verification_documents?: Array<{
       document_type: string;
       document_url: string;
@@ -383,6 +384,31 @@ export const mediaApi = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Document upload to Cloudinary failed");
+    return data.data as {
+      public_id: string;
+      secure_url: string;
+      url: string;
+      format: string;
+      bytes: number;
+      original_filename: string;
+      folder: string;
+    };
+  },
+
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE_URL}/media/avatar`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Avatar upload to Cloudinary CDN failed");
     return data.data as {
       public_id: string;
       secure_url: string;

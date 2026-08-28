@@ -14,7 +14,9 @@ import {
   ExternalLink,
   ShieldCheck,
   Mail,
-  KeyRound
+  KeyRound,
+  Camera,
+  User
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,12 +57,15 @@ const COMMON_QUALIFICATIONS = [
 ];
 
 export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorModalProps) {
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [autoVerify, setAutoVerify] = useState(true);
 
   // Form states
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -111,7 +116,29 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
     }
   };
 
-  // Direct file upload to Cloudinary CDN
+  // Direct avatar upload to Cloudinary CDN
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      const res = await mediaApi.uploadAvatar(file);
+      setAvatarUrl(res.secure_url);
+      toast.success("Profile photo uploaded to Cloudinary CDN", {
+        icon: <CheckCircle2 className="size-4 text-emerald-500" />,
+      });
+    } catch (err: any) {
+      toast.error("Avatar upload failed", { description: err.message });
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Direct document upload to Cloudinary CDN
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -148,6 +175,10 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!avatarUrl) {
+      toast.error("Please upload a doctor profile picture");
+      return;
+    }
     if (!name.trim() || !phone.trim() || !email.trim() || !bmdcReg.trim()) {
       toast.error("Please fill in all required fields (Name, Phone, Email, BMDC Number)");
       return;
@@ -159,6 +190,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
         name: name.trim(),
         phone: phone.trim(),
         email: email.trim(),
+        avatar_url: avatarUrl,
         bmdc_reg_number: bmdcReg.trim(),
         specialties: selectedSpecialties.length > 0 ? selectedSpecialties : ["General Medicine"],
         qualifications: selectedQualifications.length > 0 ? selectedQualifications : ["MBBS"],
@@ -194,7 +226,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto neo-card rounded-[24px] p-6 sm:p-8 bg-white my-auto shadow-2xl animate-in fade-in zoom-in-95">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto neo-card rounded-[24px] p-6 sm:p-8 bg-white my-auto shadow-xl animate-in fade-in zoom-in-95">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div className="flex items-center gap-3">
@@ -203,7 +235,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
             </div>
             <div>
               <h2 className="font-heading text-xl font-normal text-stone-900">Onboard & Create Doctor</h2>
-              <p className="text-xs text-stone-500">Credentials will be generated and dispatched to the doctor&apos;s email address</p>
+              <p className="text-xs text-stone-500">Upload profile photo and credentials for practitioner activation</p>
             </div>
           </div>
           <button
@@ -216,6 +248,70 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          {/* Profile Picture Upload Section */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
+            <div className="relative group size-20 shrink-0">
+              <div className="size-20 rounded-full border-2 border-stone-200 bg-white overflow-hidden flex items-center justify-center shadow-xs">
+                {uploadingAvatar ? (
+                  <Spinner className="size-6 text-[#5b15fc]" />
+                ) : avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Doctor preview"
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <User className="size-9 text-stone-300" />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                title="Change Photo"
+              >
+                <Camera className="size-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-1 text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-stone-800">
+                  Doctor Profile Photo *
+                </label>
+                {avatarUrl && (
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.2 border border-emerald-300">
+                    Uploaded
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-stone-500">
+                Upload professional headshot (JPG, PNG, WEBP). Stored securely on Cloudinary CDN.
+              </p>
+              <div className="pt-1">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                  id="avatar-file-upload"
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all"
+                >
+                  <Camera className="size-3.5 text-[#5b15fc]" />
+                  <span>{avatarUrl ? "Change Photo" : "Upload Doctor Photo"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Row 1: Name & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -311,10 +407,10 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                   type="button"
                   key={spec}
                   onClick={() => toggleSpecialty(spec)}
-                  className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     selectedSpecialties.includes(spec)
-                      ? "bg-[#5b15fc] text-white shadow-[1px_1px_0px_0px_#1C1917]"
-                      : "border border-stone-300 bg-stone-50 text-stone-600 hover:bg-stone-100"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "border border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100"
                   }`}
                 >
                   {spec}
@@ -421,7 +517,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                 type="button"
                 disabled={uploadingDoc}
                 onClick={() => fileInputRef.current?.click()}
-                className="h-9 rounded-xl border border-dashed border-[#5b15fc] bg-white px-4 text-xs font-bold text-[#5b15fc] hover:bg-[#5b15fc]/5 flex-1 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="h-9 rounded-xl border border-dashed border-[#5b15fc] bg-white px-4 text-xs font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/5 flex-1 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {uploadingDoc ? (
                   <>
@@ -487,7 +583,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           </div>
 
           {/* Auto-verify Switch */}
-          <div className="flex items-center justify-between rounded-xl border border-stone-300 bg-stone-50 p-4">
+          <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50/80 p-4">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-emerald-600" />
@@ -516,7 +612,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
             </button>
             <button
               type="submit"
-              disabled={loading || uploadingDoc}
+              disabled={loading || uploadingDoc || uploadingAvatar}
               className="rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-semibold shadow-xs hover:bg-[#4d0ee0] disabled:opacity-50 flex items-center gap-2 cursor-pointer transition-all"
             >
               {loading ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-4" />}
