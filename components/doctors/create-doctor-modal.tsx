@@ -254,7 +254,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           </div>
 
           {/* Automatic Passphrase Informational Callout */}
-          <div className="rounded-xl border border-stone-800 bg-stone-50 p-3.5 flex items-start gap-3 shadow-xs">
+          <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 flex items-start gap-3 shadow-xs">
             <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20 mt-0.5">
               <KeyRound className="size-4" />
             </div>
@@ -502,14 +502,14 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-stone-800 bg-white px-4 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
+              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || uploadingDoc}
-              className="rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50 flex items-center gap-2"
+              className="rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-semibold shadow-xs hover:bg-[#4d0ee0] disabled:opacity-50 flex items-center gap-2 cursor-pointer transition-all"
             >
               {loading ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-4" />}
               <span>Create Doctor & Send Credentials</span>

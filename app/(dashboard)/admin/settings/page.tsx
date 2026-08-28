@@ -61,7 +61,7 @@ export default function SettingsAdminPage() {
               <ShieldCheck className="size-5 text-emerald-600" />
               <h3 className="font-heading text-base font-normal text-stone-900">Telemedicine Platform Fee</h3>
             </div>
-            <span className="rounded border border-stone-800 bg-stone-50 px-2 py-0.5 text-xs font-mono font-bold text-stone-800">
+            <span className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-0.5 text-xs font-mono font-bold text-stone-800">
               10.0%
             </span>
           </div>
