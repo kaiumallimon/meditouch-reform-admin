@@ -43,3 +43,4 @@ export function isAdmin(): boolean {
   const session = getSession();
   return session?.role === "ADMIN";
 }
+

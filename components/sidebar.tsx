@@ -257,3 +257,4 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     </>
   );
 }
+
