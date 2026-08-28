@@ -158,7 +158,7 @@ export default function OrdersAdminPage() {
                     value={order.status}
                     disabled={updatingId === order.id}
                     onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                    className="h-8 rounded-xl border border-stone-800 bg-white px-3 text-xs font-bold text-stone-800 neo-input outline-hidden"
+                    className="h-8 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 shadow-xs outline-hidden cursor-pointer"
                   >
                     <option value="CONFIRMED">CONFIRMED</option>
                     <option value="PROCESSING">PROCESSING</option>

@@ -328,7 +328,11 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                 onChange={(e) => setCustomSpecialty(e.target.value)}
                 className="flex-1 h-8 rounded-lg px-3 text-xs text-stone-900 neo-input outline-hidden"
               />
-              <button type="button" onClick={addCustomSpecialty} className="h-8 rounded-lg border border-stone-800 bg-white px-3 text-xs font-bold neo-button">
+              <button
+                type="button"
+                onClick={addCustomSpecialty}
+                className="h-8 rounded-lg border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
+              >
                 Add
               </button>
             </div>
@@ -343,10 +347,10 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                   type="button"
                   key={qual}
                   onClick={() => toggleQualification(qual)}
-                  className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     selectedQualifications.includes(qual)
-                      ? "bg-[#5b15fc] text-white shadow-[1px_1px_0px_0px_#1C1917]"
-                      : "border border-stone-300 bg-stone-50 text-stone-600 hover:bg-stone-100"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "border border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100"
                   }`}
                 >
                   {qual}
@@ -360,7 +364,11 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                 onChange={(e) => setCustomQualification(e.target.value)}
                 className="flex-1 h-8 rounded-lg px-3 text-xs text-stone-900 neo-input outline-hidden"
               />
-              <button type="button" onClick={addCustomQualification} className="h-8 rounded-lg border border-stone-800 bg-white px-3 text-xs font-bold neo-button">
+              <button
+                type="button"
+                onClick={addCustomQualification}
+                className="h-8 rounded-lg border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
+              >
                 Add
               </button>
             </div>
@@ -379,7 +387,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           </div>
 
           {/* Verification Documents: Cloudinary CDN Direct Upload */}
-          <div className="space-y-3 rounded-2xl border border-stone-300 bg-stone-50 p-4">
+          <div className="space-y-3 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Upload Verification Documents (Cloudinary CDN)</label>
               <p className="text-[11px] text-stone-500 mt-0.5">
@@ -391,7 +399,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
-                className="h-9 rounded-xl border border-stone-800 bg-white px-3 text-xs font-bold text-stone-800 neo-input outline-hidden"
+                className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 shadow-xs outline-hidden cursor-pointer"
               >
                 <option value="BMDC_CERTIFICATE">BMDC Certificate</option>
                 <option value="NATIONAL_ID">National ID (NID)</option>
