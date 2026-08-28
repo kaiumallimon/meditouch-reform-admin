@@ -218,9 +218,9 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {pendingDoctors.map((doc) => (
+              {pendingDoctors.map((doc, idx) => (
                 <div
-                  key={doc.id}
+                  key={doc.id || doc._id || doc.bmdc_reg_number || `pending-doc-${idx}`}
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 transition-all hover:bg-stone-100"
                 >
                   <div className="space-y-1 min-w-0">
