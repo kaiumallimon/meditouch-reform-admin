@@ -255,7 +255,7 @@ export default function AdminDashboardPage() {
                     <button
                       disabled={processingDocId === doc.id}
                       onClick={() => handleVerifyDoctor(doc.id, "REJECTED")}
-                      className="flex items-center gap-1 rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 neo-button"
+                      className="flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 shadow-xs cursor-pointer transition-all"
                     >
                       <XCircle className="size-3.5" />
                       <span>Reject</span>
@@ -263,9 +263,9 @@ export default function AdminDashboardPage() {
                     <button
                       disabled={processingDocId === doc.id}
                       onClick={() => handleVerifyDoctor(doc.id, "VERIFIED")}
-                      className="flex items-center gap-1 rounded-xl border border-stone-900 bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 neo-button shadow-[2px_2px_0px_0px_#1C1917]"
+                      className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 shadow-xs cursor-pointer transition-all"
                     >
-                      {processingDocId === doc.id ? <Spinner className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
+                      {processingDocId === doc.id ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-3.5" />}
                       <span>Approve</span>
                     </button>
                   </div>
@@ -296,7 +296,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={handleSyncMedEasy}
               disabled={syncingCatalog}
-              className="w-full h-10 rounded-xl bg-[#5b15fc] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50"
+              className="w-full h-10 rounded-xl bg-[#5b15fc] text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs hover:bg-[#4d0ee0] disabled:opacity-50 cursor-pointer transition-all"
             >
               {syncingCatalog ? (
                 <>
