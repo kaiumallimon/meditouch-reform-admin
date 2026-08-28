@@ -36,6 +36,49 @@ function getStoredToken(): string | null {
   return localStorage.getItem("meditouch_access_token");
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function doRefreshToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const refreshToken = localStorage.getItem("meditouch_refresh_token");
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) {
+      // Refresh token is expired or revoked
+      localStorage.removeItem("meditouch_user");
+      localStorage.removeItem("meditouch_access_token");
+      localStorage.removeItem("meditouch_refresh_token");
+      document.cookie = "meditouch_token=; path=/; max-age=0";
+      return null;
+    }
+
+    const json = await res.json();
+    const data = json.data;
+    if (data && data.access_token) {
+      localStorage.setItem("meditouch_access_token", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("meditouch_refresh_token", data.refresh_token);
+      }
+      document.cookie = `meditouch_token=${data.access_token}; path=/; max-age=86400; SameSite=Lax`;
+      return data.access_token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -54,10 +97,36 @@ export async function fetchApi<T>(
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
 
   try {
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       ...options,
       headers,
     });
+
+    // Automatic token refresh on 401 Unauthorized
+    if (res.status === 401 && !endpoint.includes("/auth/login") && !endpoint.includes("/auth/refresh")) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = doRefreshToken().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+      }
+
+      const newToken = await refreshPromise;
+      if (newToken) {
+        // Re-execute original request with new token
+        headers["Authorization"] = `Bearer ${newToken}`;
+        res = await fetch(url, {
+          ...options,
+          headers,
+        });
+      } else {
+        // Refresh failed, redirect to login if in browser
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+          window.location.href = "/login";
+        }
+      }
+    }
 
     const data = await res.json();
 
@@ -97,6 +166,22 @@ export const authApi = {
     return res.data;
   },
 
+  refreshToken: async (refreshToken: string) => {
+    const res = await fetchApi<{
+      access_token: string;
+      refresh_token: string;
+      user_id: string;
+      role: string;
+      name: string;
+      phone: string;
+      email?: string;
+    }>("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    return res.data;
+  },
+
   getMe: async () => {
     const res = await fetchApi<{
       id: string;
@@ -124,6 +209,36 @@ export const adminApi = {
       total_orders: number;
       total_revenue_bdt: number;
     }>("/admin/dashboard/stats");
+    return res.data;
+  },
+
+  createDoctor: async (payload: {
+    name: string;
+    phone: string;
+    email?: string;
+    password: string;
+    bmdc_reg_number: string;
+    specialties: string[];
+    qualifications: string[];
+    experience_years: number;
+    consultation_fee: number;
+    bio?: string;
+    verification_documents?: Array<{
+      document_type: string;
+      document_url: string;
+    }>;
+  }) => {
+    const res = await fetchApi<{
+      id: string;
+      user_id: string;
+      name: string;
+      bmdc_reg_number: string;
+      is_verified: boolean;
+      is_active: boolean;
+    }>("/admin/doctors", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
     return res.data;
   },
 
@@ -252,3 +367,56 @@ export const ordersApi = {
   },
 };
 
+// 5. Media & Cloudinary CDN API
+export const mediaApi = {
+  uploadDoctorDocument: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE_URL}/media/doctor-document`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Document upload to Cloudinary failed");
+    return data.data as {
+      public_id: string;
+      secure_url: string;
+      url: string;
+      format: string;
+      bytes: number;
+      original_filename: string;
+      folder: string;
+    };
+  },
+
+  uploadFile: async (file: File, folder: string = "meditouch/general") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE_URL}/media/upload`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Upload to Cloudinary CDN failed");
+    return data.data as {
+      public_id: string;
+      secure_url: string;
+      url: string;
+      format: string;
+      bytes: number;
+      original_filename: string;
+      folder: string;
+    };
+  },
+};

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { adminApi, pharmacyApi } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { CreateDoctorModal } from "@/components/doctors/create-doctor-modal";
 import {
   Users,
   ShieldCheck,
@@ -19,7 +20,8 @@ import {
   Stethoscope,
   Pill,
   ExternalLink,
-  ArrowUpRight
+  ArrowUpRight,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +35,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
   const [processingDocId, setProcessingDocId] = useState<string | null>(null);
+  const [createDoctorOpen, setCreateDoctorOpen] = useState(false);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -112,6 +115,14 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
+            <Button
+              size="sm"
+              onClick={() => setCreateDoctorOpen(true)}
+              className="gap-2 rounded-4xl bg-primary text-primary-foreground font-semibold shadow-xs"
+            >
+              <UserPlus className="size-3.5" />
+              Onboard Doctor
+            </Button>
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground rounded-4xl border border-border bg-card px-3 py-2">
               <Calendar className="size-3.5 text-primary" />
               <span>{dateStr}</span>
@@ -363,6 +374,13 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Create Doctor Modal Dialog */}
+      <CreateDoctorModal
+        isOpen={createDoctorOpen}
+        onClose={() => setCreateDoctorOpen(false)}
+        onSuccess={loadDashboardData}
+      />
     </div>
   );
 }

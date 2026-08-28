@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
+import { CreateDoctorModal } from "@/components/doctors/create-doctor-modal";
 import {
   UserCheck,
   Search,
@@ -12,7 +13,8 @@ import {
   FileText,
   ExternalLink,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,7 @@ export default function DoctorsAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [createDoctorOpen, setCreateDoctorOpen] = useState(false);
 
   const fetchDoctors = async () => {
     try {
@@ -90,10 +93,20 @@ export default function DoctorsAdminPage() {
             Review BMDC registrations, medical degrees, and manage doctor activation status.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchDoctors} disabled={loading} className="gap-2 rounded-4xl">
-          <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setCreateDoctorOpen(true)}
+            className="gap-2 rounded-4xl bg-primary text-primary-foreground font-semibold shadow-xs"
+          >
+            <UserPlus className="size-3.5" />
+            Onboard New Doctor
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchDoctors} disabled={loading} className="gap-2 rounded-4xl">
+            <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filter Tabs & Search */}
@@ -239,6 +252,13 @@ export default function DoctorsAdminPage() {
           </div>
         )}
       </div>
+
+      {/* Create Doctor Modal */}
+      <CreateDoctorModal
+        isOpen={createDoctorOpen}
+        onClose={() => setCreateDoctorOpen(false)}
+        onSuccess={fetchDoctors}
+      />
     </div>
   );
 }
