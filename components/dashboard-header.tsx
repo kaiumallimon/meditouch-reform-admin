@@ -82,23 +82,23 @@ export function DashboardHeader() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-stone-800 bg-stone-50 px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-100 neo-input transition-all cursor-pointer"
+            className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50/80 px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-100 transition-all cursor-pointer shadow-xs"
           >
-            <Search className="size-3.5 text-stone-500" />
+            <Search className="size-3.5 text-stone-400" />
             <span className="hidden md:inline font-medium">Quick search...</span>
-            <kbd className="pointer-events-none hidden select-none rounded border border-stone-300 bg-white px-1.5 text-[10px] font-mono font-bold text-stone-600 md:inline">
+            <kbd className="pointer-events-none hidden select-none rounded border border-stone-200 bg-white px-1.5 text-[10px] font-mono font-semibold text-stone-500 md:inline">
               ⌘K
             </kbd>
           </button>
 
-          <button className="flex size-9 items-center justify-center rounded-xl border border-stone-800 bg-white text-stone-700 hover:bg-stone-50 neo-input transition-all cursor-pointer">
+          <button className="flex size-9 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-all cursor-pointer shadow-xs">
             <Bell className="size-4" />
           </button>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="flex size-9 items-center justify-center rounded-xl border border-stone-800 bg-white text-stone-700 hover:bg-stone-50 neo-input md:hidden transition-all cursor-pointer"
+            className="flex size-9 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 md:hidden transition-all cursor-pointer shadow-xs"
           >
             <Menu className="size-4" />
           </button>

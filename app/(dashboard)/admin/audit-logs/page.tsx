@@ -51,7 +51,7 @@ export default function AuditLogsAdminPage() {
         <button
           onClick={loadLogs}
           disabled={loading}
-          className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
+          className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
         >
           <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
           <span>Refresh</span>
