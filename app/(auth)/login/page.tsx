@@ -30,10 +30,10 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <h1 className="font-heading text-xl font-bold tracking-tight text-stone-900">
+          <h1 className="font-heading text-2xl font-normal text-stone-900 tracking-tight">
             Welcome back
           </h1>
-          <p className="text-xs text-stone-500 mt-0.5">
+          <p className="text-xs text-stone-500 mt-1">
             Sign in to access your administrative controls
           </p>
         </div>

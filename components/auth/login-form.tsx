@@ -105,7 +105,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10.5 rounded-xl bg-[#2D5A27] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 neo-button cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#254B20]"
+          className="w-full h-10.5 rounded-xl bg-[#5b15fc] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 neo-button cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#4d0ee0]"
         >
           {loading ? (
             <Spinner className="size-4 text-white" />
