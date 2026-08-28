@@ -15,7 +15,6 @@ import {
   Activity,
   Settings,
   LogOut,
-  ShieldCheck,
   AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
@@ -75,13 +74,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     <>
       <aside className="flex h-full w-60 flex-col neo-card rounded-[22px] bg-white">
         {/* Profile Card */}
-        <div className="border-b border-stone-200 p-4">
+        <div className="border-b border-stone-200/80 p-4">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc] text-sm font-bold text-white shadow-[2px_2px_0px_0px_#1C1917] border border-stone-900">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#5b15fc] text-xs font-bold text-white shadow-xs">
                 {initials}
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border border-stone-900 bg-emerald-500" />
+              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-500" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
@@ -109,10 +108,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                   href={item.href}
                   onClick={onNavigate}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
+                    "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
                     isActive
                       ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
-                      : "text-stone-700 hover:bg-stone-100/80 hover:text-stone-900 font-medium"
+                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
                   )}
                 >
                   <Icon className="size-4 shrink-0" />
@@ -124,7 +123,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
           {/* Telemedicine Section */}
           <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
               Telemedicine
             </p>
             <nav className="space-y-1">
@@ -137,10 +136,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                     href={item.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
+                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
                       isActive
-                        ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
-                        : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
                     )}
                   >
                     <Icon className="size-4 shrink-0" />
@@ -153,7 +152,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
           {/* E-Pharmacy Section */}
           <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
               E-Pharmacy
             </p>
             <nav className="space-y-1">
@@ -166,10 +165,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                     href={item.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
+                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
                       isActive
-                        ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
-                        : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
                     )}
                   >
                     <Icon className="size-4 shrink-0" />
@@ -182,7 +181,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
           {/* System Section */}
           <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
               System
             </p>
             <nav className="space-y-1">
@@ -195,10 +194,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                     href={item.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
+                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
                       isActive
-                        ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
-                        : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
                     )}
                   >
                     <Icon className="size-4 shrink-0" />
@@ -211,10 +210,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         </div>
 
         {/* Footer / Sign Out Button */}
-        <div className="border-t border-stone-200 p-3">
+        <div className="border-t border-stone-200/80 p-3">
           <button
             onClick={() => setOpenSignOutModal(true)}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-full px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <LogOut className="size-4" />
             <span>Sign Out</span>
@@ -225,13 +224,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       {/* Sign Out Confirmation Modal */}
       {openSignOutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm neo-card rounded-[22px] p-6 shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-sm neo-card rounded-[22px] p-6 shadow-xl animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 border border-rose-300">
+              <div className="flex size-10 items-center justify-center rounded-full bg-rose-100 text-rose-600">
                 <AlertTriangle className="size-5" />
               </div>
               <div>
-                <h3 className="font-heading text-lg font-bold text-stone-900">Sign Out</h3>
+                <h3 className="font-heading text-lg font-normal text-stone-900">Sign Out</h3>
                 <p className="text-xs text-stone-500">Are you sure you want to end your session?</p>
               </div>
             </div>
@@ -239,15 +238,15 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <div className="mt-6 flex items-center justify-end gap-2.5">
               <button
                 onClick={() => setOpenSignOutModal(false)}
-                className="rounded-xl border border-stone-800 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-800 hover:bg-stone-50 neo-button"
+                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSignOut}
-                className="rounded-xl border border-stone-900 bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-rose-700 neo-button shadow-[2px_2px_0px_0px_#1C1917]"
+                className="rounded-full bg-rose-600 text-white px-4 py-2 text-xs font-semibold hover:bg-rose-700 shadow-xs cursor-pointer transition-all"
               >
-                Confirm Sign Out
+                Sign Out
               </button>
             </div>
           </div>
