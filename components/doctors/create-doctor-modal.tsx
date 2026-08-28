@@ -18,7 +18,9 @@ import {
   Trash2,
   CheckCircle2,
   UploadCloud,
-  ExternalLink
+  ExternalLink,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -69,6 +71,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [bmdcReg, setBmdcReg] = useState("");
   const [experienceYears, setExperienceYears] = useState("5");
   const [consultationFee, setConsultationFee] = useState("500");
@@ -260,14 +263,29 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Initial Password *</Label>
-              <Input
-                required
-                type="text"
-                placeholder="DoctorSecret123!"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-9 text-xs font-mono"
-              />
+              <div className="relative">
+                <Input
+                  required
+                  type={showPassword ? "text" : "password"}
+                  placeholder="DoctorSecret123!"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-9 text-xs font-mono pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-3.5" />
+                  ) : (
+                    <Eye className="size-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
