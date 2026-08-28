@@ -14,8 +14,8 @@ import { ShieldAlert, CheckCircle2 } from "lucide-react";
 
 export function LoginForm() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState("kalimon291@gmail.com");
-  const [password, setPassword] = useState("admin");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
