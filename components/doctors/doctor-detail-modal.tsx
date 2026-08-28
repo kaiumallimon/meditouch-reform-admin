@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import {
   X,
   User,
@@ -19,9 +20,14 @@ import {
   Star,
   Activity,
   Calendar,
-  Building
+  Building,
+  Download,
+  Copy,
+  Eye
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { downloadFileWithExtension } from "@/lib/download";
+import { toast } from "sonner";
 
 interface DoctorDetailModalProps {
   doctor: any | null;
@@ -44,7 +50,30 @@ export function DoctorDetailModal({
   onToggleActive,
   processingId,
 }: DoctorDetailModalProps) {
+  const [previewDoc, setPreviewDoc] = useState<{ type: string; url: string } | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
   if (!isOpen || !doctor) return null;
+
+  const handleDownload = async (url: string, type: string) => {
+    try {
+      setDownloading(true);
+      const filename = `${doctor.name}_${type}`.replace(/\s+/g, "_");
+      await downloadFileWithExtension(url, filename);
+      toast.success("Document downloaded", {
+        icon: <CheckCircle2 className="size-4 text-emerald-500" />,
+      });
+    } catch (e: any) {
+      toast.error("Download failed");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const copyDocUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success("Document URL copied to clipboard");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in">
@@ -244,21 +273,28 @@ export function DoctorDetailModal({
                       <p className="text-xs font-bold text-stone-900 truncate">
                         {doc.document_type?.replace(/_/g, " ")}
                       </p>
-                      <p className="text-[10px] text-stone-400 font-mono truncate max-w-[180px]">
+                      <p className="text-[10px] text-stone-400 font-mono truncate max-w-[160px]">
                         {doc.document_url}
                       </p>
                     </div>
                   </div>
 
-                  <a
-                    href={doc.document_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/10 transition-colors shrink-0"
-                  >
-                    <span>View</span>
-                    <ExternalLink className="size-2.5" />
-                  </a>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setPreviewDoc({ type: doc.document_type, url: doc.document_url })}
+                      className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/10 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <Eye className="size-3" />
+                      <span>View</span>
+                    </button>
+                    <button
+                      onClick={() => handleDownload(doc.document_url, doc.document_type)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1 text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                      title="Download with proper extension"
+                    >
+                      <Download className="size-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -330,7 +366,76 @@ export function DoctorDetailModal({
           </div>
         </div>
       </div>
+
+      {/* Document Preview Lightbox Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-2xl neo-card rounded-[24px] bg-white p-5 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div className="min-w-0 pr-4">
+                <h4 className="font-heading text-base font-normal text-stone-900 truncate">
+                  {previewDoc.type.replace(/_/g, " ")}
+                </h4>
+                <p className="text-[11px] font-mono text-stone-500 truncate">{previewDoc.url}</p>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Document / Image Viewer Body */}
+            <div className="flex-1 min-h-[380px] max-h-[500px] overflow-hidden rounded-xl border border-stone-200 bg-stone-100 flex items-center justify-center">
+              {previewDoc.url.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={previewDoc.url}
+                  className="size-full min-h-[420px]"
+                  title={previewDoc.type}
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.type}
+                  className="size-full max-h-[480px] object-contain"
+                />
+              )}
+            </div>
+
+            {/* Lightbox Footer Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-3 text-xs">
+              <button
+                onClick={() => copyDocUrl(previewDoc.url)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
+              >
+                <Copy className="size-3.5" />
+                <span>Copy Link</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={downloading}
+                  onClick={() => handleDownload(previewDoc.url, previewDoc.type)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#5b15fc] bg-white px-4 py-2 font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/5 shadow-xs cursor-pointer"
+                >
+                  <Download className="size-3.5" />
+                  <span>Download Document</span>
+                </button>
+                <a
+                  href={previewDoc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-2 font-semibold text-white hover:bg-[#4d0ee0] shadow-xs"
+                >
+                  <span>Open Full Link</span>
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

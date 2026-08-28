@@ -15,9 +15,11 @@ import {
   FileText,
   UploadCloud,
   ExternalLink,
-  Trash2
+  Trash2,
+  Download
 } from "lucide-react";
 import { toast } from "sonner";
+import { downloadFileWithExtension } from "@/lib/download";
 
 interface EditDoctorModalProps {
   doctor: any | null;
@@ -551,15 +553,25 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
                             {d.document_type.replace(/_/g, " ")}
                           </span>
                         </div>
-                        <a
-                          href={d.document_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5b15fc] hover:underline truncate"
-                        >
-                          <span className="truncate">{d.document_url}</span>
-                          <ExternalLink className="size-2.5 shrink-0" />
-                        </a>
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <a
+                            href={d.document_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5b15fc] hover:underline truncate"
+                          >
+                            <span className="truncate">{d.document_url}</span>
+                            <ExternalLink className="size-2.5 shrink-0" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => downloadFileWithExtension(d.document_url, `${name || 'doctor'}_${d.document_type}`)}
+                            className="text-stone-400 hover:text-stone-700 cursor-pointer"
+                            title="Download document file"
+                          >
+                            <Download className="size-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
