@@ -215,8 +215,8 @@ export const adminApi = {
   createDoctor: async (payload: {
     name: string;
     phone: string;
-    email?: string;
-    password: string;
+    email: string;
+    password?: string;
     bmdc_reg_number: string;
     specialties: string[];
     qualifications: string[];

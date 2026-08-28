@@ -12,9 +12,9 @@ import {
   CheckCircle2,
   UploadCloud,
   ExternalLink,
-  Eye,
-  EyeOff,
-  ShieldCheck
+  ShieldCheck,
+  Mail,
+  KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,8 +64,6 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [bmdcReg, setBmdcReg] = useState("");
   const [experienceYears, setExperienceYears] = useState("5");
   const [consultationFee, setConsultationFee] = useState("500");
@@ -150,8 +148,8 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim() || !password.trim() || !bmdcReg.trim()) {
-      toast.error("Please fill in all required fields (Name, Phone, Password, BMDC Number)");
+    if (!name.trim() || !phone.trim() || !email.trim() || !bmdcReg.trim()) {
+      toast.error("Please fill in all required fields (Name, Phone, Email, BMDC Number)");
       return;
     }
 
@@ -160,8 +158,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
       const payload = {
         name: name.trim(),
         phone: phone.trim(),
-        email: email.trim() ? email.trim() : undefined,
-        password: password.trim(),
+        email: email.trim(),
         bmdc_reg_number: bmdcReg.trim(),
         specialties: selectedSpecialties.length > 0 ? selectedSpecialties : ["General Medicine"],
         qualifications: selectedQualifications.length > 0 ? selectedQualifications : ["MBBS"],
@@ -181,8 +178,8 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
         await adminApi.verifyDoctor(created.id, "VERIFIED");
       }
 
-      toast.success("Doctor account created successfully!", {
-        description: `${created.name} (BMDC: ${created.bmdc_reg_number}) is ${autoVerify ? "verified and activated" : "pending review"}.`,
+      toast.success("Doctor account created & credentials emailed!", {
+        description: `Login passphrase sent to ${email.trim()}. Account is ${autoVerify ? "verified and activated" : "pending review"}.`,
         icon: <CheckCircle2 className="size-4 text-emerald-500" />,
       });
 
@@ -206,7 +203,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
             </div>
             <div>
               <h2 className="font-heading text-xl font-normal text-stone-900">Onboard & Create Doctor</h2>
-              <p className="text-xs text-stone-500">Add practitioner credentials to the Telemedicine network with Cloudinary CDN storage</p>
+              <p className="text-xs text-stone-500">Credentials will be generated and dispatched to the doctor&apos;s email address</p>
             </div>
           </div>
           <button
@@ -243,43 +240,29 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
             </div>
           </div>
 
-          {/* Row 2: Email & Password */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Email Address (Optional)</label>
-              <input
-                type="email"
-                placeholder="dr.tanvir@meditouch.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 neo-input outline-hidden"
-              />
+          {/* Row 2: Email Address (Required for Credential Delivery) */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Doctor Email Address *</label>
+            <input
+              required
+              type="email"
+              placeholder="dr.tanvir@meditouch.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 neo-input outline-hidden"
+            />
+          </div>
+
+          {/* Automatic Passphrase Informational Callout */}
+          <div className="rounded-xl border border-stone-800 bg-stone-50 p-3.5 flex items-start gap-3 shadow-xs">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20 mt-0.5">
+              <KeyRound className="size-4" />
             </div>
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Initial Password *</label>
-              <div className="relative">
-                <input
-                  required
-                  type={showPassword ? "text" : "password"}
-                  placeholder="DoctorSecret123!"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-10 rounded-xl pl-3.5 pr-10 text-xs font-mono text-stone-900 neo-input outline-hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors p-1"
-                  tabIndex={-1}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-3.5" />
-                  ) : (
-                    <Eye className="size-3.5" />
-                  )}
-                </button>
-              </div>
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-stone-900">Automatic Passphrase Generation & SMTP Dispatch</p>
+              <p className="text-[11px] text-stone-600 leading-relaxed">
+                The platform will automatically generate a secure, human-readable passphrase (e.g. <code className="font-mono font-bold text-[#5b15fc] bg-white px-1.5 py-0.5 rounded border border-stone-200">Summit-River-Beacon-482#</code>) and email it directly to the doctor with login instructions.
+              </p>
             </div>
           </div>
 
@@ -529,7 +512,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
               className="rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50 flex items-center gap-2"
             >
               {loading ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-4" />}
-              <span>Create Doctor Account</span>
+              <span>Create Doctor & Send Credentials</span>
             </button>
           </div>
         </form>
