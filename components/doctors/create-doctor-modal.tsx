@@ -3,24 +3,18 @@
 import * as React from "react";
 import { useState, useRef } from "react";
 import { adminApi, mediaApi } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { Badge } from "@/components/ui/badge";
 import {
   X,
   UserPlus,
-  Stethoscope,
-  ShieldCheck,
   FileText,
-  Plus,
   Trash2,
   CheckCircle2,
   UploadCloud,
   ExternalLink,
   Eye,
-  EyeOff
+  EyeOff,
+  ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -202,22 +196,22 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-4xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto neo-card rounded-[24px] p-6 sm:p-8 bg-white my-auto shadow-2xl animate-in fade-in zoom-in-95">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/60 pb-4">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-4xl bg-primary/10 text-primary">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20">
               <UserPlus className="size-5" />
             </div>
             <div>
-              <h2 className="font-heading text-lg font-bold text-foreground">Onboard & Create Doctor</h2>
-              <p className="text-xs text-muted-foreground">Add practitioner credentials to the Telemedicine network with Cloudinary CDN storage</p>
+              <h2 className="font-heading text-xl font-normal text-stone-900">Onboard & Create Doctor</h2>
+              <p className="text-xs text-stone-500">Add practitioner credentials to the Telemedicine network with Cloudinary CDN storage</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-4xl p-1.5 text-muted-foreground hover:bg-muted transition-colors"
+            className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors"
           >
             <X className="size-5" />
           </button>
@@ -228,23 +222,23 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           {/* Row 1: Name & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Doctor Full Name *</Label>
-              <Input
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Doctor Full Name *</label>
+              <input
                 required
                 placeholder="Dr. Tanvir Rahman"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-9 text-xs"
+                className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 neo-input outline-hidden"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Phone Number (Login ID) *</Label>
-              <Input
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Phone Number (Login ID) *</label>
+              <input
                 required
                 placeholder="01711223344"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="h-9 text-xs font-mono"
+                className="w-full h-10 rounded-xl px-3.5 text-xs font-mono text-stone-900 neo-input outline-hidden"
               />
             </div>
           </div>
@@ -252,30 +246,30 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           {/* Row 2: Email & Password */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Email Address (Optional)</Label>
-              <Input
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Email Address (Optional)</label>
+              <input
                 type="email"
                 placeholder="dr.tanvir@meditouch.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-9 text-xs"
+                className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 neo-input outline-hidden"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Initial Password *</Label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Initial Password *</label>
               <div className="relative">
-                <Input
+                <input
                   required
                   type={showPassword ? "text" : "password"}
                   placeholder="DoctorSecret123!"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-9 text-xs font-mono pr-9"
+                  className="w-full h-10 rounded-xl pl-3.5 pr-10 text-xs font-mono text-stone-900 neo-input outline-hidden"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors p-1"
                   tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -292,52 +286,52 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           {/* Row 3: BMDC Reg & Experience & Consultation Fee */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">BMDC Reg Number *</Label>
-              <Input
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">BMDC Reg Number *</label>
+              <input
                 required
                 placeholder="A-88741"
                 value={bmdcReg}
                 onChange={(e) => setBmdcReg(e.target.value)}
-                className="h-9 text-xs font-mono"
+                className="w-full h-10 rounded-xl px-3.5 text-xs font-mono text-stone-900 neo-input outline-hidden"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Experience (Years)</Label>
-              <Input
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Experience (Years)</label>
+              <input
                 type="number"
                 min="0"
                 placeholder="5"
                 value={experienceYears}
                 onChange={(e) => setExperienceYears(e.target.value)}
-                className="h-9 text-xs"
+                className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 neo-input outline-hidden"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Consultation Fee (BDT)</Label>
-              <Input
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Consultation Fee (BDT)</label>
+              <input
                 type="number"
                 min="0"
                 placeholder="500"
                 value={consultationFee}
                 onChange={(e) => setConsultationFee(e.target.value)}
-                className="h-9 text-xs"
+                className="w-full h-10 rounded-xl px-3.5 text-xs text-stone-900 neo-input outline-hidden"
               />
             </div>
           </div>
 
           {/* Specialties Selection */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Specialties (Select all that apply)</Label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Specialties (Select all that apply)</label>
             <div className="flex flex-wrap gap-1.5">
               {COMMON_SPECIALTIES.map((spec) => (
                 <button
                   type="button"
                   key={spec}
                   onClick={() => toggleSpecialty(spec)}
-                  className={`rounded-4xl px-3 py-1 text-xs font-medium transition-all ${
+                  className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
                     selectedSpecialties.includes(spec)
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "border border-border bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-[#5b15fc] text-white shadow-[1px_1px_0px_0px_#1C1917]"
+                      : "border border-stone-300 bg-stone-50 text-stone-600 hover:bg-stone-100"
                   }`}
                 >
                   {spec}
@@ -345,31 +339,31 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
               ))}
             </div>
             <div className="flex gap-2 pt-1">
-              <Input
+              <input
                 placeholder="Add other specialty..."
                 value={customSpecialty}
                 onChange={(e) => setCustomSpecialty(e.target.value)}
-                className="h-8 text-xs"
+                className="flex-1 h-8 rounded-lg px-3 text-xs text-stone-900 neo-input outline-hidden"
               />
-              <Button type="button" variant="outline" size="sm" onClick={addCustomSpecialty} className="h-8 rounded-4xl text-xs">
+              <button type="button" onClick={addCustomSpecialty} className="h-8 rounded-lg border border-stone-800 bg-white px-3 text-xs font-bold neo-button">
                 Add
-              </Button>
+              </button>
             </div>
           </div>
 
           {/* Qualifications Selection */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Qualifications & Degrees</Label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Qualifications & Degrees</label>
             <div className="flex flex-wrap gap-1.5">
               {COMMON_QUALIFICATIONS.map((qual) => (
                 <button
                   type="button"
                   key={qual}
                   onClick={() => toggleQualification(qual)}
-                  className={`rounded-4xl px-3 py-1 text-xs font-medium transition-all ${
+                  className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
                     selectedQualifications.includes(qual)
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "border border-border bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-[#5b15fc] text-white shadow-[1px_1px_0px_0px_#1C1917]"
+                      : "border border-stone-300 bg-stone-50 text-stone-600 hover:bg-stone-100"
                   }`}
                 >
                   {qual}
@@ -377,46 +371,44 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
               ))}
             </div>
             <div className="flex gap-2 pt-1">
-              <Input
+              <input
                 placeholder="Add other qualification (e.g. Diploma in Cardiology)..."
                 value={customQualification}
                 onChange={(e) => setCustomQualification(e.target.value)}
-                className="h-8 text-xs"
+                className="flex-1 h-8 rounded-lg px-3 text-xs text-stone-900 neo-input outline-hidden"
               />
-              <Button type="button" variant="outline" size="sm" onClick={addCustomQualification} className="h-8 rounded-4xl text-xs">
+              <button type="button" onClick={addCustomQualification} className="h-8 rounded-lg border border-stone-800 bg-white px-3 text-xs font-bold neo-button">
                 Add
-              </Button>
+              </button>
             </div>
           </div>
 
           {/* Bio / Summary */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Doctor Bio / Professional Summary</Label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Doctor Bio / Professional Summary</label>
             <textarea
               rows={2}
               placeholder="Experienced clinician specializing in rural family healthcare, preventative screenings, and maternal care."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full rounded-4xl border border-input bg-background p-3 text-xs outline-hidden focus:ring-2 focus:ring-ring"
+              className="w-full rounded-xl p-3 text-xs text-stone-900 neo-input outline-hidden"
             />
           </div>
 
           {/* Verification Documents: Cloudinary CDN Direct Upload */}
-          <div className="space-y-3 rounded-4xl border border-border/80 bg-muted/20 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-semibold text-foreground">Upload Verification Documents (Cloudinary CDN)</Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Upload BMDC Certificate, NID card, or Medical Degrees directly to Cloudinary storage.
-                </p>
-              </div>
+          <div className="space-y-3 rounded-2xl border border-stone-300 bg-stone-50 p-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Upload Verification Documents (Cloudinary CDN)</label>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Upload BMDC Certificate, NID card, or Medical Degrees directly to Cloudinary storage.
+              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
-                className="h-9 rounded-4xl border border-input bg-card px-3 text-xs font-medium outline-hidden"
+                className="h-9 rounded-xl border border-stone-800 bg-white px-3 text-xs font-bold text-stone-800 neo-input outline-hidden"
               >
                 <option value="BMDC_CERTIFICATE">BMDC Certificate</option>
                 <option value="NATIONAL_ID">National ID (NID)</option>
@@ -434,26 +426,24 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                 id="doc-file-upload"
               />
 
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
                 disabled={uploadingDoc}
                 onClick={() => fileInputRef.current?.click()}
-                className="h-9 rounded-4xl text-xs gap-2 border-dashed border-primary/50 hover:border-primary flex-1 justify-center"
+                className="h-9 rounded-xl border border-dashed border-[#5b15fc] bg-white px-4 text-xs font-bold text-[#5b15fc] hover:bg-[#5b15fc]/5 flex-1 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {uploadingDoc ? (
                   <>
-                    <Spinner className="size-3.5" />
-                    Uploading to Cloudinary CDN...
+                    <Spinner className="size-3.5 text-[#5b15fc]" />
+                    <span>Uploading to Cloudinary CDN...</span>
                   </>
                 ) : (
                   <>
-                    <UploadCloud className="size-4 text-primary" />
-                    Choose Document File (PDF, PNG, JPG)
+                    <UploadCloud className="size-4 text-[#5b15fc]" />
+                    <span>Choose Document File (PDF, PNG, JPG)</span>
                   </>
                 )}
-              </Button>
+              </button>
             </div>
 
             {/* Uploaded Documents List */}
@@ -462,24 +452,24 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                 {documents.map((d, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-2 rounded-4xl border border-border bg-card p-2.5 px-3 text-xs"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white p-2.5 px-3 text-xs shadow-xs"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc]">
                         <FileText className="size-3.5" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-semibold text-foreground truncate">{d.filename || d.document_type}</p>
-                          <Badge variant="outline" className="text-[9px]">
+                          <p className="font-bold text-stone-900 truncate">{d.filename || d.document_type}</p>
+                          <span className="rounded border border-stone-200 bg-stone-50 px-1 text-[9px] font-mono font-bold">
                             {d.document_type.replace(/_/g, " ")}
-                          </Badge>
+                          </span>
                         </div>
                         <a
                           href={d.document_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline truncate"
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5b15fc] hover:underline truncate"
                         >
                           <span className="truncate">{d.document_url}</span>
                           <ExternalLink className="size-2.5 shrink-0" />
@@ -490,7 +480,7 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                     <button
                       type="button"
                       onClick={() => removeDocument(i)}
-                      className="text-destructive hover:opacity-80 p-1 shrink-0"
+                      className="text-rose-600 hover:opacity-80 p-1 shrink-0 cursor-pointer"
                       title="Remove Document"
                     >
                       <Trash2 className="size-4" />
@@ -499,20 +489,20 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
                 ))}
               </div>
             ) : (
-              <p className="text-[11px] text-muted-foreground/70 italic text-center py-1">
+              <p className="text-[11px] text-stone-400 italic text-center py-1">
                 No documents uploaded yet.
               </p>
             )}
           </div>
 
           {/* Auto-verify Switch */}
-          <div className="flex items-center justify-between rounded-4xl border border-border bg-muted/20 p-4">
+          <div className="flex items-center justify-between rounded-xl border border-stone-300 bg-stone-50 p-4">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-emerald-600" />
-                <p className="text-xs font-semibold text-foreground">Auto-Approve & Activate Now</p>
+                <p className="text-xs font-bold text-stone-900">Auto-Approve & Activate Now</p>
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-stone-500">
                 Instantly mark doctor status as VERIFIED and ACTIVE upon creation.
               </p>
             </div>
@@ -520,19 +510,27 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
               type="checkbox"
               checked={autoVerify}
               onChange={(e) => setAutoVerify(e.target.checked)}
-              className="size-4 rounded accent-primary cursor-pointer"
+              className="size-4 rounded accent-[#5b15fc] cursor-pointer"
             />
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 border-t border-border/60 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-4xl text-xs">
+          <div className="flex items-center justify-end gap-3 border-t border-stone-200 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-stone-800 bg-white px-4 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
+            >
               Cancel
-            </Button>
-            <Button type="submit" disabled={loading || uploadingDoc} className="rounded-4xl text-xs gap-2">
-              {loading ? <Spinner className="size-3.5" /> : <CheckCircle2 className="size-4" />}
-              Create Doctor Account
-            </Button>
+            </button>
+            <button
+              type="submit"
+              disabled={loading || uploadingDoc}
+              className="rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50 flex items-center gap-2"
+            >
+              {loading ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-4" />}
+              <span>Create Doctor Account</span>
+            </button>
           </div>
         </form>
       </div>

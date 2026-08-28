@@ -1,32 +1,29 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { adminApi, pharmacyApi } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { CreateDoctorModal } from "@/components/doctors/create-doctor-modal";
 import {
   Users,
   ShieldCheck,
-  Clock,
   Calendar,
   Video,
   Banknote,
-  Activity,
+  Clock,
   CheckCircle2,
   XCircle,
-  RefreshCw,
-  FileText,
-  Stethoscope,
-  Pill,
   ExternalLink,
-  ArrowUpRight,
-  UserPlus
+  RefreshCw,
+  Sparkles,
+  UserPlus,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
+import { CreateDoctorModal } from "@/components/doctors/create-doctor-modal";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -37,16 +34,7 @@ export default function AdminDashboardPage() {
   const [processingDocId, setProcessingDocId] = useState<string | null>(null);
   const [createDoctorOpen, setCreateDoctorOpen] = useState(false);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const dateStr = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const [statsData, docsData, logsData] = await Promise.all([
@@ -63,20 +51,20 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
   const handleVerifyDoctor = async (doctorId: string, status: "VERIFIED" | "REJECTED") => {
     try {
       setProcessingDocId(doctorId);
       await adminApi.verifyDoctor(doctorId, status);
-      toast.success(status === "VERIFIED" ? "Doctor Approved & Activated" : "Doctor Application Rejected");
+      toast.success(`Doctor ${status === "VERIFIED" ? "Approved & Verified" : "Rejected"}`);
       await loadDashboardData();
     } catch (err: any) {
-      toast.error("Verification update failed", { description: err.message });
+      toast.error("Verification failed", { description: err.message });
     } finally {
       setProcessingDocId(null);
     }
@@ -86,7 +74,7 @@ export default function AdminDashboardPage() {
     try {
       setSyncingCatalog(true);
       const res = await pharmacyApi.ingestMedEasy();
-      toast.success("MedEasy Catalog Ingestion Complete", {
+      toast.success("MedEasy Catalog Ingested", {
         description: `Successfully synchronized ${res.count} medicine records.`,
       });
       await loadDashboardData();
@@ -97,46 +85,52 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? "Good morning" : currentHour < 18 ? "Good afternoon" : "Good evening";
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
   return (
     <div className="space-y-6">
-      {/* 1. Hero Section (Aven exact gradient & layout) */}
-      <div className="relative overflow-hidden rounded-4xl border border-border bg-gradient-to-br from-card via-card to-primary/5 p-6 sm:p-8 shadow-xs">
-        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 size-48 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
+      {/* 1. Hero Greeting Card */}
+      <div className="relative overflow-hidden neo-card rounded-[22px] p-6 sm:p-8 bg-gradient-to-br from-white via-white to-[#5b15fc]/5">
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-                {greeting}, Administrator
-              </h1>
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">Live Platform Status</span>
             </div>
-            <p className="mt-2 max-w-lg text-sm text-muted-foreground sm:text-base">
-              Real-time operations monitor for MediTouch Telemedicine & E-Pharmacy platform.
+            <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900 mt-1">
+              {greeting}, Administrator
+            </h1>
+            <p className="mt-1 max-w-lg text-xs text-stone-500">
+              Operations overview for MediTouch Telemedicine network and E-Pharmacy fulfillment.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
-            <Button
-              size="sm"
+            <button
               onClick={() => setCreateDoctorOpen(true)}
-              className="gap-2 rounded-4xl bg-primary text-primary-foreground font-semibold shadow-xs"
+              className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] cursor-pointer hover:bg-[#4d0ee0]"
             >
               <UserPlus className="size-3.5" />
-              Onboard Doctor
-            </Button>
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground rounded-4xl border border-border bg-card px-3 py-2">
-              <Calendar className="size-3.5 text-primary" />
+              <span>Onboard Doctor</span>
+            </button>
+            <div className="flex items-center gap-2 text-xs font-medium text-stone-700 rounded-xl border border-stone-800 bg-stone-50 px-3 py-2">
+              <Calendar className="size-3.5 text-[#5b15fc]" />
               <span>{dateStr}</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={loadDashboardData}
               disabled={loading}
-              className="gap-2 rounded-4xl"
+              className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-white px-3 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
             >
               <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+              <span>Refresh</span>
+            </button>
           </div>
         </div>
       </div>
@@ -147,48 +141,48 @@ export default function AdminDashboardPage() {
           icon={Users}
           label="Total Users"
           value={stats?.total_users ?? 0}
-          color="text-blue-500"
-          bgColor="bg-blue-500/10"
+          color="text-[#5b15fc]"
+          bgColor="bg-[#5b15fc]/10"
         />
         <MetricCard
           icon={ShieldCheck}
           label="Active Doctors"
           value={stats?.active_doctors ?? 0}
-          color="text-emerald-500"
+          color="text-emerald-600"
           bgColor="bg-emerald-500/10"
           badge={`${stats?.total_doctors ?? 0} total`}
-          badgeColor="text-emerald-600"
+          badgeColor="text-emerald-700"
         />
         <MetricCard
           icon={Clock}
           label="Pending Review"
           value={stats?.pending_doctor_verifications ?? 0}
-          color="text-amber-500"
+          color="text-amber-600"
           bgColor="bg-amber-500/10"
           badge={stats?.pending_doctor_verifications > 0 ? "Action req." : "All clear"}
-          badgeColor={stats?.pending_doctor_verifications > 0 ? "text-amber-600 font-semibold" : "text-muted-foreground"}
+          badgeColor={stats?.pending_doctor_verifications > 0 ? "text-amber-700 font-bold" : "text-stone-400"}
         />
         <MetricCard
           icon={Calendar}
           label="Appointments"
           value={stats?.total_appointments ?? 0}
-          color="text-violet-500"
+          color="text-violet-600"
           bgColor="bg-violet-500/10"
         />
         <MetricCard
           icon={Video}
           label="Consultations"
           value={stats?.completed_consultations ?? 0}
-          color="text-cyan-500"
+          color="text-cyan-600"
           bgColor="bg-cyan-500/10"
           badge="Completed"
-          badgeColor="text-cyan-600"
+          badgeColor="text-cyan-700"
         />
         <MetricCard
           icon={Banknote}
           label="Revenue BDT"
           value={stats?.total_revenue_bdt ? formatCurrency(stats.total_revenue_bdt) : "৳0.00"}
-          color="text-emerald-500"
+          color="text-emerald-600"
           bgColor="bg-emerald-500/10"
           isRawString
         />
@@ -197,46 +191,46 @@ export default function AdminDashboardPage() {
       {/* 3. Operational Sections: Doctor Verification Queue & Quick Sync */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Doctor Verification Queue */}
-        <div className="lg:col-span-2 rounded-4xl border border-border bg-card p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 neo-card rounded-[22px] p-6 bg-white">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
             <div>
-              <h2 className="font-heading text-lg font-semibold text-foreground">Doctor Verification Queue</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Review BMDC registration and credentials for onboarding doctors
+              <h2 className="font-heading text-lg font-normal text-stone-900">Doctor Verification Queue</h2>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Review BMDC registrations and medical credentials for onboarding doctors
               </p>
             </div>
-            <Badge variant="warning" className="rounded-4xl px-2.5 py-1">
+            <span className="rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold px-2.5 py-1">
               {pendingDoctors.length} Pending
-            </Badge>
+            </span>
           </div>
 
           {loading ? (
             <div className="flex justify-center py-10">
-              <Spinner className="size-6 text-primary" />
+              <Spinner className="size-6 text-[#5b15fc]" />
             </div>
           ) : pendingDoctors.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="flex size-12 items-center justify-center rounded-4xl bg-emerald-500/10 text-emerald-600 mb-2">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 border border-emerald-300 mb-2">
                 <CheckCircle2 className="size-6" />
               </div>
-              <p className="text-sm font-medium text-foreground">No Pending Verifications</p>
-              <p className="text-xs text-muted-foreground mt-1">All doctor registrations have been processed.</p>
+              <p className="text-sm font-bold text-stone-900">No Pending Verifications</p>
+              <p className="text-xs text-stone-500 mt-0.5">All practitioner registrations have been approved.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {pendingDoctors.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-4xl border border-border/80 bg-muted/20 p-4 transition-colors hover:bg-muted/40"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 transition-all hover:bg-stone-100"
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground truncate">{doc.name}</p>
-                      <Badge variant="outline" className="text-[10px] font-mono">
+                      <p className="text-sm font-bold text-stone-900 truncate">{doc.name}</p>
+                      <span className="rounded border border-stone-300 bg-white px-1.5 py-0.5 text-[10px] font-mono font-bold text-stone-700">
                         BMDC: {doc.bmdc_reg_number}
-                      </Badge>
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-stone-600">
                       {doc.specialties?.join(", ") || "General Physician"} • {doc.experience_years} yrs exp • ৳{doc.consultation_fee} fee
                     </p>
                     {doc.verification_documents && doc.verification_documents.length > 0 && (
@@ -247,11 +241,10 @@ export default function AdminDashboardPage() {
                             href={d.document_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#5b15fc] hover:underline"
                           >
-                            <FileText className="size-3" />
-                            {d.document_type}
-                            <ExternalLink className="size-2.5" />
+                            <span>{d.document_type}</span>
+                            <ExternalLink className="size-3" />
                           </a>
                         ))}
                       </div>
@@ -259,24 +252,22 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="destructive"
+                    <button
                       disabled={processingDocId === doc.id}
                       onClick={() => handleVerifyDoctor(doc.id, "REJECTED")}
-                      className="h-8 rounded-4xl px-3 text-xs"
+                      className="flex items-center gap-1 rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 neo-button"
                     >
-                      Reject
-                    </Button>
-                    <Button
-                      size="sm"
+                      <XCircle className="size-3.5" />
+                      <span>Reject</span>
+                    </button>
+                    <button
                       disabled={processingDocId === doc.id}
                       onClick={() => handleVerifyDoctor(doc.id, "VERIFIED")}
-                      className="h-8 rounded-4xl px-3 text-xs"
+                      className="flex items-center gap-1 rounded-xl border border-stone-900 bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 neo-button shadow-[2px_2px_0px_0px_#1C1917]"
                     >
-                      {processingDocId === doc.id ? <Spinner className="mr-1 size-3" /> : <CheckCircle2 className="mr-1 size-3.5" />}
-                      Approve & Activate
-                    </Button>
+                      {processingDocId === doc.id ? <Spinner className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
+                      <span>Approve</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -284,89 +275,90 @@ export default function AdminDashboardPage() {
           )}
         </div>
 
-        {/* Catalog Ingestion & Quick Actions */}
-        <div className="rounded-4xl border border-border bg-card p-6 shadow-xs flex flex-col justify-between space-y-4">
+        {/* E-Pharmacy Ingestion Sync Action Card */}
+        <div className="neo-card rounded-[22px] p-6 bg-white flex flex-col justify-between">
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">Catalog & Data Ingestion</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Sync normalized medicine records from MedEasy data source into MongoDB.
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20">
+                <Sparkles className="size-4.5" />
+              </div>
+              <div>
+                <h2 className="font-heading text-lg font-normal text-stone-900">MedEasy Sync</h2>
+                <p className="text-[11px] text-stone-500">E-Pharmacy Catalog Automation</p>
+              </div>
+            </div>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Populate or update medicine inventory directly from the MedEasy Bangladesh verified pharmaceutical catalog.
             </p>
           </div>
 
-          <div className="rounded-4xl border border-border/80 bg-muted/20 p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-4xl bg-primary/10 text-primary">
-                <Pill className="size-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">MedEasy Catalog</p>
-                <p className="text-xs text-muted-foreground">Generics, dosage, pricing & stock</p>
-              </div>
-            </div>
-
-            <Button
-              className="w-full h-9 rounded-4xl text-xs gap-2"
-              disabled={syncingCatalog}
+          <div className="pt-4 mt-4 border-t border-stone-200 space-y-2">
+            <button
               onClick={handleSyncMedEasy}
+              disabled={syncingCatalog}
+              className="w-full h-10 rounded-xl bg-[#5b15fc] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50"
             >
-              {syncingCatalog ? <Spinner className="size-3.5" /> : <RefreshCw className="size-3.5" />}
-              Synchronize Catalog Now
-            </Button>
-          </div>
-
-          <div className="rounded-4xl border border-border/80 bg-gradient-to-br from-card to-primary/5 p-4 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-              <ShieldCheck className="size-4 text-emerald-600" />
-              Platform Status
-            </div>
-            <p className="text-xs text-muted-foreground">
-              MongoDB, ZEGOCLOUD Video Gateway, bKash Sandbox, and Cloudinary CDN are online and operational.
+              {syncingCatalog ? (
+                <>
+                  <Spinner className="size-3.5 text-white" />
+                  <span>Ingesting MedEasy...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="size-3.5" />
+                  <span>Sync MedEasy Catalog</span>
+                </>
+              )}
+            </button>
+            <p className="text-[10px] text-stone-400 text-center">
+              Runs server-side idempotent scraper & catalog ingestion
             </p>
           </div>
         </div>
       </div>
 
-      {/* 4. Live Audit Logs Activity Stream */}
-      <div className="rounded-4xl border border-border bg-card p-6 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+      {/* 4. Live Audit Log Stream */}
+      <div className="neo-card rounded-[22px] p-6 bg-white">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">Recent Platform Activity</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Real-time audit trails of transactions, registrations, and status updates
-            </p>
+            <h2 className="font-heading text-lg font-normal text-stone-900">System Activity Stream</h2>
+            <p className="text-xs text-stone-500 mt-0.5">Real-time audit log of admin and user transactions</p>
           </div>
-          <Badge variant="outline" className="rounded-4xl text-xs">
-            Live Stream
-          </Badge>
+          <button
+            onClick={loadDashboardData}
+            className="text-xs font-bold text-[#5b15fc] hover:underline"
+          >
+            Refresh Stream
+          </button>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-6">
-            <Spinner className="size-6 text-primary" />
+            <Spinner className="size-5 text-[#5b15fc]" />
           </div>
         ) : auditLogs.length === 0 ? (
-          <p className="py-6 text-center text-xs text-muted-foreground">No recent audit activity.</p>
+          <p className="text-center py-6 text-xs text-stone-400 italic">No audit records logged yet.</p>
         ) : (
-          <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
-            {auditLogs.map((log, index) => (
-              <div key={index} className="flex items-center justify-between py-3 px-1 text-sm">
+          <div className="divide-y divide-stone-100">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="flex items-center justify-between py-2.5 text-xs">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-4xl bg-muted text-muted-foreground">
-                    <Activity className="size-4 text-primary" />
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-700 border border-stone-200">
+                    <Activity className="size-3.5 text-[#5b15fc]" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">
+                    <p className="text-xs font-bold text-stone-900 truncate">
                       {log.action}
-                      <span className="ml-2 font-normal text-muted-foreground">
+                      <span className="ml-2 font-normal text-stone-500">
                         on {log.target_type} ({log.target_id || "-"})
                       </span>
                     </p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[10px] text-stone-400">
                       User: {log.user_id || "System"} • IP: {log.ip_address || "Internal"}
                     </p>
                   </div>
                 </div>
-                <div className="text-[11px] text-muted-foreground shrink-0 pl-2">
+                <div className="text-[10px] font-mono text-stone-400 shrink-0 pl-2">
                   {formatDate(log.created_at)}
                 </div>
               </div>
@@ -405,24 +397,23 @@ function MetricCard({
   isRawString?: boolean;
 }) {
   return (
-    <div className="rounded-4xl border border-border bg-card p-4 transition-colors hover:bg-muted/30 shadow-xs">
+    <div className="neo-card rounded-2xl p-4 transition-all hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_0px_#1C1917] bg-white">
       <div className="flex items-center gap-3">
-        <div className={`flex size-10 items-center justify-center rounded-4xl ${bgColor} shrink-0`}>
+        <div className={`flex size-10 items-center justify-center rounded-xl ${bgColor} shrink-0 border border-stone-200`}>
           <Icon className={`size-5 ${color}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold tracking-tight text-foreground truncate">
+          <p className="text-base font-bold tracking-tight text-stone-900 truncate">
             {typeof value === "number" ? value.toLocaleString() : value}
             {badge && (
-              <span className={`ml-1.5 text-[11px] font-normal ${badgeColor ?? "text-muted-foreground"}`}>
+              <span className={`ml-1.5 text-[10px] font-medium ${badgeColor ?? "text-stone-400"}`}>
                 ({badge})
               </span>
             )}
           </p>
-          <p className="text-[11px] text-muted-foreground truncate">{label}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 truncate">{label}</p>
         </div>
       </div>
     </div>
   );
 }
-

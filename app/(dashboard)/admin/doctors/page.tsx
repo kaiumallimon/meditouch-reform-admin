@@ -16,8 +16,6 @@ import {
   RefreshCw,
   UserPlus
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -53,7 +51,7 @@ export default function DoctorsAdminPage() {
     try {
       setProcessingId(doctorId);
       await adminApi.verifyDoctor(doctorId, status);
-      toast.success(status === "VERIFIED" ? "Doctor verified & activated" : "Doctor rejected");
+      toast.success(`Doctor ${status === "VERIFIED" ? "verified & activated" : "rejected"}`);
       await fetchDoctors();
     } catch (err: any) {
       toast.error("Action failed", { description: err.message });
@@ -86,40 +84,43 @@ export default function DoctorsAdminPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900">
             Doctor Verification & Directory
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Review BMDC registrations, medical degrees, and manage doctor activation status.
+          <p className="text-xs text-stone-500 mt-1">
+            Review BMDC registrations, medical credentials, and manage practitioner activation status.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
+        <div className="flex items-center gap-2.5">
+          <button
             onClick={() => setCreateDoctorOpen(true)}
-            className="gap-2 rounded-4xl bg-primary text-primary-foreground font-semibold shadow-xs"
+            className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0]"
           >
             <UserPlus className="size-3.5" />
-            Onboard New Doctor
-          </Button>
-          <Button variant="outline" size="sm" onClick={fetchDoctors} disabled={loading} className="gap-2 rounded-4xl">
+            <span>Onboard New Doctor</span>
+          </button>
+          <button
+            onClick={fetchDoctors}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-white px-3 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
+          >
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 rounded-4xl border border-border bg-muted/40 p-1">
+        <div className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-stone-100 p-1 shadow-[2px_2px_0px_0px_#1C1917]">
           {["ALL", "PENDING", "VERIFIED", "REJECTED"].map((tab) => (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
-              className={`rounded-4xl px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
                 statusFilter === tab
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#5b15fc] text-white shadow-[1px_1px_0px_0px_#1C1917]"
+                  : "text-stone-600 hover:text-stone-900"
               }`}
             >
               {tab === "ALL" ? "All Doctors" : tab}
@@ -128,83 +129,90 @@ export default function DoctorsAdminPage() {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
+            placeholder="Search by name, BMDC reg, or specialty..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, BMDC, or specialty..."
-            className="h-9 w-full sm:w-72 rounded-4xl border border-input bg-card pl-9 pr-3 text-xs outline-hidden focus:ring-2 focus:ring-ring"
+            className="h-9 w-full sm:w-80 rounded-xl pl-9 pr-4 text-xs font-medium text-stone-900 neo-input outline-hidden placeholder:text-stone-400"
           />
         </div>
       </div>
 
-      {/* Doctor List */}
-      <div className="rounded-4xl border border-border bg-card p-6 shadow-xs">
+      {/* Doctor Cards List */}
+      <div className="neo-card rounded-[22px] p-6 bg-white">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Spinner className="size-8 text-primary" />
+          <div className="flex justify-center py-16">
+            <Spinner className="size-8 text-[#5b15fc]" />
           </div>
         ) : filteredDoctors.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <UserCheck className="size-10 text-muted-foreground/40 mb-2" />
-            <p className="text-sm font-semibold text-foreground">No doctors found</p>
-            <p className="text-xs text-muted-foreground mt-1">No doctor records match the selected filter criteria.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 border border-stone-200 mb-2">
+              <UserCheck className="size-6" />
+            </div>
+            <p className="text-sm font-bold text-stone-900">No Doctors Found</p>
+            <p className="text-xs text-stone-500 mt-1">Try adjusting your search criteria or verification status filter.</p>
           </div>
         ) : (
-          <div className="divide-y divide-border/60">
+          <div className="space-y-4">
             {filteredDoctors.map((doc) => (
               <div
                 key={doc.id}
-                className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-xl border border-stone-200 bg-stone-50/50 p-4 transition-all hover:bg-stone-50 hover:border-stone-400"
               >
-                <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="space-y-2 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold text-foreground">{doc.name}</p>
-                    <Badge variant="outline" className="font-mono text-[10px]">
+                    <h3 className="font-heading text-base font-normal text-stone-900">{doc.name}</h3>
+                    <span className="rounded border border-stone-300 bg-white px-2 py-0.5 text-[10px] font-mono font-bold text-stone-700">
                       BMDC: {doc.bmdc_reg_number}
-                    </Badge>
-                    <Badge
-                      variant={
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
                         doc.verification_status === "VERIFIED"
-                          ? "success"
-                          : doc.verification_status === "PENDING"
-                          ? "warning"
-                          : "destructive"
-                      }
-                      className="text-[10px]"
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                          : doc.verification_status === "REJECTED"
+                          ? "bg-rose-100 text-rose-800 border-rose-300"
+                          : "bg-amber-100 text-amber-800 border-amber-300"
+                      }`}
                     >
                       {doc.verification_status}
-                    </Badge>
-                    <Badge
-                      variant={doc.is_active ? "success" : "secondary"}
-                      className="text-[10px]"
-                    >
-                      {doc.is_active ? "Active" : "Inactive"}
-                    </Badge>
+                    </span>
+                    {doc.is_active && (
+                      <span className="rounded-full bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/30 px-2 py-0.5 text-[10px] font-bold uppercase">
+                        Active In Network
+                      </span>
+                    )}
                   </div>
 
-                  <p className="text-xs text-muted-foreground">
-                    {doc.qualifications?.join(", ") || "MBBS"} • {doc.specialties?.join(", ") || "General Physician"} • {doc.experience_years} yrs experience • Fee: ৳{doc.consultation_fee}
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground pt-0.5">
-                    <span>Phone: {doc.phone}</span>
-                    {doc.email && <span>• Email: {doc.email}</span>}
-                    <span>• Consultations: {doc.total_consultations || 0}</span>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600">
+                    <span>
+                      <strong className="text-stone-900">Specialties:</strong> {doc.specialties?.join(", ") || "General Medicine"}
+                    </span>
+                    <span>
+                      <strong className="text-stone-900">Degrees:</strong> {doc.qualifications?.join(", ") || "MBBS"}
+                    </span>
+                    <span>
+                      <strong className="text-stone-900">Experience:</strong> {doc.experience_years} years
+                    </span>
+                    <span>
+                      <strong className="text-stone-900">Fee:</strong> ৳{doc.consultation_fee} BDT
+                    </span>
                   </div>
 
+                  {/* Attached Verification Documents */}
                   {doc.verification_documents && doc.verification_documents.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {doc.verification_documents.map((d: any, i: number) => (
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Attached Documents:</span>
+                      {doc.verification_documents.map((d: any, idx: number) => (
                         <a
-                          key={i}
+                          key={idx}
                           href={d.document_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-4xl border border-border bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-muted"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-2.5 py-1 text-[11px] font-bold text-[#5b15fc] hover:bg-[#5b15fc]/10 shadow-[1px_1px_0px_0px_#1C1917]"
                         >
-                          <FileText className="size-2.5" />
-                          {d.document_type}
+                          <FileText className="size-3 text-[#5b15fc]" />
+                          <span>{d.document_type}</span>
                           <ExternalLink className="size-2.5" />
                         </a>
                       ))}
@@ -213,38 +221,38 @@ export default function DoctorsAdminPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 pt-2 lg:pt-0">
                   {doc.verification_status === "PENDING" ? (
                     <>
-                      <Button
-                        size="sm"
-                        variant="destructive"
+                      <button
                         disabled={processingId === doc.id}
                         onClick={() => handleVerify(doc.id, "REJECTED")}
-                        className="h-8 rounded-4xl px-3 text-xs"
+                        className="flex items-center gap-1 rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 neo-button"
                       >
-                        Reject
-                      </Button>
-                      <Button
-                        size="sm"
+                        <XCircle className="size-3.5" />
+                        <span>Reject</span>
+                      </button>
+                      <button
                         disabled={processingId === doc.id}
                         onClick={() => handleVerify(doc.id, "VERIFIED")}
-                        className="h-8 rounded-4xl px-3 text-xs"
+                        className="flex items-center gap-1 rounded-xl border border-stone-900 bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 neo-button shadow-[2px_2px_0px_0px_#1C1917]"
                       >
-                        {processingId === doc.id ? <Spinner className="size-3 mr-1" /> : <CheckCircle2 className="size-3.5 mr-1" />}
-                        Approve & Verify
-                      </Button>
+                        {processingId === doc.id ? <Spinner className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
+                        <span>Approve & Verify</span>
+                      </button>
                     </>
                   ) : (
-                    <Button
-                      size="sm"
-                      variant={doc.is_active ? "outline" : "default"}
+                    <button
                       disabled={processingId === doc.id}
                       onClick={() => handleToggleActive(doc.id, doc.is_active)}
-                      className="h-8 rounded-4xl px-3 text-xs"
+                      className={`rounded-xl px-3 py-1.5 text-xs font-bold neo-button border border-stone-800 ${
+                        doc.is_active
+                          ? "bg-white text-stone-800 hover:bg-stone-100"
+                          : "bg-[#5b15fc] text-white shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0]"
+                      }`}
                     >
                       {doc.is_active ? "Deactivate Doctor" : "Activate Doctor"}
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -262,4 +270,3 @@ export default function DoctorsAdminPage() {
     </div>
   );
 }
-

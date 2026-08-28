@@ -15,8 +15,8 @@ import {
   Activity,
   Settings,
   LogOut,
-  Stethoscope,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,37 +73,35 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
   return (
     <>
-      <aside className="flex h-full w-60 flex-col rounded-4xl border border-border bg-card shadow-xs">
+      <aside className="flex h-full w-60 flex-col neo-card rounded-[22px] bg-white">
         {/* Profile Card */}
-        <div className="border-b border-border/60 p-4">
+        <div className="border-b border-stone-200 p-4">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc] text-sm font-bold text-white shadow-[2px_2px_0px_0px_#1C1917] border border-stone-900">
                 {initials}
               </div>
-              <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-card bg-emerald-500" />
+              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border border-stone-900 bg-emerald-500" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <p className="truncate text-sm font-medium leading-none">
+                <p className="truncate text-xs font-bold text-stone-900">
                   {fullName}
                 </p>
-                <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
-                  Admin
-                </span>
               </div>
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {user?.email || "Super Administrator"}
+              <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">
+                {user?.email || "Platform Admin"}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Nav Links */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
-          {/* Main */}
-          <div className="space-y-0.5">
+        {/* Navigation Sections */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-4">
+          {/* Main Section */}
+          <nav className="space-y-1">
             {mainNavigation.map((item) => {
+              const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -111,144 +109,145 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                   href={item.href}
                   onClick={onNavigate}
                   className={cn(
-                    "flex items-center gap-3 rounded-4xl px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
                     isActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
+                      : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
                   )}
                 >
-                  <item.icon className="size-4 shrink-0" />
-                  {item.name}
+                  <Icon className="size-4 shrink-0" />
+                  <span>{item.name}</span>
                 </Link>
               );
             })}
-          </div>
+          </nav>
 
-          <div className="h-px bg-border/60" />
-
-          {/* Telemedicine */}
+          {/* Telemedicine Section */}
           <div>
-            <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
               Telemedicine
-            </div>
-            <div className="space-y-0.5">
+            </p>
+            <nav className="space-y-1">
               {telemedicineNavigation.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-3 rounded-4xl px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
                       isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
+                        : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
                     )}
                   >
-                    <item.icon className="size-4 shrink-0" />
-                    {item.name}
+                    <Icon className="size-4 shrink-0" />
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
 
-          <div className="h-px bg-border/60" />
-
-          {/* E-Pharmacy */}
+          {/* E-Pharmacy Section */}
           <div>
-            <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
               E-Pharmacy
-            </div>
-            <div className="space-y-0.5">
+            </p>
+            <nav className="space-y-1">
               {pharmacyNavigation.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-3 rounded-4xl px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
                       isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
+                        : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
                     )}
                   >
-                    <item.icon className="size-4 shrink-0" />
-                    {item.name}
+                    <Icon className="size-4 shrink-0" />
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
 
-          <div className="h-px bg-border/60" />
-
-          {/* System */}
+          {/* System Section */}
           <div>
-            <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
               System
-            </div>
-            <div className="space-y-0.5">
+            </p>
+            <nav className="space-y-1">
               {systemNavigation.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-3 rounded-4xl px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
                       isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
+                        : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
                     )}
                   >
-                    <item.icon className="size-4 shrink-0" />
-                    {item.name}
+                    <Icon className="size-4 shrink-0" />
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
-        </nav>
+        </div>
 
-        {/* Footer with Sign Out */}
-        <div className="border-t border-border/60 p-3">
+        {/* Footer / Sign Out Button */}
+        <div className="border-t border-stone-200 p-3">
           <button
             onClick={() => setOpenSignOutModal(true)}
-            className="flex w-full cursor-pointer items-center gap-3 rounded-4xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
           >
-            <LogOut className="size-4 shrink-0" />
-            Sign out
+            <LogOut className="size-4" />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* Sign Out Modal Dialog */}
+      {/* Sign Out Confirmation Modal */}
       {openSignOutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm rounded-4xl border border-border bg-card p-6 shadow-xl animate-in fade-in zoom-in-95">
-            <h2 className="font-heading text-base font-semibold text-card-foreground">
-              Sign out of MediTouch Admin
-            </h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Are you sure you want to end your current administrator session?
-            </p>
-            <div className="mt-6 flex justify-end gap-2.5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm neo-card rounded-[22px] p-6 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 border border-rose-300">
+                <AlertTriangle className="size-5" />
+              </div>
+              <div>
+                <h3 className="font-heading text-lg font-bold text-stone-900">Sign Out</h3>
+                <p className="text-xs text-stone-500">Are you sure you want to end your session?</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
               <button
                 onClick={() => setOpenSignOutModal(false)}
-                className="inline-flex items-center justify-center rounded-4xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                className="rounded-xl border border-stone-800 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-800 hover:bg-stone-50 neo-button"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSignOut}
-                className="inline-flex items-center justify-center rounded-4xl bg-destructive text-destructive-foreground px-4 py-2 text-sm font-medium shadow-xs transition-colors hover:bg-destructive/90"
+                className="rounded-xl border border-stone-900 bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-rose-700 neo-button shadow-[2px_2px_0px_0px_#1C1917]"
               >
-                Sign out
+                Confirm Sign Out
               </button>
             </div>
           </div>
@@ -257,4 +256,3 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     </>
   );
 }
-

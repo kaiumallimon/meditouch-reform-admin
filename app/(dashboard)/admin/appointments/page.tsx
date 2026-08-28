@@ -1,31 +1,29 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
-import { Calendar, RefreshCw, Clock, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Calendar } from "lucide-react";
 
 export default function AppointmentsAdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900">
           Telemedicine Appointments
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Monitor scheduled, active, and completed doctor-patient video consultations across rural hubs.
+        <p className="text-xs text-stone-500 mt-1">
+          Monitor scheduled, active, and completed doctor-patient video consultations across rural healthcare centers.
         </p>
       </div>
 
-      <div className="rounded-4xl border border-border bg-card p-12 text-center shadow-xs">
-        <Calendar className="size-12 text-muted-foreground/30 mx-auto mb-3" />
-        <h3 className="font-heading text-base font-semibold text-foreground">Active Telemedicine Sessions</h3>
-        <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-          Appointments booked by rural patients automatically trigger ZEGOCLOUD video room token generation and bKash escrow settlement.
+      <div className="neo-card rounded-[22px] p-12 text-center bg-white">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20 mx-auto mb-3">
+          <Calendar className="size-7" />
+        </div>
+        <h3 className="font-heading text-lg font-normal text-stone-900">Active Telemedicine Queue</h3>
+        <p className="text-xs text-stone-500 max-w-md mx-auto mt-1 leading-relaxed">
+          Appointments booked by rural patients automatically generate secure ZEGOCLOUD video room tokens and bKash digital payment escrows.
         </p>
       </div>
     </div>
   );
 }
-

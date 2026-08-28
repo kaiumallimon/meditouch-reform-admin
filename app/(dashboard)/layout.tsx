@@ -26,21 +26,21 @@ export default function DashboardLayout({
 
   if (authorized === null) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner className="size-8 text-primary" />
-          <p className="text-sm font-medium text-muted-foreground">Authenticating MediTouch Admin...</p>
+      <div className="flex h-screen items-center justify-center bg-[#F7F4EE]">
+        <div className="flex flex-col items-center gap-3 neo-card rounded-2xl p-6">
+          <Spinner className="size-8 text-[#5b15fc]" />
+          <p className="text-xs font-bold uppercase tracking-wider text-stone-800">Authenticating Admin Workspace...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background p-3">
-      {/* Header */}
+    <div className="flex h-screen flex-col bg-[#F7F4EE] p-3">
+      {/* Top Navigation Header */}
       <DashboardHeader />
 
-      {/* Main Workspace */}
+      {/* Main Workspace Canvas */}
       <div className="flex flex-1 gap-3 overflow-hidden pt-3">
         {/* Left Sidebar */}
         <div className="hidden md:block">
@@ -48,11 +48,10 @@ export default function DashboardLayout({
         </div>
 
         {/* Central Card Canvas */}
-        <main className="flex-1 overflow-y-auto rounded-4xl border border-border bg-card shadow-xs">
-          <div className="px-6 py-8">{children}</div>
+        <main className="flex-1 overflow-y-auto neo-card rounded-[22px] bg-white p-6 sm:p-8">
+          {children}
         </main>
       </div>
     </div>
   );
 }
-
