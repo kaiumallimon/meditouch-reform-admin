@@ -26,7 +26,7 @@ import {
   Eye
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { downloadFileWithExtension } from "@/lib/download";
+import { downloadFileWithExtension, getDocumentPreviewUrl } from "@/lib/download";
 import { toast } from "sonner";
 
 interface DoctorDetailModalProps {
@@ -387,20 +387,24 @@ export function DoctorDetailModal({
             </div>
 
             {/* Document / Image Viewer Body */}
-            <div className="flex-1 min-h-[380px] max-h-[500px] overflow-hidden rounded-xl border border-stone-200 bg-stone-100 flex items-center justify-center">
-              {previewDoc.url.toLowerCase().endsWith(".pdf") ? (
-                <iframe
-                  src={previewDoc.url}
-                  className="size-full min-h-[420px]"
-                  title={previewDoc.type}
-                />
-              ) : (
-                <img
-                  src={previewDoc.url}
-                  alt={previewDoc.type}
-                  className="size-full max-h-[480px] object-contain"
-                />
-              )}
+            <div className="flex-1 min-h-[380px] max-h-[500px] overflow-hidden rounded-xl border border-stone-200 bg-stone-100 flex items-center justify-center p-2">
+              <img
+                src={getDocumentPreviewUrl(previewDoc.url)}
+                alt={previewDoc.type}
+                className="size-full max-h-[480px] object-contain rounded-xl shadow-xs"
+                onError={(e) => {
+                  // If img tag fails (e.g. multi-page raw iframe), fall back to iframe
+                  const target = e.currentTarget;
+                  target.style.display = "none";
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector("iframe")) {
+                    const iframe = document.createElement("iframe");
+                    iframe.src = getDocumentPreviewUrl(previewDoc.url);
+                    iframe.className = "size-full min-h-[420px] rounded-xl";
+                    parent.appendChild(iframe);
+                  }
+                }}
+              />
             </div>
 
             {/* Lightbox Footer Actions */}
@@ -423,7 +427,7 @@ export function DoctorDetailModal({
                   <span>Download Document</span>
                 </button>
                 <a
-                  href={previewDoc.url}
+                  href={getDocumentPreviewUrl(previewDoc.url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-2 font-semibold text-white hover:bg-[#4d0ee0] shadow-xs"

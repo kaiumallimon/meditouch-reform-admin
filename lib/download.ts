@@ -1,34 +1,54 @@
 /**
- * Downloads a remote file as a Blob with a guaranteed filename and extension.
+ * Downloads a remote file with guaranteed filename, mime-type and extension.
+ * Routes through the backend media stream proxy to bypass any Cloudinary ACL 401s or CORS limits.
  */
 export async function downloadFileWithExtension(url: string, defaultName: string) {
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to fetch file");
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
     let filename = defaultName.replace(/[^a-zA-Z0-9._-]/g, "_");
     if (!filename.includes(".")) {
-      const type = blob.type.toLowerCase();
-      if (type.includes("pdf")) filename += ".pdf";
-      else if (type.includes("png")) filename += ".png";
-      else if (type.includes("jpeg") || type.includes("jpg")) filename += ".jpg";
-      else if (type.includes("webp")) filename += ".webp";
-      else if (type.includes("word") || type.includes("doc")) filename += ".docx";
-      else filename += ".pdf";
+      filename += ".pdf";
     }
 
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    const streamUrl = `${apiBase}/media/stream?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}&download=true`;
+
+    const res = await fetch(streamUrl);
+    if (!res.ok) {
+      // Fallback direct fetch
+      const directRes = await fetch(url);
+      if (!directRes.ok) throw new Error("Fetch failed");
+      const blob = await directRes.blob();
+      triggerBlobDownload(blob, filename);
+      return;
+    }
+
+    const blob = await res.blob();
+    triggerBlobDownload(blob, filename);
   } catch (e) {
-    // Fallback: open in new window
     window.open(url, "_blank");
   }
 }
 
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+}
+
+/**
+ * Returns a guaranteed viewable URL for documents and PDFs.
+ * If Cloudinary raw PDF, transforms to image rendering or backend streaming proxy.
+ */
+export function getDocumentPreviewUrl(url: string): string {
+  if (!url) return "";
+  if (url.includes("cloudinary.com") && url.includes("/raw/upload/") && url.toLowerCase().endsWith(".pdf")) {
+    return url.replace("/raw/upload/", "/image/upload/").replace(/\.pdf$/i, ".png");
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  return `${apiBase}/media/stream?url=${encodeURIComponent(url)}`;
+}
