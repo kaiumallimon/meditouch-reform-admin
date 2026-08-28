@@ -111,8 +111,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                   className={cn(
                     "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-all",
                     isActive
-                      ? "bg-[#5b15fc] text-white font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917]"
-                      : "text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                      ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                      : "text-stone-700 hover:bg-stone-100/80 hover:text-stone-900 font-medium"
                   )}
                 >
                   <Icon className="size-4 shrink-0" />

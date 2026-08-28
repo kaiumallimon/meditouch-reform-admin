@@ -114,19 +114,19 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
             <button
               onClick={() => setCreateDoctorOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] cursor-pointer hover:bg-[#4d0ee0]"
+              className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-semibold shadow-xs hover:bg-[#4d0ee0] transition-all cursor-pointer"
             >
               <UserPlus className="size-3.5" />
               <span>Onboard Doctor</span>
             </button>
-            <div className="flex items-center gap-2 text-xs font-medium text-stone-700 rounded-xl border border-stone-800 bg-stone-50 px-3 py-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-stone-600 rounded-xl border border-stone-200 bg-stone-50/80 px-3 py-2">
               <Calendar className="size-3.5 text-[#5b15fc]" />
               <span>{dateStr}</span>
             </div>
             <button
               onClick={loadDashboardData}
               disabled={loading}
-              className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-white px-3 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
+              className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
             >
               <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
               <span>Refresh</span>
@@ -397,9 +397,9 @@ function MetricCard({
   isRawString?: boolean;
 }) {
   return (
-    <div className="neo-card rounded-2xl p-4 transition-all hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0px_0px_#1C1917] bg-white">
+    <div className="neo-card rounded-2xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-md bg-white">
       <div className="flex items-center gap-3">
-        <div className={`flex size-10 items-center justify-center rounded-xl ${bgColor} shrink-0 border border-stone-200`}>
+        <div className={`flex size-10 items-center justify-center rounded-xl ${bgColor} shrink-0 border border-stone-200/60`}>
           <Icon className={`size-5 ${color}`} />
         </div>
         <div className="min-w-0 flex-1">

@@ -94,7 +94,7 @@ export default function DoctorsAdminPage() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setCreateDoctorOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0]"
+            className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-semibold shadow-xs hover:bg-[#4d0ee0] transition-all cursor-pointer"
           >
             <UserPlus className="size-3.5" />
             <span>Onboard New Doctor</span>
@@ -102,7 +102,7 @@ export default function DoctorsAdminPage() {
           <button
             onClick={fetchDoctors}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-white px-3 py-2 text-xs font-bold text-stone-800 neo-button hover:bg-stone-50"
+            className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
           >
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
@@ -112,14 +112,14 @@ export default function DoctorsAdminPage() {
 
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 rounded-xl border border-stone-800 bg-stone-100 p-1 shadow-[2px_2px_0px_0px_#1C1917]">
+        <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-100/70 p-1">
           {["ALL", "PENDING", "VERIFIED", "REJECTED"].map((tab) => (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
-              className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 statusFilter === tab
-                  ? "bg-[#5b15fc] text-white shadow-[1px_1px_0px_0px_#1C1917]"
+                  ? "bg-[#5b15fc] text-white shadow-xs"
                   : "text-stone-600 hover:text-stone-900"
               }`}
             >
