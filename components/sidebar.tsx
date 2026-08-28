@@ -15,7 +15,8 @@ import {
   Activity,
   Settings,
   LogOut,
-  AlertTriangle
+  AlertTriangle,
+  Cloud
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ const pharmacyNavigation = [
 ];
 
 const systemNavigation = [
+  { name: "CDN Storage", href: "/admin/cdn", icon: Cloud },
   { name: "Audit Logs", href: "/admin/audit-logs", icon: Activity },
   { name: "System Settings", href: "/admin/settings", icon: Settings },
 ];

@@ -243,10 +243,11 @@ export const adminApi = {
     return res.data;
   },
 
-  listDoctors: async (params: { verification_status?: string; is_active?: boolean; page?: number; limit?: number }) => {
+  listDoctors: async (params: { verification_status?: string; is_active?: boolean; search?: string; page?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (params.verification_status) query.append("verification_status", params.verification_status);
     if (params.is_active !== undefined) query.append("is_active", String(params.is_active));
+    if (params.search) query.append("search", params.search);
     if (params.page) query.append("page", String(params.page));
     if (params.limit) query.append("limit", String(params.limit));
 
@@ -256,11 +257,13 @@ export const adminApi = {
       name: string;
       phone: string;
       email?: string;
+      avatar_url?: string;
       bmdc_reg_number: string;
       specialties: string[];
       qualifications: string[];
       experience_years: number;
       consultation_fee: number;
+      bio?: string;
       is_verified: boolean;
       verification_status: string;
       is_active: boolean;
@@ -273,6 +276,34 @@ export const adminApi = {
       }>;
       created_at?: string;
     }>>(`/admin/doctors?${query.toString()}`);
+    return res.data;
+  },
+
+  updateDoctor: async (doctorId: string, payload: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    avatar_url?: string;
+    bmdc_reg_number?: string;
+    specialties?: string[];
+    qualifications?: string[];
+    experience_years?: number;
+    consultation_fee?: number;
+    bio?: string;
+    is_active?: boolean;
+    verification_status?: string;
+  }) => {
+    const res = await fetchApi(`/admin/doctors/${doctorId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  deleteDoctor: async (doctorId: string) => {
+    const res = await fetchApi(`/admin/doctors/${doctorId}`, {
+      method: "DELETE",
+    });
     return res.data;
   },
 
@@ -444,5 +475,60 @@ export const mediaApi = {
       original_filename: string;
       folder: string;
     };
+  },
+
+  listAssets: async (params: {
+    folder?: string;
+    resource_type?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.folder) query.append("folder", params.folder);
+    if (params.resource_type) query.append("resource_type", params.resource_type);
+    if (params.search) query.append("search", params.search);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+
+    const res = await fetchApi<PaginatedData<{
+      id: string;
+      public_id: string;
+      secure_url: string;
+      url: string;
+      format: string;
+      resource_type: string;
+      bytes: number;
+      original_filename: string;
+      folder: string;
+      uploader_id?: string;
+      created_at?: string;
+    }>>(`/media/assets?${query.toString()}`);
+    return res.data;
+  },
+
+  getStats: async () => {
+    const res = await fetchApi<{
+      total_assets: number;
+      total_bytes: number;
+      total_images: number;
+      total_documents: number;
+      storage_used_formatted: string;
+      cloud_name: string;
+      is_configured: boolean;
+      folders: Array<{
+        folder: string;
+        count: number;
+        bytes: number;
+      }>;
+    }>("/media/stats");
+    return res.data;
+  },
+
+  deleteAsset: async (assetId: string) => {
+    const res = await fetchApi(`/media/assets/${assetId}`, {
+      method: "DELETE",
+    });
+    return res.data;
   },
 };
