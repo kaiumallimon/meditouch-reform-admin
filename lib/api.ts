@@ -290,6 +290,10 @@ export const adminApi = {
     experience_years?: number;
     consultation_fee?: number;
     bio?: string;
+    verification_documents?: Array<{
+      document_type: string;
+      document_url: string;
+    }>;
     is_active?: boolean;
     verification_status?: string;
   }) => {

@@ -5,6 +5,7 @@ import { useState, useEffect, useTransition } from "react";
 import { adminApi } from "@/lib/api";
 import { CreateDoctorModal } from "@/components/doctors/create-doctor-modal";
 import { EditDoctorModal } from "@/components/doctors/edit-doctor-modal";
+import { DoctorDetailModal } from "@/components/doctors/doctor-detail-modal";
 import {
   UserCheck,
   Search,
@@ -26,15 +27,13 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
-  CheckSquare,
-  Square,
+  Eye,
   User
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 export default function DoctorsAdminPage() {
-  const [isPending, startTransition] = useTransition();
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -56,9 +55,10 @@ export default function DoctorsAdminPage() {
   // Selection states
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Action states
+  // Action / Modal states
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [createDoctorOpen, setCreateDoctorOpen] = useState(false);
+  const [viewingDoctor, setViewingDoctor] = useState<any | null>(null);
   const [editingDoctor, setEditingDoctor] = useState<any | null>(null);
   const [deletingDoctor, setDeletingDoctor] = useState<any | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
@@ -85,7 +85,6 @@ export default function DoctorsAdminPage() {
     try {
       setStatsLoading(true);
       const data = await adminApi.getDashboardStats();
-      // Fetch general list to calculate average fee
       const sample = await adminApi.listDoctors({ limit: 100 });
       const docList = sample.items || [];
       const fees = docList.map((d) => d.consultation_fee || 0).filter((f) => f > 0);
@@ -146,6 +145,12 @@ export default function DoctorsAdminPage() {
       toast.success(`Doctor ${status === "VERIFIED" ? "verified & activated" : "rejected"}`, {
         icon: <CheckCircle2 className="size-4 text-emerald-500" />,
       });
+      // If viewing modal is open for this doctor, update its state
+      if (viewingDoctor && viewingDoctor.id === doctorId) {
+        setViewingDoctor((prev: any) =>
+          prev ? { ...prev, verification_status: status, is_active: status === "VERIFIED" } : null
+        );
+      }
       await Promise.all([fetchDoctors(), fetchStats()]);
     } catch (err: any) {
       toast.error("Action failed", { description: err.message });
@@ -159,6 +164,9 @@ export default function DoctorsAdminPage() {
       setProcessingId(doctorId);
       await adminApi.updateDoctorStatus(doctorId, !currentStatus);
       toast.success(`Doctor ${!currentStatus ? "activated" : "deactivated"}`);
+      if (viewingDoctor && viewingDoctor.id === doctorId) {
+        setViewingDoctor((prev: any) => (prev ? { ...prev, is_active: !currentStatus } : null));
+      }
       await Promise.all([fetchDoctors(), fetchStats()]);
     } catch (err: any) {
       toast.error("Status update failed", { description: err.message });
@@ -178,6 +186,9 @@ export default function DoctorsAdminPage() {
         icon: <CheckCircle2 className="size-4 text-emerald-500" />,
       });
       setDeletingDoctor(null);
+      if (viewingDoctor?.id === deletingDoctor.id) {
+        setViewingDoctor(null);
+      }
       setSelectedIds((prev) => prev.filter((id) => id !== deletingDoctor.id));
       await Promise.all([fetchDoctors(), fetchStats()]);
     } catch (err: any) {
@@ -462,10 +473,14 @@ export default function DoctorsAdminPage() {
                         />
                       </td>
 
-                      {/* Doctor & Avatar */}
+                      {/* Doctor & Avatar (Clickable to view detailed info) */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="size-9 shrink-0 rounded-full border border-stone-200 bg-stone-100 overflow-hidden flex items-center justify-center shadow-xs">
+                        <div
+                          onClick={() => setViewingDoctor(doc)}
+                          className="flex items-center gap-3 cursor-pointer group/item"
+                          title="View Comprehensive Profile"
+                        >
+                          <div className="size-9 shrink-0 rounded-full border border-stone-200 bg-stone-100 overflow-hidden flex items-center justify-center shadow-xs group-hover/item:border-[#5b15fc]">
                             {doc.avatar_url ? (
                               <img src={doc.avatar_url} alt={doc.name} className="size-full object-cover" />
                             ) : (
@@ -473,7 +488,9 @@ export default function DoctorsAdminPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-stone-900 truncate">{doc.name}</p>
+                            <p className="font-bold text-stone-900 truncate group-hover/item:text-[#5b15fc] transition-colors">
+                              {doc.name}
+                            </p>
                             <p className="text-[11px] text-stone-500 font-mono truncate">{doc.phone}</p>
                             {doc.email && (
                               <p className="text-[10px] text-stone-400 truncate">{doc.email}</p>
@@ -538,6 +555,15 @@ export default function DoctorsAdminPage() {
                       {/* Actions */}
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
+                          {/* Inspect / View Details Button */}
+                          <button
+                            onClick={() => setViewingDoctor(doc)}
+                            className="rounded-lg p-1.5 text-stone-500 hover:bg-[#5b15fc]/10 hover:text-[#5b15fc] transition-colors cursor-pointer"
+                            title="View Comprehensive Profile"
+                          >
+                            <Eye className="size-3.5" />
+                          </button>
+
                           {/* Edit Button */}
                           <button
                             onClick={() => setEditingDoctor(doc)}
@@ -613,10 +639,13 @@ export default function DoctorsAdminPage() {
                 className="flex flex-col justify-between rounded-2xl border border-stone-200 bg-white p-5 shadow-xs transition-all hover:border-[#5b15fc]/30 hover:shadow-md"
               >
                 <div>
-                  {/* Top: Avatar & Badges */}
-                  <div className="flex items-start justify-between gap-3">
+                  {/* Top: Avatar & Badges (Clickable to view detailed modal) */}
+                  <div
+                    onClick={() => setViewingDoctor(doc)}
+                    className="flex items-start justify-between gap-3 cursor-pointer group/card"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="size-12 shrink-0 rounded-full border border-stone-200 bg-stone-100 overflow-hidden flex items-center justify-center shadow-xs">
+                      <div className="size-12 shrink-0 rounded-full border border-stone-200 bg-stone-100 overflow-hidden flex items-center justify-center shadow-xs group-hover/card:border-[#5b15fc]">
                         {doc.avatar_url ? (
                           <img src={doc.avatar_url} alt={doc.name} className="size-full object-cover" />
                         ) : (
@@ -624,7 +653,7 @@ export default function DoctorsAdminPage() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-heading text-base font-normal text-stone-900 truncate">
+                        <h3 className="font-heading text-base font-normal text-stone-900 truncate group-hover/card:text-[#5b15fc] transition-colors">
                           {doc.name}
                         </h3>
                         <p className="text-[11px] text-stone-500 font-mono">BMDC: {doc.bmdc_reg_number}</p>
@@ -689,6 +718,13 @@ export default function DoctorsAdminPage() {
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setViewingDoctor(doc)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
+                    >
+                      <Eye className="size-3.5 text-[#5b15fc]" />
+                      <span>View</span>
+                    </button>
                     <button
                       onClick={() => setEditingDoctor(doc)}
                       className="rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
@@ -803,6 +839,24 @@ export default function DoctorsAdminPage() {
           fetchDoctors();
           fetchStats();
         }}
+      />
+
+      {/* Comprehensive Doctor Detail Modal */}
+      <DoctorDetailModal
+        doctor={viewingDoctor}
+        isOpen={Boolean(viewingDoctor)}
+        onClose={() => setViewingDoctor(null)}
+        onEdit={(d) => {
+          setViewingDoctor(null);
+          setEditingDoctor(d);
+        }}
+        onDelete={(d) => {
+          setViewingDoctor(null);
+          setDeletingDoctor(d);
+        }}
+        onVerify={handleVerify}
+        onToggleActive={handleToggleActive}
+        processingId={processingId}
       />
 
       {/* Edit Doctor Modal */}

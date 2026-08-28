@@ -11,7 +11,11 @@ import {
   Camera,
   User,
   ShieldCheck,
-  Edit3
+  Edit3,
+  FileText,
+  UploadCloud,
+  ExternalLink,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +24,13 @@ interface EditDoctorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+interface AttachedDoc {
+  document_type: string;
+  document_url: string;
+  filename?: string;
+  size_bytes?: number;
 }
 
 const COMMON_SPECIALTIES = [
@@ -47,8 +58,11 @@ const COMMON_QUALIFICATIONS = [
 
 export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoctorModalProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   // Form states
   const [name, setName] = useState("");
@@ -61,6 +75,10 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
   const [bio, setBio] = useState("");
   const [verificationStatus, setVerificationStatus] = useState("PENDING");
   const [isActive, setIsActive] = useState(false);
+
+  // Verification Documents
+  const [docType, setDocType] = useState("BMDC_CERTIFICATE");
+  const [documents, setDocuments] = useState<AttachedDoc[]>([]);
 
   // Multi-select tags
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
@@ -82,6 +100,7 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
       setIsActive(Boolean(doctor.is_active));
       setSelectedSpecialties(doctor.specialties || ["General Medicine"]);
       setSelectedQualifications(doctor.qualifications || ["MBBS"]);
+      setDocuments(doctor.verification_documents || []);
     }
   }, [doctor]);
 
@@ -138,6 +157,40 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingDoc(true);
+      const res = await mediaApi.uploadDoctorDocument(file);
+
+      const newDoc: AttachedDoc = {
+        document_type: docType,
+        document_url: res.secure_url,
+        filename: file.name,
+        size_bytes: res.bytes,
+      };
+
+      setDocuments((prev) => [...prev, newDoc]);
+      toast.success("Document uploaded to Cloudinary CDN", {
+        description: `${file.name} attached as ${docType.replace(/_/g, " ")}.`,
+        icon: <CheckCircle2 className="size-4 text-emerald-500" />,
+      });
+    } catch (err: any) {
+      toast.error("Cloudinary upload failed", { description: err.message });
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeDocument = (index: number) => {
+    setDocuments(documents.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim() || !email.trim() || !bmdcReg.trim()) {
@@ -158,6 +211,10 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
         experience_years: parseInt(experienceYears, 10) || 0,
         consultation_fee: parseFloat(consultationFee) || 0.0,
         bio: bio.trim() || undefined,
+        verification_documents: documents.map((d) => ({
+          document_type: d.document_type,
+          document_url: d.document_url,
+        })),
         verification_status: verificationStatus,
         is_active: isActive,
       };
@@ -188,7 +245,7 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
             </div>
             <div>
               <h2 className="font-heading text-xl font-normal text-stone-900">Edit Doctor Profile</h2>
-              <p className="text-xs text-stone-500">Update credentials, fees, specialties, and verification state</p>
+              <p className="text-xs text-stone-500">Update credentials, documents, fees, specialties, and verification state</p>
             </div>
           </div>
           <button
@@ -406,15 +463,122 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
             </div>
           </div>
 
-          {/* Bio */}
+          {/* Bio (Increased default height) */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Doctor Bio</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">
+              Doctor Professional Biography & Clinical Summary
+            </label>
             <textarea
-              rows={2}
+              rows={5}
+              placeholder="Detailed doctor biography, clinical background, hospital affiliations, specialized procedures, and patient care philosophy..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full rounded-xl p-3 text-xs text-stone-900 neo-input outline-hidden"
+              className="w-full min-h-[120px] rounded-xl p-3.5 text-xs text-stone-900 neo-input outline-hidden leading-relaxed"
             />
+          </div>
+
+          {/* Verification Documents Upload & Management (Cloudinary CDN) */}
+          <div className="space-y-3 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">
+                Verification Documents (Cloudinary CDN)
+              </label>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Upload new or manage existing BMDC Certificate, NID card, or Medical Degrees stored on CDN.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <select
+                value={docType}
+                onChange={(e) => setDocType(e.target.value)}
+                className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 shadow-xs outline-hidden cursor-pointer"
+              >
+                <option value="BMDC_CERTIFICATE">BMDC Certificate</option>
+                <option value="NATIONAL_ID">National ID (NID)</option>
+                <option value="MEDICAL_DEGREE">Medical Degree</option>
+                <option value="OTHER">Other Certificate</option>
+              </select>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                onChange={handleFileUpload}
+                disabled={uploadingDoc}
+                className="hidden"
+                id="edit-doc-file-upload"
+              />
+
+              <button
+                type="button"
+                disabled={uploadingDoc}
+                onClick={() => fileInputRef.current?.click()}
+                className="h-9 rounded-xl border border-dashed border-[#5b15fc] bg-white px-4 text-xs font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/5 flex-1 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {uploadingDoc ? (
+                  <>
+                    <Spinner className="size-3.5 text-[#5b15fc]" />
+                    <span>Uploading to Cloudinary CDN...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="size-4 text-[#5b15fc]" />
+                    <span>Upload Document File (PDF, PNG, JPG)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Attached Documents List */}
+            {documents.length > 0 ? (
+              <div className="space-y-2 pt-1">
+                {documents.map((d, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white p-2.5 px-3 text-xs shadow-xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc]">
+                        <FileText className="size-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-stone-900 truncate">
+                            {d.filename || d.document_type.replace(/_/g, " ")}
+                          </p>
+                          <span className="rounded border border-stone-200 bg-stone-50 px-1 text-[9px] font-mono font-bold">
+                            {d.document_type.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <a
+                          href={d.document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-[#5b15fc] hover:underline truncate"
+                        >
+                          <span className="truncate">{d.document_url}</span>
+                          <ExternalLink className="size-2.5 shrink-0" />
+                        </a>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeDocument(i)}
+                      className="text-rose-600 hover:opacity-80 p-1 shrink-0 cursor-pointer"
+                      title="Remove Document"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-stone-400 italic text-center py-1">
+                No verification documents attached to this profile.
+              </p>
+            )}
           </div>
 
           {/* Active Toggle Switch */}
@@ -447,7 +611,7 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
             </button>
             <button
               type="submit"
-              disabled={loading || uploadingAvatar}
+              disabled={loading || uploadingAvatar || uploadingDoc}
               className="rounded-xl bg-[#5b15fc] text-white px-5 py-2 text-xs font-semibold shadow-xs hover:bg-[#4d0ee0] disabled:opacity-50 flex items-center gap-2 cursor-pointer transition-all"
             >
               {loading ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-4" />}
@@ -459,4 +623,3 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
     </div>
   );
 }
-

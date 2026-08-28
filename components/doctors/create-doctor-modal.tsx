@@ -474,11 +474,11 @@ export function CreateDoctorModal({ isOpen, onClose, onSuccess }: CreateDoctorMo
           <div className="space-y-1.5">
             <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">Doctor Bio / Professional Summary</label>
             <textarea
-              rows={2}
-              placeholder="Experienced clinician specializing in rural family healthcare, preventative screenings, and maternal care."
+              rows={5}
+              placeholder="Experienced clinician specializing in rural family healthcare, preventative screenings, maternal care, and specialized procedures..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full rounded-xl p-3 text-xs text-stone-900 neo-input outline-hidden"
+              className="w-full min-h-[120px] rounded-xl p-3.5 text-xs text-stone-900 neo-input outline-hidden leading-relaxed"
             />
           </div>
 
