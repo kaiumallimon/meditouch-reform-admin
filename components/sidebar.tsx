@@ -101,8 +101,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#5b15fc] text-xs font-bold text-white shadow-xs overflow-hidden ring-1 ring-stone-200">
-                {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt={fullName} className="size-full object-cover rounded-full" />
+                {(user as any)?.avatar_url ? (
+                  <img src={(user as any).avatar_url} alt={fullName} className="size-full object-cover rounded-full" />
                 ) : (
                   initials
                 )}

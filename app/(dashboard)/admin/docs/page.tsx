@@ -55,7 +55,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-type SdkLang = "nextjs" | "flutter" | "curl";
+export type SdkLang = "nextjs-fetch" | "nextjs-axios" | "flutter-http" | "flutter-dio" | "curl";
 type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "SSE";
 
 interface ParamDef {
@@ -81,8 +81,10 @@ interface EndpointDoc {
   params?: ParamDef[];
   requestBody?: Record<string, any>;
   responseExample: Record<string, any>;
-  nextjsSnippet: string;
-  flutterSnippet: string;
+  nextjsFetchSnippet: string;
+  nextjsAxiosSnippet: string;
+  flutterHttpSnippet: string;
+  flutterDioSnippet: string;
   curlSnippet: string;
 }
 
@@ -96,7 +98,7 @@ export default function DeveloperDocsPage() {
   // Active section state
   const [activeSection, setActiveSection] = useState<string>("intro");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLang, setSelectedLang] = useState<SdkLang>("nextjs");
+  const [selectedLang, setSelectedLang] = useState<SdkLang>("nextjs-fetch");
 
   // Collapsible tree groups
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -157,7 +159,7 @@ export default function DeveloperDocsPage() {
     setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
   };
 
-  // Full Endpoint Catalog
+  // Full Endpoint Catalog with all 5 SDK options
   const endpoints: EndpointDoc[] = useMemo(
     () => [
       // AUTH
@@ -193,30 +195,54 @@ export default function DeveloperDocsPage() {
             email: "dev@meditouch.com"
           }
         },
-        nextjsSnippet: `// lib/api/auth.ts
+        nextjsFetchSnippet: `// lib/api/auth.ts (Next.js 15 Native fetch)
+export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  user_id: string;
+  role: string;
+  name: string;
+}
+
+export async function loginWithFetch(identifier: string, password: string): Promise<AuthResponse> {
+  const response = await fetch("${API_BASE}/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, password }),
+    cache: "no-store",
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || "Login failed");
+  }
+
+  localStorage.setItem("meditouch_access_token", json.data.access_token);
+  return json.data;
+}`,
+        nextjsAxiosSnippet: `// lib/api/auth.ts (Next.js / React Axios)
 import axios from "axios";
 
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
   user_id: string;
-  role: "USER" | "DOCTOR" | "NURSE" | "ADMIN" | "DEVELOPER";
+  role: string;
   name: string;
 }
 
-export async function loginWithCredentials(identifier: string, password: string): Promise<AuthResponse> {
-  const response = await axios.post("${API_BASE}/auth/login", {
+export async function loginWithAxios(identifier: string, password: string): Promise<AuthResponse> {
+  const { data } = await axios.post("${API_BASE}/auth/login", {
     identifier,
     password,
   }, {
     headers: { "Content-Type": "application/json" }
   });
 
-  const { data } = response.data;
-  localStorage.setItem("meditouch_access_token", data.access_token);
-  return data;
+  localStorage.setItem("meditouch_access_token", data.data.access_token);
+  return data.data;
 }`,
-        flutterSnippet: `// lib/services/auth_service.dart
+        flutterHttpSnippet: `// lib/services/auth_service.dart (Flutter http)
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -231,26 +257,139 @@ class AuthService {
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'identifier': identifier,
-        'password': password,
-      }),
+      body: jsonEncode({'identifier': identifier, 'password': password}),
     );
 
+    final json = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
       return json['data'];
     } else {
-      throw Exception('Authentication failed: \${response.body}');
+      throw Exception(json['message'] ?? 'Authentication failed');
     }
   }
 }`,
-        curlSnippet: `curl -X POST "${API_BASE}/auth/login" \\
-  -H "Content-Type: application/json" \\
+        flutterDioSnippet: `// lib/services/auth_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+class AuthDioService {
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: '${API_BASE}',
+    headers: {'Content-Type': 'application/json'},
+  ));
+
+  Future<Map<String, dynamic>> login({
+    required String identifier,
+    required String password,
+  }) async {
+    try {
+      final response = await _dio.post('/auth/login', data: {
+        'identifier': identifier,
+        'password': password,
+      });
+      return response.data['data'];
+    } on DioException catch (e) {
+      final errorMsg = e.response?.data?['message'] ?? e.message;
+      throw Exception('Dio Auth Error: \$errorMsg');
+    }
+  }
+}`,
+        curlSnippet: `curl -X POST "${API_BASE}/auth/login" \
+  -H "Content-Type: application/json" \
   -d '{
     "identifier": "dev@meditouch.com",
     "password": "YourStrongPassword123"
   }'`
+      },
+
+      {
+        id: "auth-refresh",
+        group: "auth",
+        category: "Auth & Identity",
+        method: "POST",
+        path: "/auth/refresh",
+        title: "Rotate Access Token via Refresh Token",
+        description:
+          "Issues a new short-lived HMAC SHA-256 JWT access token and rolling refresh token without prompting the user for credentials.",
+        authRequired: false,
+        params: [
+          { name: "refresh_token", in: "body", type: "string", required: true, description: "Valid HMAC SHA-256 JWT refresh token issued at login", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+        ],
+        requestBody: {
+          refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOTliMWE1ZTciLCJpc19yZWZyZXNoIjp0cnVlfQ.signature"
+        },
+        responseExample: {
+          success: true,
+          message: "Token refreshed successfully",
+          data: {
+            access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOTliMWE1ZTciLCJyb2xlIjoiREVWRUxPUEVSIiwiZXhwIjoxNzI1MDAzNjAwfQ.newSignature",
+            refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOTliMWE1ZTciLCJpc19yZWZyZXNoIjp0cnVlfQ.newSignature",
+            token_type: "bearer",
+            user_id: "usr_99b1a5e7",
+            role: "DEVELOPER",
+            name: "Dev Integrator",
+            phone: "+880195432200",
+            email: "dev@meditouch.com"
+          }
+        },
+        nextjsFetchSnippet: `// lib/api/refresh.ts (Next.js 15 Native fetch)
+export async function refreshAccessTokenFetch(refreshToken: string) {
+  const res = await fetch("${API_BASE}/auth/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+    cache: "no-store",
+  });
+
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to refresh token");
+
+  localStorage.setItem("meditouch_access_token", json.data.access_token);
+  localStorage.setItem("meditouch_refresh_token", json.data.refresh_token);
+  return json.data;
+}`,
+        nextjsAxiosSnippet: `// lib/api/refresh.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function refreshAccessTokenAxios(refreshToken: string) {
+  const { data } = await axios.post("${API_BASE}/auth/refresh", {
+    refresh_token: refreshToken,
+  });
+
+  localStorage.setItem("meditouch_access_token", data.data.access_token);
+  localStorage.setItem("meditouch_refresh_token", data.data.refresh_token);
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/auth_refresh_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<Map<String, dynamic>> refreshAuthTokenHttp(String refreshToken) async {
+  final res = await http.post(
+    Uri.parse('${API_BASE}/auth/refresh'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'refresh_token': refreshToken}),
+  );
+
+  final json = jsonDecode(res.body);
+  if (res.statusCode == 200) {
+    return json['data'];
+  }
+  throw Exception(json['message'] ?? 'Token refresh failed');
+}`,
+        flutterDioSnippet: `// lib/services/auth_refresh_dio.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<Map<String, dynamic>> refreshAuthTokenDio(String refreshToken) async {
+  final dio = Dio();
+  final res = await dio.post(
+    '${API_BASE}/auth/refresh',
+    data: {'refresh_token': refreshToken},
+  );
+  return res.data['data'];
+}`,
+        curlSnippet: `curl -X POST "${API_BASE}/auth/refresh" \\
+  -H "Content-Type: application/json" \\
+  -d '{"refresh_token": "<YOUR_REFRESH_TOKEN>"}'`
       },
 
       {
@@ -277,19 +416,34 @@ class AuthService {
             avatar_url: null
           }
         },
-        nextjsSnippet: `// lib/api/user.ts
-export async function fetchCurrentUserProfile(token: string) {
+        nextjsFetchSnippet: `// lib/api/user.ts (Next.js 15 Native fetch)
+export async function getProfileWithFetch(token: string) {
   const res = await fetch("${API_BASE}/auth/me", {
     headers: {
       "Authorization": \`Bearer \${token}\`,
       "Accept": "application/json"
-    }
+    },
+    cache: "no-store"
   });
-  if (!res.ok) throw new Error("Unauthorized");
+  if (!res.ok) throw new Error("Unauthorized profile request");
   return (await res.json()).data;
 }`,
-        flutterSnippet: `// lib/services/user_service.dart
-Future<Map<String, dynamic>> getCurrentUser(String token) async {
+        nextjsAxiosSnippet: `// lib/api/user.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function getProfileWithAxios(token: string) {
+  const { data } = await axios.get("${API_BASE}/auth/me", {
+    headers: {
+      Authorization: \`Bearer \${token}\`
+    }
+  });
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/user_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<Map<String, dynamic>> getCurrentUserHttp(String token) async {
   final res = await http.get(
     Uri.parse('${API_BASE}/auth/me'),
     headers: {
@@ -297,7 +451,21 @@ Future<Map<String, dynamic>> getCurrentUser(String token) async {
       'Accept': 'application/json',
     },
   );
-  return jsonDecode(res.body)['data'];
+  if (res.statusCode == 200) {
+    return jsonDecode(res.body)['data'];
+  }
+  throw Exception('Failed to load user profile: \${res.body}');
+}`,
+        flutterDioSnippet: `// lib/services/user_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<Map<String, dynamic>> getCurrentUserDio(String token) async {
+  final dio = Dio();
+  final response = await dio.get(
+    '${API_BASE}/auth/me',
+    options: Options(headers: {'Authorization': 'Bearer \$token'}),
+  );
+  return response.data['data'];
 }`,
         curlSnippet: `curl -X GET "${API_BASE}/auth/me" \\
   -H "Authorization: Bearer <YOUR_JWT_TOKEN>"`
@@ -347,25 +515,34 @@ Future<Map<String, dynamic>> getCurrentUser(String token) async {
             total_pages: 519
           }
         },
-        nextjsSnippet: `// lib/api/pharmacy.ts
-export async function searchMedicines(query = "", category = "", page = 1) {
-  const params = new URLSearchParams({
-    search: query,
-    category: category,
+        nextjsFetchSnippet: `// lib/api/pharmacy.ts (Next.js 15 Native fetch with ISR)
+export async function searchMedicinesFetch(search = "", category = "", page = 1) {
+  const qs = new URLSearchParams({
+    search,
+    category,
     page: String(page),
     limit: "24"
   });
 
-  const res = await fetch(\`${API_BASE}/pharmacy/medicines?\${params.toString()}\`, {
-    next: { revalidate: 30 } // ISR Cache
+  const res = await fetch(\`${API_BASE}/pharmacy/medicines?\${qs.toString()}\`, {
+    next: { revalidate: 60 } // Incremental Static Regeneration cache
   });
   return (await res.json()).data;
 }`,
-        flutterSnippet: `// lib/services/pharmacy_service.dart
-Future<Map<String, dynamic>> searchMedicines({
-  String search = '',
-  int page = 1,
-}) async {
+        nextjsAxiosSnippet: `// lib/api/pharmacy.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function searchMedicinesAxios(search = "", page = 1) {
+  const { data } = await axios.get("${API_BASE}/pharmacy/medicines", {
+    params: { search, page, limit: 24 }
+  });
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/pharmacy_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<Map<String, dynamic>> searchMedicinesHttp({String search = '', int page = 1}) async {
   final uri = Uri.parse('${API_BASE}/pharmacy/medicines').replace(
     queryParameters: {
       if (search.isNotEmpty) 'search': search,
@@ -375,6 +552,18 @@ Future<Map<String, dynamic>> searchMedicines({
   );
   final res = await http.get(uri);
   return jsonDecode(res.body)['data'];
+}`,
+        flutterDioSnippet: `// lib/services/pharmacy_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<Map<String, dynamic>> searchMedicinesDio({String search = '', int page = 1}) async {
+  final dio = Dio();
+  final res = await dio.get('${API_BASE}/pharmacy/medicines', queryParameters: {
+    if (search.isNotEmpty) 'search': search,
+    'page': page,
+    'limit': 24,
+  });
+  return res.data['data'];
 }`,
         curlSnippet: `curl -X GET "${API_BASE}/pharmacy/medicines?search=Paracetamol&page=1&limit=10"`
       },
@@ -410,20 +599,39 @@ Future<Map<String, dynamic>> searchMedicines({
             dosage_administration: "Adult: 0.5-1 g every 4-6 hours up to a maximum of 4 g daily.",
             contraindications: "Hypersensitivity to paracetamol.",
             side_effects: "Skin rashes, neutropenia, thrombocytopenia are rare.",
-            pregnancy_lactation: "Pregnancy Category B. Safe in therapeutic doses.",
-            faqs: "Q: Can I take Ace on an empty stomach?\\nA: Yes, it can be taken with or without food."
+            pregnancy_lactation: "Pregnancy Category B. Safe in therapeutic doses."
           }
         },
-        nextjsSnippet: `// lib/api/monograph.ts
-export async function getDrugMonograph(slug: string) {
-  const res = await fetch(\`${API_BASE}/pharmacy/medicines/\${encodeURIComponent(slug)}\`);
-  if (!res.ok) throw new Error("Medicine not found");
+        nextjsFetchSnippet: `// lib/api/monograph.ts (Next.js 15 Native fetch)
+export async function getDrugMonographFetch(slug: string) {
+  const res = await fetch(\`${API_BASE}/pharmacy/medicines/\${encodeURIComponent(slug)}\`, {
+    next: { revalidate: 3600 }
+  });
+  if (!res.ok) throw new Error("Medicine monograph not found");
   return (await res.json()).data;
 }`,
-        flutterSnippet: `// lib/services/monograph_service.dart
-Future<Map<String, dynamic>> getDrugMonograph(String slug) async {
+        nextjsAxiosSnippet: `// lib/api/monograph.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function getDrugMonographAxios(slug: string) {
+  const { data } = await axios.get(\`${API_BASE}/pharmacy/medicines/\${encodeURIComponent(slug)}\`);
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/monograph_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<Map<String, dynamic>> getDrugMonographHttp(String slug) async {
   final res = await http.get(Uri.parse('${API_BASE}/pharmacy/medicines/\$slug'));
   return jsonDecode(res.body)['data'];
+}`,
+        flutterDioSnippet: `// lib/services/monograph_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<Map<String, dynamic>> getDrugMonographDio(String slug) async {
+  final dio = Dio();
+  final res = await dio.get('${API_BASE}/pharmacy/medicines/\$slug');
+  return res.data['data'];
 }`,
         curlSnippet: `curl -X GET "${API_BASE}/pharmacy/medicines/ace-500-mg-tablet"`
       },
@@ -448,7 +656,7 @@ Future<Map<String, dynamic>> getDrugMonograph(String slug) async {
             total_ingested_session: 348
           }
         },
-        nextjsSnippet: `// hooks/useCrawlerStream.ts
+        nextjsFetchSnippet: `// hooks/useCrawlerStreamFetch.ts (Next.js EventSource / Native Stream)
 import { useEffect, useState } from "react";
 
 export function useCrawlerStream() {
@@ -456,36 +664,63 @@ export function useCrawlerStream() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const eventSource = new EventSource("${API_BASE}/pharmacy/crawler/stream");
-
-    eventSource.onopen = () => setConnected(true);
-    
-    eventSource.onmessage = (event) => {
+    const es = new EventSource("${API_BASE}/pharmacy/crawler/stream");
+    es.onopen = () => setConnected(true);
+    es.onmessage = (event) => {
       try {
-        const payload = JSON.parse(event.data);
-        setMessages((prev) => [payload, ...prev]);
-      } catch {
-        // Raw frame
+        const data = JSON.parse(event.data);
+        setMessages((prev) => [data, ...prev]);
+      } catch (err) {
+        console.warn("SSE frame error:", err);
       }
     };
-
-    eventSource.onerror = () => setConnected(false);
-
-    return () => eventSource.close();
+    es.onerror = () => setConnected(false);
+    return () => es.close();
   }, []);
 
   return { messages, connected };
 }`,
-        flutterSnippet: `// lib/services/crawler_stream.dart
+        nextjsAxiosSnippet: `// hooks/useCrawlerStreamAxios.ts (Next.js React Client)
+import { useEffect, useState } from "react";
+
+export function useCrawlerEvents() {
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const source = new EventSource("${API_BASE}/pharmacy/crawler/stream");
+    source.addEventListener("DRUG_INGESTED", (e: any) => {
+      setEvents((prev) => [JSON.parse(e.data), ...prev]);
+    });
+    return () => source.close();
+  }, []);
+
+  return events;
+}`,
+        flutterHttpSnippet: `// lib/services/crawler_stream_http.dart (Flutter eventsource / http)
 import 'dart:convert';
 import 'package:eventsource/eventsource.dart';
 
-Stream<Map<String, dynamic>> listenToCrawlerEvents() async* {
+Stream<Map<String, dynamic>> streamCrawlerEventsHttp() async* {
   final eventSource = await EventSource.connect('${API_BASE}/pharmacy/crawler/stream');
   await for (final event in eventSource) {
     if (event.data != null && event.data!.isNotEmpty) {
       yield jsonDecode(event.data!);
     }
+  }
+}`,
+        flutterDioSnippet: `// lib/services/crawler_stream_dio.dart (Flutter Dio Stream)
+import 'dart:convert';
+import 'package:dio/dio.dart';
+
+Stream<String> streamCrawlerEventsDio() async* {
+  final dio = Dio();
+  final response = await dio.get<ResponseBody>(
+    '${API_BASE}/pharmacy/crawler/stream',
+    options: Options(responseType: ResponseType.stream),
+  );
+
+  await for (final chunk in response.data!.stream) {
+    yield utf8.decode(chunk);
   }
 }`,
         curlSnippet: `curl -N -H "Accept: text/event-stream" "${API_BASE}/pharmacy/crawler/stream"`
@@ -520,20 +755,38 @@ Stream<Map<String, dynamic>> listenToCrawlerEvents() async* {
             folder: "meditouch/general"
           }
         },
-        nextjsSnippet: `// lib/api/cdn.ts
-export async function uploadMedia(file: File, folder = "meditouch/general", token: string) {
+        nextjsFetchSnippet: `// lib/api/cdn.ts (Next.js 15 Native fetch)
+export async function uploadMediaFetch(file: File, token: string, folder = "meditouch/general") {
   const formData = new FormData();
   formData.append("file", file);
 
   const res = await fetch(\`${API_BASE}/media/upload?folder=\${encodeURIComponent(folder)}\`, {
     method: "POST",
     headers: { "Authorization": \`Bearer \${token}\` },
-    body: formData
+    body: formData,
   });
   return (await res.json()).data;
 }`,
-        flutterSnippet: `// lib/services/media_service.dart
-Future<Map<String, dynamic>> uploadMediaFile({
+        nextjsAxiosSnippet: `// lib/api/cdn.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function uploadMediaAxios(file: File, token: string, folder = "meditouch/general") {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await axios.post(\`${API_BASE}/media/upload?folder=\${encodeURIComponent(folder)}\`, formData, {
+    headers: {
+      Authorization: \`Bearer \${token}\`,
+      "Content-Type": "multipart/form-data"
+    }
+  });
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/media_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<Map<String, dynamic>> uploadMediaFileHttp({
   required String filePath,
   required String token,
   String folder = 'meditouch/general',
@@ -546,6 +799,26 @@ Future<Map<String, dynamic>> uploadMediaFile({
   final streamedRes = await req.send();
   final res = await http.Response.fromStream(streamedRes);
   return jsonDecode(res.body)['data'];
+}`,
+        flutterDioSnippet: `// lib/services/media_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<Map<String, dynamic>> uploadMediaFileDio({
+  required String filePath,
+  required String token,
+  String folder = 'meditouch/general',
+}) async {
+  final dio = Dio();
+  final formData = FormData.fromMap({
+    'file': await MultipartFile.fromFile(filePath),
+  });
+
+  final response = await dio.post(
+    '${API_BASE}/media/upload?folder=\$folder',
+    data: formData,
+    options: Options(headers: {'Authorization': 'Bearer \$token'}),
+  );
+  return response.data['data'];
 }`,
         curlSnippet: `curl -X POST "${API_BASE}/media/upload?folder=meditouch/general" \\
   -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \\
@@ -591,8 +864,8 @@ Future<Map<String, dynamic>> uploadMediaFile({
             limit: 20
           }
         },
-        nextjsSnippet: `// lib/api/doctors.ts
-export async function getDoctors(specialty?: string, search?: string) {
+        nextjsFetchSnippet: `// lib/api/doctors.ts (Next.js 15 Native fetch)
+export async function getDoctorsFetch(specialty?: string, search?: string) {
   const qs = new URLSearchParams();
   if (specialty) qs.append("specialty", specialty);
   if (search) qs.append("search", search);
@@ -600,12 +873,35 @@ export async function getDoctors(specialty?: string, search?: string) {
   const res = await fetch(\`${API_BASE}/doctors?\${qs.toString()}\`);
   return (await res.json()).data;
 }`,
-        flutterSnippet: `// lib/services/doctor_service.dart
-Future<List<dynamic>> fetchDoctors({String? specialty}) async {
-  final uri = Uri.parse('${API_BASE}/doctors')
-      .replace(queryParameters: {if (specialty != null) 'specialty': specialty});
+        nextjsAxiosSnippet: `// lib/api/doctors.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function getDoctorsAxios(specialty?: string, search?: string) {
+  const { data } = await axios.get("${API_BASE}/doctors", {
+    params: { specialty, search }
+  });
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/doctor_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<List<dynamic>> fetchDoctorsHttp({String? specialty}) async {
+  final uri = Uri.parse('${API_BASE}/doctors').replace(
+    queryParameters: {if (specialty != null) 'specialty': specialty},
+  );
   final res = await http.get(uri);
   return jsonDecode(res.body)['data']['items'];
+}`,
+        flutterDioSnippet: `// lib/services/doctor_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<List<dynamic>> fetchDoctorsDio({String? specialty}) async {
+  final dio = Dio();
+  final res = await dio.get('${API_BASE}/doctors', queryParameters: {
+    if (specialty != null) 'specialty': specialty,
+  });
+  return res.data['data']['items'];
 }`,
         curlSnippet: `curl -X GET "${API_BASE}/doctors?specialty=Cardiology"`
       },
@@ -649,20 +945,44 @@ Future<List<dynamic>> fetchDoctors({String? specialty}) async {
             limit: 25
           }
         },
-        nextjsSnippet: `// lib/api/audit.ts
-export async function getAuditLogs(token: string, page = 1) {
+        nextjsFetchSnippet: `// lib/api/audit.ts (Next.js 15 Native fetch)
+export async function getAuditLogsFetch(token: string, page = 1) {
   const res = await fetch(\`${API_BASE}/admin/audit-logs?page=\${page}&limit=25\`, {
     headers: { "Authorization": \`Bearer \${token}\` }
   });
   return (await res.json()).data;
 }`,
-        flutterSnippet: `// lib/services/audit_service.dart
-Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
+        nextjsAxiosSnippet: `// lib/api/audit.ts (Next.js / React Axios)
+import axios from "axios";
+
+export async function getAuditLogsAxios(token: string, page = 1) {
+  const { data } = await axios.get("${API_BASE}/admin/audit-logs", {
+    params: { page, limit: 25 },
+    headers: { Authorization: \`Bearer \${token}\` }
+  });
+  return data.data;
+}`,
+        flutterHttpSnippet: `// lib/services/audit_service.dart (Flutter http)
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<Map<String, dynamic>> getAuditLogsHttp(String token, {int page = 1}) async {
   final res = await http.get(
     Uri.parse('${API_BASE}/admin/audit-logs?page=\$page&limit=25'),
     headers: {'Authorization': 'Bearer \$token'},
   );
   return jsonDecode(res.body)['data'];
+}`,
+        flutterDioSnippet: `// lib/services/audit_dio_service.dart (Flutter Dio)
+import 'package:dio/dio.dart';
+
+Future<Map<String, dynamic>> getAuditLogsDio(String token, {int page = 1}) async {
+  final dio = Dio();
+  final res = await dio.get('${API_BASE}/admin/audit-logs', 
+    queryParameters: {'page': page, 'limit': 25},
+    options: Options(headers: {'Authorization': 'Bearer \$token'}),
+  );
+  return res.data['data'];
 }`,
         curlSnippet: `curl -X GET "${API_BASE}/admin/audit-logs?limit=10" \\
   -H "Authorization: Bearer <YOUR_JWT_TOKEN>"`
@@ -792,30 +1112,52 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
           </div>
 
           {/* Center/Right: SDK Language Tabs (Inside Terminal Header) + Format Badge + Copy */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {showLanguageTabs && (
-              <div className="inline-flex rounded-lg border border-stone-700/80 bg-stone-900 p-0.5 text-[11px] font-mono">
+              <div className="inline-flex rounded-lg border border-stone-700/80 bg-stone-900 p-0.5 text-[10.5px] font-mono flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setSelectedLang("nextjs")}
+                  onClick={() => setSelectedLang("nextjs-fetch")}
                   className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
-                    selectedLang === "nextjs"
+                    selectedLang === "nextjs-fetch"
                       ? "bg-[#5b15fc] text-white shadow-xs"
                       : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
                   }`}
                 >
-                  Next.js / React
+                  Next.js (fetch)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedLang("flutter")}
+                  onClick={() => setSelectedLang("nextjs-axios")}
                   className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
-                    selectedLang === "flutter"
+                    selectedLang === "nextjs-axios"
                       ? "bg-[#5b15fc] text-white shadow-xs"
                       : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
                   }`}
                 >
-                  Flutter / Dart
+                  Next.js (axios)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLang("flutter-http")}
+                  className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                    selectedLang === "flutter-http"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
+                  }`}
+                >
+                  Flutter (http)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLang("flutter-dio")}
+                  className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                    selectedLang === "flutter-dio"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
+                  }`}
+                >
+                  Flutter (dio)
                 </button>
                 <button
                   type="button"
@@ -1016,6 +1358,15 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
                   <span className="rounded px-1.5 py-0.2 text-[9px] font-mono font-bold text-blue-700 bg-blue-50">POST</span>
                 </button>
                 <button
+                  onClick={() => setActiveSection("auth-refresh")}
+                  className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === "auth-refresh" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  }`}
+                >
+                  <span className="truncate">Rotate Token</span>
+                  <span className="rounded px-1.5 py-0.2 text-[9px] font-mono font-bold text-blue-700 bg-blue-50">POST</span>
+                </button>
+                <button
                   onClick={() => setActiveSection("auth-me")}
                   className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 font-medium transition-colors cursor-pointer text-left ${
                     activeSection === "auth-me" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
@@ -1129,27 +1480,51 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
               <div className="pl-3 space-y-0.5 border-l-2 border-stone-200/60 ml-2.5">
                 <button
                   onClick={() => {
-                    setSelectedLang("nextjs");
-                    setActiveSection("sdk-nextjs");
+                    setSelectedLang("nextjs-fetch");
+                    setActiveSection("sdk-nextjs-fetch");
                   }}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 font-medium transition-colors cursor-pointer text-left ${
-                    activeSection === "sdk-nextjs" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                    activeSection === "sdk-nextjs-fetch" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                   }`}
                 >
                   <Monitor className="size-3.5 text-stone-400" />
-                  <span>Next.js 15 (TypeScript)</span>
+                  <span>Next.js 15 (fetch)</span>
                 </button>
                 <button
                   onClick={() => {
-                    setSelectedLang("flutter");
-                    setActiveSection("sdk-flutter");
+                    setSelectedLang("nextjs-axios");
+                    setActiveSection("sdk-nextjs-axios");
                   }}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 font-medium transition-colors cursor-pointer text-left ${
-                    activeSection === "sdk-flutter" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                    activeSection === "sdk-nextjs-axios" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  }`}
+                >
+                  <Monitor className="size-3.5 text-stone-400" />
+                  <span>Next.js / React (axios)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedLang("flutter-http");
+                    setActiveSection("sdk-flutter-http");
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === "sdk-flutter-http" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                   }`}
                 >
                   <Smartphone className="size-3.5 text-stone-400" />
-                  <span>Flutter (Dart)</span>
+                  <span>Flutter (package:http)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedLang("flutter-dio");
+                    setActiveSection("sdk-flutter-dio");
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === "sdk-flutter-dio" ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  }`}
+                >
+                  <Smartphone className="size-3.5 text-stone-400" />
+                  <span>Flutter (package:dio)</span>
                 </button>
               </div>
             )}
@@ -1259,26 +1634,30 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
                   <h2 className="font-heading text-xl font-normal text-stone-900">Client Installation & Setup</h2>
                   <TerminalWindow
                     title={
-                      selectedLang === "nextjs"
-                        ? "terminal.sh"
-                        : selectedLang === "flutter"
+                      selectedLang.startsWith("nextjs")
+                        ? "package.json"
+                        : selectedLang.startsWith("flutter")
                         ? "pubspec.yaml"
                         : "terminal.sh"
                     }
                     language={
-                      selectedLang === "nextjs"
-                        ? "bash"
-                        : selectedLang === "flutter"
+                      selectedLang.startsWith("nextjs")
+                        ? "json"
+                        : selectedLang.startsWith("flutter")
                         ? "yaml"
                         : "bash"
                     }
                     id={`intro-setup-${selectedLang}`}
                     showLanguageTabs={true}
                     code={
-                      selectedLang === "nextjs"
-                        ? `# Initialize Next.js 15 Client Dependencies\nnpm install axios @tanstack/react-query lucide-react sonner`
-                        : selectedLang === "flutter"
+                      selectedLang === "nextjs-fetch"
+                        ? `// Native fetch is built into Next.js 15+ & Node.js runtime\n// Zero external client dependencies needed!`
+                        : selectedLang === "nextjs-axios"
+                        ? `# Install Axios Client Dependency\nnpm install axios`
+                        : selectedLang === "flutter-http"
                         ? `dependencies:\n  flutter:\n    sdk: flutter\n  http: ^1.2.0\n  eventsource: ^0.4.0`
+                        : selectedLang === "flutter-dio"
+                        ? `dependencies:\n  flutter:\n    sdk: flutter\n  dio: ^5.4.0`
                         : `# Check API Server Status\ncurl -X GET "${API_BASE.replace('/api/v1', '')}/health"`
                     }
                   />
@@ -1368,92 +1747,536 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
               </div>
             )}
 
-            {/* VIEW 4: SDK GUIDES (NEXTJS & FLUTTER) */}
-            {activeSection === "sdk-nextjs" && (
+            {/* VIEW 4A: NEXT.JS NATIVE FETCH SDK */}
+            {activeSection === "sdk-nextjs-fetch" && (
               <div className="space-y-8 animate-in fade-in">
                 <div>
                   <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                    Next.js 15+ (TypeScript) SDK Integration
+                    Next.js 15+ Native fetch Client (Auto Token Refresh)
                   </h1>
                   <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                    Production-ready API client supporting Server Components, Server Actions, Incremental Static Regeneration (ISR), and Client Hooks.
+                    Zero-dependency client library optimized for Next.js App Router, Server Components, and Next.js Data Cache with automatic 401 token refresh interceptor.
                   </p>
                 </div>
 
                 <TerminalWindow
-                  title="lib/meditouch-sdk.ts"
+                  title="lib/meditouch-fetch-client.ts"
                   language="typescript"
-                  id="sdk-nextjs-code"
-                  code={`import axios from "axios";
+                  id="sdk-nextjs-fetch-code"
+                  code={`// lib/meditouch-fetch-client.ts
+const BASE_URL = "${API_BASE}";
 
-export const meditouch = {
-  baseURL: "${API_BASE}",
+// In-flight refresh promise mutex to prevent concurrent refresh storms
+let refreshTokenPromise: Promise<string> | null = null;
 
+async function refreshTokens(): Promise<string> {
+  const currentRefreshToken =
+    typeof window !== "undefined"
+      ? localStorage.getItem("meditouch_refresh_token")
+      : null;
+
+  if (!currentRefreshToken) {
+    throw new Error("No refresh token available");
+  }
+
+  const res = await fetch(\`\${BASE_URL}/auth/refresh\`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: currentRefreshToken }),
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("meditouch_access_token");
+      localStorage.removeItem("meditouch_refresh_token");
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  const newAccessToken = json.data.access_token;
+  const newRefreshToken = json.data.refresh_token;
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem("meditouch_access_token", newAccessToken);
+    localStorage.setItem("meditouch_refresh_token", newRefreshToken);
+  }
+
+  return newAccessToken;
+}
+
+export class MediTouchFetchClient {
+  private static async requestWithAutoRefresh<T>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    let token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("meditouch_access_token")
+        : null;
+
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...(token ? { Authorization: \`Bearer \${token}\` } : {}),
+      ...(options.headers as Record<string, string>),
+    };
+
+    let response = await fetch(\`\${BASE_URL}\${path}\`, { ...options, headers });
+
+    // Handle 401 Unauthorized -> Automatic Token Refresh Interceptor
+    if (
+      response.status === 401 &&
+      !path.includes("/auth/login") &&
+      !path.includes("/auth/refresh")
+    ) {
+      try {
+        if (!refreshTokenPromise) {
+          refreshTokenPromise = refreshTokens().finally(() => {
+            refreshTokenPromise = null;
+          });
+        }
+        const newAccessToken = await refreshTokenPromise;
+
+        // Replay original request with refreshed access token
+        headers["Authorization"] = \`Bearer \${newAccessToken}\`;
+        response = await fetch(\`\${BASE_URL}\${path}\`, { ...options, headers });
+      } catch (refreshErr) {
+        throw refreshErr;
+      }
+    }
+
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.message || "API request failed");
+    return json.data;
+  }
+
+  // 1. Search Catalog (ISR cached for 60s)
+  static async getMedicines(search = "", page = 1) {
+    const qs = new URLSearchParams({ search, page: String(page) });
+    return this.requestWithAutoRefresh(\`/pharmacy/medicines?\${qs.toString()}\`, {
+      next: { revalidate: 60 },
+    });
+  }
+
+  // 2. Full Drug Monograph
+  static async getMedicineDetail(slug: string) {
+    return this.requestWithAutoRefresh(
+      \`/pharmacy/medicines/\${encodeURIComponent(slug)}\`,
+      { next: { revalidate: 3600 } }
+    );
+  }
+
+  // 3. Cloudinary CDN Media Upload
+  static async uploadFile(file: File, folder = "meditouch/general") {
+    const form = new FormData();
+    form.append("file", file);
+    return this.requestWithAutoRefresh(
+      \`/media/upload?folder=\${encodeURIComponent(folder)}\`,
+      {
+        method: "POST",
+        body: form,
+      }
+    );
+  }
+}`}
+                />
+              </div>
+            )}
+
+            {/* VIEW 4B: NEXT.JS / REACT AXIOS SDK */}
+            {activeSection === "sdk-nextjs-axios" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Next.js / React (Axios) SDK (Auto Token Refresh)
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    Axios instance configured with automated Bearer Token interceptor, 401 token rotation with concurrent request queueing, and JSON serialization.
+                  </p>
+                </div>
+
+                <TerminalWindow
+                  title="lib/meditouch-axios-client.ts"
+                  language="typescript"
+                  id="sdk-nextjs-axios-code"
+                  code={`// lib/meditouch-axios-client.ts
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+
+const BASE_URL = "${API_BASE}";
+
+export const api = axios.create({
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+});
+
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
+  });
+  failedQueue = [];
+};
+
+// 1. Request Interceptor: Attach Bearer Token
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("meditouch_access_token");
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = \`Bearer \${token}\`;
+    }
+  }
+  return config;
+});
+
+// 2. Response Interceptor: Catch 401 & Automatic Refresh Interceptor
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/login") &&
+      !originalRequest.url?.includes("/auth/refresh")
+    ) {
+      if (isRefreshing) {
+        // Queue pending requests while token refresh is in flight
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = \`Bearer \${token}\`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem("meditouch_refresh_token");
+      if (!refreshToken) {
+        isRefreshing = false;
+        return Promise.reject(error);
+      }
+
+      try {
+        const { data } = await axios.post(\`\${BASE_URL}/auth/refresh\`, {
+          refresh_token: refreshToken,
+        });
+
+        const newAccessToken = data.data.access_token;
+        const newRefreshToken = data.data.refresh_token;
+
+        localStorage.setItem("meditouch_access_token", newAccessToken);
+        localStorage.setItem("meditouch_refresh_token", newRefreshToken);
+
+        api.defaults.headers.common.Authorization = \`Bearer \${newAccessToken}\`;
+        originalRequest.headers.Authorization = \`Bearer \${newAccessToken}\`;
+
+        processQueue(null, newAccessToken);
+        return api(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        localStorage.removeItem("meditouch_access_token");
+        localStorage.removeItem("meditouch_refresh_token");
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export const MediTouchAxios = {
   // Pharmacy Catalog Search
   async getMedicines(params?: { search?: string; page?: number; limit?: number }) {
-    const res = await axios.get(\`\${this.baseURL}/pharmacy/medicines\`, { params });
+    const res = await api.get("/pharmacy/medicines", { params });
     return res.data.data;
   },
 
   // Drug Monograph
   async getMedicineDetail(slug: string) {
-    const res = await axios.get(\`\${this.baseURL}/pharmacy/medicines/\${slug}\`);
+    const res = await api.get(\`/pharmacy/medicines/\${slug}\`);
     return res.data.data;
   },
 
-  // Media CDN Upload
-  async uploadFile(file: File, token: string) {
+  // Multi-part CDN Upload
+  async uploadMedia(file: File, folder = "meditouch/general") {
     const form = new FormData();
     form.append("file", file);
-    const res = await axios.post(\`\${this.baseURL}/media/upload\`, form, {
-      headers: { Authorization: \`Bearer \${token}\` }
+    const res = await api.post(\`/media/upload?folder=\${encodeURIComponent(folder)}\`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data.data;
-  }
+  },
 };`}
                 />
               </div>
             )}
 
-            {activeSection === "sdk-flutter" && (
+            {/* VIEW 4C: FLUTTER HTTP SDK */}
+            {activeSection === "sdk-flutter-http" && (
               <div className="space-y-8 animate-in fade-in">
                 <div>
                   <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                    Flutter (Dart) SDK Integration
+                    Flutter (package:http) SDK Integration (Auto Token Refresh)
                   </h1>
                   <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                    Asynchronous Dart service for mobile apps with SSE streaming and JSON serialization.
+                    Custom <code className="font-mono text-xs text-[#5b15fc]">AuthenticatedHttpClient</code> extending <code className="font-mono text-xs text-[#5b15fc]">http.BaseClient</code> with automated 401 token refresh and request replay.
                   </p>
                 </div>
 
                 <TerminalWindow
-                  title="lib/services/meditouch_api.dart"
+                  title="lib/services/meditouch_http_service.dart"
                   language="dart"
-                  id="sdk-flutter-code"
-                  code={`import 'dart:convert';
+                  id="sdk-flutter-http-code"
+                  code={`// lib/services/meditouch_http_service.dart
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:eventsource/eventsource.dart';
 
-class MediTouchApi {
-  static const String baseUrl = '${API_BASE}';
+class AuthenticatedHttpClient extends http.BaseClient {
+  final http.Client _inner = http.Client();
+  final String baseUrl;
+  String? accessToken;
+  String? refreshToken;
+  bool _isRefreshing = false;
 
-  // Fetch Catalog
-  static Future<Map<String, dynamic>> fetchCatalog({String search = '', int page = 1}) async {
+  AuthenticatedHttpClient({
+    required this.baseUrl,
+    this.accessToken,
+    this.refreshToken,
+  });
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (accessToken != null) {
+      request.headers['Authorization'] = 'Bearer \$accessToken';
+    }
+
+    final streamedResponse = await _inner.send(request);
+
+    // 401 Unauthorized -> Intercept & Refresh Token
+    if (streamedResponse.statusCode == 401 && 
+        !request.url.path.contains('/auth/refresh') && 
+        !request.url.path.contains('/auth/login') &&
+        refreshToken != null) {
+      
+      final refreshed = await _refreshAccessToken();
+      if (refreshed) {
+        // Clone and re-send request with new access token
+        final retryRequest = _copyRequest(request);
+        retryRequest.headers['Authorization'] = 'Bearer \$accessToken';
+        return _inner.send(retryRequest);
+      }
+    }
+
+    return streamedResponse;
+  }
+
+  Future<bool> _refreshAccessToken() async {
+    if (_isRefreshing || refreshToken == null) return false;
+    _isRefreshing = true;
+
+    try {
+      final res = await _inner.post(
+        Uri.parse('\$baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
+      );
+
+      if (res.statusCode == 200) {
+        final json = jsonDecode(res.body);
+        accessToken = json['data']['access_token'];
+        refreshToken = json['data']['refresh_token'];
+        return true;
+      }
+    } catch (_) {
+      // Refresh token expired/revoked -> trigger logout
+      accessToken = null;
+      refreshToken = null;
+    } finally {
+      _isRefreshing = false;
+    }
+    return false;
+  }
+
+  http.BaseRequest _copyRequest(http.BaseRequest request) {
+    http.BaseRequest copy;
+    if (request is http.Request) {
+      copy = http.Request(request.method, request.url)
+        ..encoding = request.encoding
+        ..bodyBytes = request.bodyBytes;
+    } else {
+      copy = http.Request(request.method, request.url);
+    }
+    copy.headers.addAll(request.headers);
+    return copy;
+  }
+}
+
+class MediTouchHttpService {
+  static const String baseUrl = '${API_BASE}';
+  static final AuthenticatedHttpClient client = AuthenticatedHttpClient(baseUrl: baseUrl);
+
+  // 1. Pharmacy Catalog Search
+  static Future<Map<String, dynamic>> searchMedicines({String search = '', int page = 1}) async {
     final uri = Uri.parse('\$baseUrl/pharmacy/medicines').replace(
       queryParameters: {if (search.isNotEmpty) 'search': search, 'page': '\$page'},
     );
-    final res = await http.get(uri);
+    final res = await client.get(uri);
     return jsonDecode(res.body)['data'];
   }
 
-  // Real-Time Crawler SSE Stream
+  // 2. Real-Time Crawler SSE Stream
   static Stream<Map<String, dynamic>> streamCrawlerEvents() async* {
-    final client = await EventSource.connect('\$baseUrl/pharmacy/crawler/stream');
-    await for (final event in client) {
+    final sse = await EventSource.connect('\$baseUrl/pharmacy/crawler/stream');
+    await for (final event in sse) {
       if (event.data != null && event.data!.isNotEmpty) {
         yield jsonDecode(event.data!);
       }
     }
+  }
+
+  // 3. Multi-part File Upload
+  static Future<Map<String, dynamic>> uploadFile(String filePath) async {
+    final uri = Uri.parse('\$baseUrl/media/upload');
+    final req = http.MultipartRequest('POST', uri)
+      ..files.add(await http.MultipartFile.fromPath('file', filePath));
+    final streamed = await client.send(req);
+    final res = await http.Response.fromStream(streamed);
+    return jsonDecode(res.body)['data'];
+  }
+}`}
+                />
+              </div>
+            )}
+
+            {/* VIEW 4D: FLUTTER DIO SDK */}
+            {activeSection === "sdk-flutter-dio" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Flutter (package:dio) SDK (Auto Token Refresh)
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    Enterprise Dart HTTP client with <code className="font-mono text-xs text-[#5b15fc]">QueuedInterceptorsWrapper</code> for mutex-locked 401 token refresh, request queueing, and automatic retry.
+                  </p>
+                </div>
+
+                <TerminalWindow
+                  title="lib/services/meditouch_dio_service.dart"
+                  language="dart"
+                  id="sdk-flutter-dio-code"
+                  code={`// lib/services/meditouch_dio_service.dart
+import 'package:dio/dio.dart';
+
+class MediTouchDioService {
+  static const String baseUrl = '${API_BASE}';
+  
+  static final Dio dio = Dio(BaseOptions(
+    baseUrl: baseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 15),
+    headers: {'Content-Type': 'application/json'},
+  ));
+
+  // Separate unintercepted Dio instance exclusively for token refreshing
+  static final Dio _tokenDio = Dio(BaseOptions(baseUrl: baseUrl));
+
+  static String? accessToken;
+  static String? refreshToken;
+
+  static void initialize({String? initialAccess, String? initialRefresh}) {
+    accessToken = initialAccess;
+    refreshToken = initialRefresh;
+
+    // Use QueuedInterceptorsWrapper to safely queue requests during token rotation
+    dio.interceptors.add(
+      QueuedInterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (accessToken != null && !options.headers.containsKey('Authorization')) {
+            options.headers['Authorization'] = 'Bearer \$accessToken';
+          }
+          return handler.next(options);
+        },
+        onError: (DioException error, handler) async {
+          // 401 Unauthorized Interceptor -> Rotate Token & Replay
+          if (error.response?.statusCode == 401 &&
+              !error.requestOptions.path.contains('/auth/login') &&
+              !error.requestOptions.path.contains('/auth/refresh') &&
+              refreshToken != null) {
+            try {
+              // 1. Request new access token using unintercepted Dio
+              final refreshResponse = await _tokenDio.post(
+                '/auth/refresh',
+                data: {'refresh_token': refreshToken},
+              );
+
+              final data = refreshResponse.data['data'];
+              accessToken = data['access_token'];
+              refreshToken = data['refresh_token'];
+
+              // 2. Update failed request with new access token
+              final retryOptions = error.requestOptions;
+              retryOptions.headers['Authorization'] = 'Bearer \$accessToken';
+
+              // 3. Replay original request and resolve with retry response
+              final response = await dio.fetch(retryOptions);
+              return handler.resolve(response);
+            } on DioException catch (refreshError) {
+              // Refresh token expired or revoked -> force user logout
+              accessToken = null;
+              refreshToken = null;
+              return handler.reject(refreshError);
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+  }
+
+  // 1. Search Catalog
+  static Future<Map<String, dynamic>> searchMedicines({String search = '', int page = 1}) async {
+    final response = await dio.get('/pharmacy/medicines', queryParameters: {
+      if (search.isNotEmpty) 'search': search,
+      'page': page,
+    });
+    return response.data['data'];
+  }
+
+  // 2. Drug Monograph
+  static Future<Map<String, dynamic>> getMedicineDetail(String slug) async {
+    final response = await dio.get('/pharmacy/medicines/\$slug');
+    return response.data['data'];
+  }
+
+  // 3. Multi-part File Upload
+  static Future<Map<String, dynamic>> uploadFile(String filePath, {String folder = 'meditouch/general'}) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    final response = await dio.post('/media/upload?folder=\$folder', data: formData);
+    return response.data['data'];
   }
 }`}
                 />
@@ -1535,7 +2358,7 @@ class MediTouchApi {
                   </div>
                 )}
 
-                {/* 3. Multi-Language Code Snippet with Terminal Language Tabs */}
+                {/* 3. Multi-SDK Integration Code Snippet with 5 Switcher Tabs */}
                 <div className="space-y-3">
                   <h3 className="font-heading text-lg font-normal text-stone-900">
                     Integration Code Snippet
@@ -1543,20 +2366,34 @@ class MediTouchApi {
 
                   <TerminalWindow
                     title={
-                      selectedLang === "nextjs"
-                        ? `${activeEndpoint.id}.ts`
-                        : selectedLang === "flutter"
-                        ? `${activeEndpoint.id}.dart`
+                      selectedLang === "nextjs-fetch"
+                        ? `${activeEndpoint.id}.fetch.ts`
+                        : selectedLang === "nextjs-axios"
+                        ? `${activeEndpoint.id}.axios.ts`
+                        : selectedLang === "flutter-http"
+                        ? `${activeEndpoint.id}_http.dart`
+                        : selectedLang === "flutter-dio"
+                        ? `${activeEndpoint.id}_dio.dart`
                         : `request.sh`
                     }
-                    language={selectedLang === "nextjs" ? "typescript" : selectedLang === "flutter" ? "dart" : "bash"}
+                    language={
+                      selectedLang.startsWith("nextjs")
+                        ? "typescript"
+                        : selectedLang.startsWith("flutter")
+                        ? "dart"
+                        : "bash"
+                    }
                     id={`code-${activeEndpoint.id}-${selectedLang}`}
                     showLanguageTabs={true}
                     code={
-                      selectedLang === "nextjs"
-                        ? activeEndpoint.nextjsSnippet
-                        : selectedLang === "flutter"
-                        ? activeEndpoint.flutterSnippet
+                      selectedLang === "nextjs-fetch"
+                        ? activeEndpoint.nextjsFetchSnippet
+                        : selectedLang === "nextjs-axios"
+                        ? activeEndpoint.nextjsAxiosSnippet
+                        : selectedLang === "flutter-http"
+                        ? activeEndpoint.flutterHttpSnippet
+                        : selectedLang === "flutter-dio"
+                        ? activeEndpoint.flutterDioSnippet
                         : activeEndpoint.curlSnippet
                     }
                   />
