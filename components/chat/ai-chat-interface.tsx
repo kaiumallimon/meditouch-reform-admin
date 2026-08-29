@@ -32,6 +32,7 @@ import {
   MessageScrollerItem,
   MessageScrollerButton,
 } from "@/components/ui/message-scroller";
+import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
 
 interface MedicineCard {
   id?: string;
@@ -539,15 +540,9 @@ export function AIChatInterface({
               ) : (
                 messages.map((m) => (
                   <MessageScrollerItem key={m.id} messageId={m.id} scrollAnchor={m.role === "user"}>
-                    <div className={`flex gap-2.5 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      {m.role === "assistant" && (
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20 shadow-xs">
-                          <Bot className="h-3.5 w-3.5" />
-                        </div>
-                      )}
-
+                    <div className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                       <div
-                        className={`max-w-[85%] space-y-2.5 rounded-2xl px-3.5 py-3 text-xs leading-relaxed ${
+                        className={`max-w-[88%] space-y-2.5 rounded-2xl px-3.5 py-3 text-xs leading-relaxed ${
                           m.role === "user"
                             ? "bg-[#5b15fc] text-white rounded-br-xs shadow-sm font-medium"
                             : "bg-white text-stone-800 border border-stone-200/90 rounded-bl-xs shadow-xs"
@@ -575,13 +570,12 @@ export function AIChatInterface({
                           </div>
                         )}
 
-                        {/* Text Content */}
-                        <div className="whitespace-pre-wrap text-xs">
-                          {m.content}
-                          {m.isStreaming && (
-                            <span className="ml-1 inline-block h-3.5 w-1.5 animate-pulse bg-[#5b15fc]" />
-                          )}
-                        </div>
+                        {/* Message Body */}
+                        {m.role === "assistant" ? (
+                          <MarkdownRenderer content={m.content} isStreaming={m.isStreaming} />
+                        ) : (
+                          <div className="whitespace-pre-wrap text-xs font-medium">{m.content}</div>
+                        )}
 
                         {/* Interactive Medicine Cards */}
                         {m.medicineCards && m.medicineCards.length > 0 && (
@@ -657,12 +651,6 @@ export function AIChatInterface({
                           </div>
                         )}
                       </div>
-
-                      {m.role === "user" && (
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc]/20 text-[#5b15fc] border border-[#5b15fc]/30">
-                          <User className="h-3.5 w-3.5" />
-                        </div>
-                      )}
                     </div>
                   </MessageScrollerItem>
                 ))
