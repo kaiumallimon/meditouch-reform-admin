@@ -129,39 +129,44 @@ export function DashboardHeader() {
             <Bell className="size-4" />
           </button>
 
-          <div className="h-6 w-px bg-stone-200 mx-0.5 hidden sm:block" />
+          {/* Developer-Specific User Capsule and Sign Out (Only for Developer Panel) */}
+          {user?.role === "DEVELOPER" && (
+            <>
+              <div className="h-6 w-px bg-stone-200 mx-0.5 hidden sm:block" />
 
-          {/* User Account Details */}
-          {user && (
-            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-stone-200/80 bg-stone-50/60 px-2.5 py-1">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-[#5b15fc] text-white text-xs font-bold shadow-2xs font-mono">
-                {user.name ? user.name.slice(0, 2).toUpperCase() : "JD"}
-              </div>
-              <div className="flex flex-col text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-stone-900 leading-none">
-                    {user.name || "User"}
-                  </span>
-                  <span className="rounded bg-indigo-50 border border-indigo-200 px-1 py-0.2 text-[8px] font-mono font-bold text-indigo-700">
-                    {user.role === "DEVELOPER" ? "DEV" : user.role || "ADMIN"}
+              <div className="hidden sm:flex items-center gap-2 rounded-xl border border-stone-200/80 bg-stone-50/60 px-2.5 py-1">
+                <div className="flex size-7.5 items-center justify-center rounded-full bg-[#5b15fc] text-white text-xs font-bold shadow-2xs font-mono shrink-0 overflow-hidden ring-1 ring-stone-200">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.name} className="size-full object-cover rounded-full" />
+                  ) : (
+                    user.name ? user.name.slice(0, 2).toUpperCase() : "DEV"
+                  )}
+                </div>
+                <div className="flex flex-col text-left">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-stone-900 leading-none">
+                      {user.name || "Developer"}
+                    </span>
+                    <span className="rounded bg-indigo-50 border border-indigo-200 px-1 py-0.2 text-[8px] font-mono font-bold text-indigo-700">
+                      DEV
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-stone-500 font-mono leading-tight truncate max-w-[130px]">
+                    {user.email || user.phone}
                   </span>
                 </div>
-                <span className="text-[10px] text-stone-500 font-mono leading-tight truncate max-w-[130px]">
-                  {user.email || user.phone}
-                </span>
               </div>
-            </div>
-          )}
 
-          {/* Header Sign Out Button */}
-          <button
-            onClick={handleSignOut}
-            title="Sign Out"
-            className="flex items-center gap-1.5 rounded-xl border border-rose-200/80 bg-rose-50/60 hover:bg-rose-100/80 text-rose-700 px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-xs"
-          >
-            <LogOut className="size-3.5 text-rose-600" />
-            <span className="hidden sm:inline">Sign Out</span>
-          </button>
+              <button
+                onClick={handleSignOut}
+                title="Sign Out"
+                className="flex items-center gap-1.5 rounded-xl border border-rose-200/80 bg-rose-50/60 hover:bg-rose-100/80 text-rose-700 px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-xs"
+              >
+                <LogOut className="size-3.5 text-rose-600" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            </>
+          )}
 
           {/* Mobile Menu Button */}
           <button
