@@ -74,6 +74,20 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     router.push("/login");
   };
 
+  const isRouteActive = (itemHref: string) => {
+    if (!pathname) return false;
+    if (itemHref === "/admin") {
+      return pathname === "/admin";
+    }
+    if (pathname === itemHref || pathname.startsWith(`${itemHref}/`)) {
+      return true;
+    }
+    if (itemHref === "/admin/pharmacy" && (pathname === "/admin/epharmacy" || pathname.startsWith("/admin/epharmacy/"))) {
+      return true;
+    }
+    return false;
+  };
+
   return (
     <>
       <aside className="flex h-full w-60 flex-col neo-card rounded-[22px] bg-white">
@@ -105,7 +119,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <nav className="space-y-1">
             {mainNavigation.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = isRouteActive(item.href);
               return (
                 <Link
                   key={item.name}
@@ -133,7 +147,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <nav className="space-y-1">
               {telemedicineNavigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = isRouteActive(item.href);
                 return (
                   <Link
                     key={item.name}
@@ -162,7 +176,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <nav className="space-y-1">
               {pharmacyNavigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = isRouteActive(item.href);
                 return (
                   <Link
                     key={item.name}
@@ -191,7 +205,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <nav className="space-y-1">
               {systemNavigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = isRouteActive(item.href);
                 return (
                   <Link
                     key={item.name}
