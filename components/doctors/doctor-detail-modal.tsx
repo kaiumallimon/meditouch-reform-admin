@@ -184,10 +184,10 @@ export function DoctorDetailModal({
           <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-3.5 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1">
               <Star className="size-3.5 text-amber-500 fill-amber-500" />
-              Patient Rating
+              User Rating
             </span>
             <p className="font-heading text-lg font-normal text-stone-900">{doctor.rating || 5.0} / 5.0</p>
-            <p className="text-[10px] text-stone-400">{doctor.total_reviews || 0} verified reviews</p>
+            <p className="text-[10px] text-stone-400">{doctor.total_reviews || 0} verified user reviews</p>
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-3.5 space-y-1">

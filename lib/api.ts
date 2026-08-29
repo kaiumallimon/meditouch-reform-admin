@@ -362,7 +362,7 @@ export const adminApi = {
     const res = await fetchApi<{
       total_users: number;
       active_users: number;
-      total_patients: number;
+      total_regular_users: number;
       total_doctors: number;
       total_nurses: number;
       total_admins: number;

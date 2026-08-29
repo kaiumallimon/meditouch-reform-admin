@@ -139,7 +139,7 @@ export default function OrdersAdminPage() {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600">
                     <span className="flex items-center gap-1">
                       <User className="size-3.5 text-stone-400" />
-                      <strong className="text-stone-900">{order.user_name || "Patient"}</strong> ({order.user_phone})
+                      <strong className="text-stone-900">{order.user_name || "User"}</strong> ({order.user_phone})
                     </span>
                     <span>
                       <strong className="text-stone-900">Items:</strong>{" "}

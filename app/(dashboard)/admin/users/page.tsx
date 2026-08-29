@@ -40,7 +40,7 @@ export default function UsersAdminPage() {
   const [stats, setStats] = useState<{
     total_users: number;
     active_users: number;
-    total_patients: number;
+    total_regular_users: number;
     total_doctors: number;
     total_nurses: number;
     total_admins: number;
@@ -221,6 +221,7 @@ export default function UsersAdminPage() {
         return "bg-teal-50 text-teal-700 border-teal-200";
       case "DOCTOR":
         return "bg-blue-50 text-blue-700 border-blue-200";
+      case "USER":
       case "PATIENT":
         return "bg-amber-50 text-amber-700 border-amber-200";
       default:
@@ -292,17 +293,17 @@ export default function UsersAdminPage() {
           </div>
         </div>
 
-        {/* Patients Count */}
+        {/* Standard Users Count */}
         <div className="neo-card rounded-2xl bg-white p-4 sm:p-5 flex items-center gap-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
             <User className="size-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Patient Accounts</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Standard Users</p>
             <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900 mt-0.5">
-              {statsLoading ? "..." : stats?.total_patients || 0}
+              {statsLoading ? "..." : stats?.total_regular_users || 0}
             </p>
-            <p className="text-[11px] text-stone-500 truncate">Registered care seekers</p>
+            <p className="text-[11px] text-stone-500 truncate">Registered service users</p>
           </div>
         </div>
 
@@ -354,7 +355,7 @@ export default function UsersAdminPage() {
                 <option value="ADMIN">ADMIN</option>
                 <option value="NURSE">NURSE</option>
                 <option value="DOCTOR">DOCTOR</option>
-                <option value="PATIENT">PATIENT</option>
+                <option value="USER">USER</option>
               </select>
             </div>
 

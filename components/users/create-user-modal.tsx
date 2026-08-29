@@ -178,8 +178,8 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
               >
                 <option value="ADMIN">ADMIN (System Administrator)</option>
                 <option value="NURSE">NURSE (Healthcare Staff)</option>
-                <option value="DOCTOR">DOCTOR (Practitioner)</option>
-                <option value="PATIENT">PATIENT (Regular User)</option>
+                <option value="DOCTOR">DOCTOR (Service Practitioner)</option>
+                <option value="USER">USER (General User)</option>
               </select>
             </div>
 

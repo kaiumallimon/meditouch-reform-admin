@@ -713,7 +713,7 @@ export default function AdminCDNPage() {
                 className="w-full h-10 rounded-xl border border-stone-200 bg-white px-3.5 text-xs font-semibold text-stone-800 shadow-xs outline-hidden cursor-pointer"
               >
                 <option value="meditouch/general">meditouch/general (General Assets)</option>
-                <option value="meditouch/profiles">meditouch/profiles (Doctor/Patient Avatars)</option>
+                <option value="meditouch/profiles">meditouch/profiles (Doctor/User Avatars)</option>
                 <option value="meditouch/doctors/documents">meditouch/doctors/documents (BMDC & Credentials)</option>
                 <option value="meditouch/prescriptions">meditouch/prescriptions (Prescription Media)</option>
                 <option value="meditouch/medicines">meditouch/medicines (Medicine Pack Images)</option>

@@ -286,7 +286,7 @@ export default function DoctorsAdminPage() {
             </span>
             <span className="text-xs text-emerald-600 font-medium">Available</span>
           </div>
-          <p className="text-[11px] text-stone-400 mt-1">Live for patient video visits</p>
+          <p className="text-[11px] text-stone-400 mt-1">Live for user video visits</p>
         </div>
 
         {/* Stat 3: Pending Verification */}
@@ -888,7 +888,7 @@ export default function DoctorsAdminPage() {
               Are you sure you want to remove <strong className="text-stone-900">{deletingDoctor.name}</strong> (BMDC: <span className="font-mono font-bold">{deletingDoctor.bmdc_reg_number}</span>)?
             </p>
             <p className="text-[11px] text-stone-400 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
-              This will soft-delete the practitioner profile, deactivate doctor login, and hide them from the patient discovery network while preserving historical appointment and prescription records.
+              This will soft-delete the practitioner profile, deactivate doctor login, and hide them from the user discovery network while preserving historical appointment and prescription records.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">

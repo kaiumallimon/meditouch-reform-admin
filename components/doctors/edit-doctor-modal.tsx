@@ -472,7 +472,7 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
             </label>
             <textarea
               rows={5}
-              placeholder="Detailed doctor biography, clinical background, hospital affiliations, specialized procedures, and patient care philosophy..."
+              placeholder="Detailed doctor biography, clinical background, hospital affiliations, specialized procedures, and care philosophy..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               className="w-full min-h-[120px] rounded-xl p-3.5 text-xs text-stone-900 neo-input outline-hidden leading-relaxed"
@@ -601,7 +601,7 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
                 <p className="text-xs font-bold text-stone-900">Active in Telemedicine Network</p>
               </div>
               <p className="text-[11px] text-stone-500">
-                Patients can discover and schedule appointments with active practitioners.
+                Users can discover and schedule appointments with active practitioners.
               </p>
             </div>
             <input

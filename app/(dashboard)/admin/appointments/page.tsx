@@ -11,7 +11,7 @@ export default function AppointmentsAdminPage() {
           Telemedicine Appointments
         </h1>
         <p className="text-xs text-stone-500 mt-1">
-          Monitor scheduled, active, and completed doctor-patient video consultations across rural healthcare centers.
+          Monitor scheduled, active, and completed doctor-user video consultations across service centers.
         </p>
       </div>
 
@@ -21,7 +21,7 @@ export default function AppointmentsAdminPage() {
         </div>
         <h3 className="font-heading text-lg font-normal text-stone-900">Active Telemedicine Queue</h3>
         <p className="text-xs text-stone-500 max-w-md mx-auto mt-1 leading-relaxed">
-          Appointments booked by rural patients automatically generate secure ZEGOCLOUD video room tokens and bKash digital payment escrows.
+          Appointments booked by registered users automatically generate secure ZEGOCLOUD video room tokens and bKash digital payment escrows.
         </p>
       </div>
     </div>
