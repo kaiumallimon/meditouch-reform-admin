@@ -281,6 +281,7 @@ export function DoctorDetailModal({
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      type="button"
                       onClick={() => setPreviewDoc({ type: doc.document_type, url: doc.document_url })}
                       className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/10 transition-colors cursor-pointer shadow-xs"
                     >
@@ -288,9 +289,10 @@ export function DoctorDetailModal({
                       <span>View</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDownload(doc.document_url, doc.document_type)}
                       className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1 text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
-                      title="Download with proper extension"
+                      title="Download document file"
                     >
                       <Download className="size-3.5" />
                     </button>
@@ -379,6 +381,7 @@ export function DoctorDetailModal({
                 <p className="text-[11px] font-mono text-stone-500 truncate">{previewDoc.url}</p>
               </div>
               <button
+                type="button"
                 onClick={() => setPreviewDoc(null)}
                 className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 cursor-pointer"
               >
@@ -392,24 +395,13 @@ export function DoctorDetailModal({
                 src={getDocumentPreviewUrl(previewDoc.url)}
                 alt={previewDoc.type}
                 className="size-full max-h-[480px] object-contain rounded-xl shadow-xs"
-                onError={(e) => {
-                  // If img tag fails (e.g. multi-page raw iframe), fall back to iframe
-                  const target = e.currentTarget;
-                  target.style.display = "none";
-                  const parent = target.parentElement;
-                  if (parent && !parent.querySelector("iframe")) {
-                    const iframe = document.createElement("iframe");
-                    iframe.src = getDocumentPreviewUrl(previewDoc.url);
-                    iframe.className = "size-full min-h-[420px] rounded-xl";
-                    parent.appendChild(iframe);
-                  }
-                }}
               />
             </div>
 
             {/* Lightbox Footer Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-3 text-xs">
               <button
+                type="button"
                 onClick={() => copyDocUrl(previewDoc.url)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
               >
@@ -419,6 +411,7 @@ export function DoctorDetailModal({
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   disabled={downloading}
                   onClick={() => handleDownload(previewDoc.url, previewDoc.type)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-[#5b15fc] bg-white px-4 py-2 font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/5 shadow-xs cursor-pointer"
