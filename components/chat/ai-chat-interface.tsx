@@ -33,6 +33,7 @@ import {
   MessageScrollerButton,
 } from "@/components/ui/message-scroller";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
+import { ThinkingIndicator } from "@/components/chat/thinking-indicator";
 
 interface MedicineCard {
   id?: string;
@@ -572,7 +573,11 @@ export function AIChatInterface({
 
                         {/* Message Body */}
                         {m.role === "assistant" ? (
-                          <MarkdownRenderer content={m.content} isStreaming={m.isStreaming} />
+                          !m.content && m.isStreaming ? (
+                            <ThinkingIndicator stateText={agentState} />
+                          ) : (
+                            <MarkdownRenderer content={m.content} isStreaming={m.isStreaming} />
+                          )
                         ) : (
                           <div className="whitespace-pre-wrap text-xs font-medium">{m.content}</div>
                         )}
@@ -663,9 +668,18 @@ export function AIChatInterface({
 
       {/* State Progress Banner */}
       {agentState && (
-        <div className="flex items-center gap-1.5 border-t border-stone-200 bg-white px-4 py-1.5 text-[11px] font-mono text-[#5b15fc]">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Status: {agentState}</span>
+        <div className="flex items-center justify-between border-t border-stone-100 bg-gradient-to-r from-purple-50/80 via-white to-emerald-50/60 px-4 py-1.5 text-[11px] font-mono text-stone-700">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5b15fc] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#5b15fc]"></span>
+            </span>
+            <span className="font-semibold text-[#5b15fc]">{agentState}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="h-1 w-3 rounded-full bg-[#5b15fc] animate-pulse" />
+            <span className="h-1 w-2 rounded-full bg-emerald-500 animate-pulse delay-75" />
+          </div>
         </div>
       )}
 
@@ -696,7 +710,10 @@ export function AIChatInterface({
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5b15fc] text-white shadow-xs hover:bg-[#4a0fd4] transition disabled:opacity-40"
           >
             {isStreaming ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span className="flex items-center gap-0.5">
+                <span className="h-1 w-1 rounded-full bg-white animate-ping" />
+                <span className="h-1 w-1 rounded-full bg-white animate-ping delay-75" />
+              </span>
             ) : (
               <Send className="h-3.5 w-3.5" />
             )}
