@@ -7,6 +7,7 @@ import { isAuthenticated, isStaff, isDeveloper } from "@/lib/auth";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { Sidebar } from "@/components/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { FloatingAIAssistant } from "@/components/chat/floating-ai-assistant";
 
 export default function DashboardLayout({
   children,
@@ -65,6 +66,9 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* Floating AI Assistant on the Side */}
+      <FloatingAIAssistant />
     </div>
   );
 }
