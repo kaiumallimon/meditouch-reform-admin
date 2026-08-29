@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { adminApi } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatRelativeTime, formatTime } from "@/lib/utils";
 import {
   Activity,
   RefreshCw,
@@ -81,24 +81,6 @@ function getActionColor(action: string) {
     return "bg-purple-50 text-[#5b15fc] border-[#5b15fc]/30";
   }
   return "bg-stone-100 text-stone-700 border-stone-200";
-}
-
-function formatRelativeTime(dateStr: string) {
-  try {
-    const d = new Date(dateStr);
-    const now = new Date();
-    const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
-    if (diffSec < 60) return "Just now";
-    const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHour = Math.floor(diffMin / 60);
-    if (diffHour < 24) return `${diffHour}h ago`;
-    const diffDays = Math.floor(diffHour / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return formatDate(dateStr);
-  } catch {
-    return formatDate(dateStr);
-  }
 }
 
 export default function AuditLogsAdminPage() {
@@ -411,6 +393,7 @@ export default function AuditLogsAdminPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-stone-50/80 border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-400">
                 <tr>
+                  <th className="py-3 px-3 w-12 text-center">#</th>
                   <th className="py-3 px-4 w-44">Action Event</th>
                   <th className="py-3 px-4">What Happened</th>
                   <th className="py-3 px-4 w-36">Target Entity</th>
@@ -430,6 +413,11 @@ export default function AuditLogsAdminPage() {
                       onClick={() => setSelectedLog(log)}
                       className="hover:bg-stone-50/80 transition-colors cursor-pointer group"
                     >
+                      {/* Index / Serial # */}
+                      <td className="py-3 px-3 text-center font-mono text-[11px] text-stone-400 font-medium">
+                        {(page - 1) * limit + idx + 1}
+                      </td>
+
                       {/* Action Event Badge */}
                       <td className="py-3 px-4">
                         <span
@@ -493,12 +481,12 @@ export default function AuditLogsAdminPage() {
                       </td>
 
                       {/* Timestamp */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         <p className="text-xs font-semibold text-stone-800">
                           {formatRelativeTime(log.created_at)}
                         </p>
                         <p className="text-[10px] font-mono text-stone-400">
-                          {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {formatTime(log.created_at)}
                         </p>
                       </td>
 
