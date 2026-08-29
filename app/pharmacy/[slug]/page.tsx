@@ -428,19 +428,19 @@ export default function PublicMedicineDetailPage() {
   return (
     <div className="min-h-screen bg-[#F7F4EE] flex flex-col text-stone-900 selection:bg-[#5b15fc]/20 selection:text-[#5b15fc]">
       {/* Public Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-8 py-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-8 py-3 sm:py-3.5 shadow-2xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <Image
                 src="/logo.svg"
                 alt="MediTouch"
-                width={130}
-                height={32}
-                className="h-7 w-auto object-contain"
+                width={160}
+                height={42}
+                className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-[1.02]"
                 priority
               />
-              <span className="hidden sm:inline-block ml-1 text-[10px] font-bold text-stone-500 uppercase tracking-wider bg-stone-100 border border-stone-200/80 px-2 py-0.5 rounded-full">
+              <span className="hidden sm:inline-block text-[10px] sm:text-[11px] font-bold text-stone-600 uppercase tracking-wider bg-stone-100/90 border border-stone-200/90 px-2.5 py-0.5 rounded-full">
                 Drug Reference
               </span>
             </Link>
@@ -450,19 +450,11 @@ export default function PublicMedicineDetailPage() {
             <button
               type="button"
               onClick={handleCopyLink}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-[#5b15fc] hover:border-[#5b15fc]/30 shadow-xs cursor-pointer transition-all"
             >
               {copiedLink ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5 text-stone-400" />}
               <span>{copiedLink ? "Link Copied" : "Share"}</span>
             </button>
-
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1 rounded-xl bg-stone-900 hover:bg-stone-800 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors"
-            >
-              <Lock className="size-3 text-stone-400" />
-              <span>Admin Portal</span>
-            </Link>
           </div>
         </div>
       </header>
