@@ -309,14 +309,14 @@ export default function MedicineDetailPage() {
       {/* Main Product Shop Showcase (Compact Full Width Clean E-Commerce Card) */}
       <div className="neo-card rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 shadow-xs">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          {/* Left Column: Product Visual Showcase (Crisp White Square Stage) */}
+          {/* Left Column: Product Visual Showcase (MedEasy Studio Full-Bleed 4:3) */}
           <div className="lg:col-span-5 flex items-center justify-center">
-            <div className="relative aspect-square max-w-[280px] sm:max-w-[300px] w-full rounded-2xl bg-white border border-stone-200 flex items-center justify-center p-3 overflow-hidden group shadow-xs">
+            <div className="relative w-full aspect-4/3 rounded-2xl bg-stone-100 border border-stone-200 overflow-hidden group shadow-xs">
               {rawImage ? (
                 <img
                   src={rawImage}
                   alt={medicine.medicine_name}
-                  className="size-full object-contain mix-blend-multiply drop-shadow-xs transition-transform duration-300 group-hover:scale-105"
+                  className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   onError={(e: any) => {
                     e.target.style.display = "none";
                   }}
@@ -329,7 +329,7 @@ export default function MedicineDetailPage() {
               )}
 
               {/* Floating Dosage Pill (Top-Left) */}
-              <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+              <div className="absolute top-3 left-3 z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-stone-800 border border-stone-200/90 shadow-xs">
                   <span className="size-1.5 rounded-full bg-[#5b15fc]" />
                   {medicine.category_name || pInfo.category_name || "Tablet"}
@@ -337,7 +337,7 @@ export default function MedicineDetailPage() {
               </div>
 
               {/* Floating OTC/Rx Pill (Top-Right) */}
-              <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
+              <div className="absolute top-3 right-3 z-10 pointer-events-none">
                 {pInfo.rx_required ? (
                   <span className="inline-flex items-center rounded-lg bg-rose-500 text-white backdrop-blur-md px-2.5 py-1 text-[9px] font-bold shadow-xs tracking-wider">
                     Rx Required
