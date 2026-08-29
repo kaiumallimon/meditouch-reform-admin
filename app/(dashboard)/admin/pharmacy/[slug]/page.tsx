@@ -263,23 +263,27 @@ export default function MedicineDetailPage() {
   return (
     <div className="w-full space-y-8">
       {/* Top Header & Breadcrumb Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3.5">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200/80 pb-3">
+        <div className="flex items-center gap-2">
           <Link
             href="/admin/pharmacy"
-            className="hover:text-[#5b15fc] flex items-center gap-1.5 transition-colors font-semibold text-stone-700"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-[#5b15fc] hover:border-[#5b15fc]/40 shadow-xs transition-all cursor-pointer group"
           >
-            <ArrowLeft className="size-3.5" />
-            <span>Catalog</span>
+            <ArrowLeft className="size-3.5 text-stone-400 group-hover:text-[#5b15fc] transition-colors" />
+            <span>Medicine Catalog</span>
           </Link>
-          <ChevronRight className="size-3 text-stone-300" />
-          <span className="rounded-md bg-stone-100 px-2 py-0.5 text-stone-600 font-semibold text-[11px]">
-            {medicine.category_name || pInfo.category_name || "General"}
-          </span>
-          <ChevronRight className="size-3 text-stone-300" />
-          <span className="text-stone-900 font-bold truncate max-w-sm">
-            {medicine.medicine_name}
-          </span>
+
+          <div className="hidden sm:flex items-center gap-2 text-xs text-stone-400">
+            <span>/</span>
+            <span className="inline-flex items-center gap-1 rounded-lg bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-700">
+              <span className="size-1.5 rounded-full bg-[#5b15fc]" />
+              {medicine.category_name || pInfo.category_name || "General"}
+            </span>
+            <span>/</span>
+            <span className="font-bold text-stone-900 max-w-xs truncate">
+              {medicine.medicine_name}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -288,31 +292,31 @@ export default function MedicineDetailPage() {
             className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all"
             title="Share page link"
           >
-            {copiedLink ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5 text-stone-500" />}
-            <span>{copiedLink ? "Copied" : "Share"}</span>
+            {copiedLink ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5 text-stone-400" />}
+            <span>{copiedLink ? "Link Copied" : "Share"}</span>
           </button>
 
           <button
             onClick={() => setShowRawJson(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-[#5b15fc] shadow-xs cursor-pointer transition-all"
           >
             <Code2 className="size-3.5 text-[#5b15fc]" />
-            <span>Inspect JSON</span>
+            <span>Mongo Document</span>
           </button>
         </div>
       </div>
 
       {/* Main Product Shop Showcase (Compact Full Width Clean E-Commerce Card) */}
       <div className="neo-card rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 shadow-xs">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Product Visual Showcase (Compact Proper Fit Container) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          {/* Left Column: Product Visual Showcase (Full Bleed Edge-to-Edge Container) */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center">
-            <div className="relative w-full h-64 sm:h-72 rounded-xl bg-stone-50/60 border border-stone-200 flex items-center justify-center p-4 overflow-hidden group">
+            <div className="relative w-full h-64 sm:h-72 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden group">
               {rawImage ? (
                 <img
                   src={rawImage}
                   alt={medicine.medicine_name}
-                  className="size-full object-contain mix-blend-multiply drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
+                  className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   onError={(e: any) => {
                     e.target.style.display = "none";
                   }}
@@ -326,7 +330,7 @@ export default function MedicineDetailPage() {
 
               {/* Floating Dosage Pill (Top-Left) */}
               <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-white/95 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-stone-800 border border-stone-200/90 shadow-xs">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-stone-800 border border-stone-200/90 shadow-xs">
                   <span className="size-1.5 rounded-full bg-[#5b15fc]" />
                   {medicine.category_name || pInfo.category_name || "Tablet"}
                 </span>
@@ -335,11 +339,11 @@ export default function MedicineDetailPage() {
               {/* Floating OTC/Rx Pill (Top-Right) */}
               <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
                 {pInfo.rx_required ? (
-                  <span className="inline-flex items-center rounded-md bg-rose-500 text-white backdrop-blur-md px-2 py-0.5 text-[9px] font-bold shadow-xs tracking-wider">
-                    Rx
+                  <span className="inline-flex items-center rounded-lg bg-rose-500 text-white backdrop-blur-md px-2.5 py-1 text-[9px] font-bold shadow-xs tracking-wider">
+                    Rx Required
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-md bg-emerald-600 text-white backdrop-blur-md px-2 py-0.5 text-[9px] font-bold shadow-xs tracking-wider">
+                  <span className="inline-flex items-center rounded-lg bg-emerald-600 text-white backdrop-blur-md px-2.5 py-1 text-[9px] font-bold shadow-xs tracking-wider">
                     OTC
                   </span>
                 )}
