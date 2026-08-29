@@ -327,6 +327,139 @@ export const adminApi = {
     return res.data;
   },
 
+  // User Management
+  listUsers: async (params: {
+    role?: string;
+    is_active?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.role && params.role !== "ALL") query.append("role", params.role);
+    if (params.is_active !== undefined) query.append("is_active", String(params.is_active));
+    if (params.search) query.append("search", params.search);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+
+    const res = await fetchApi<PaginatedData<{
+      id: string;
+      name: string;
+      phone: string;
+      email?: string;
+      role: string;
+      avatar_url?: string;
+      is_active: boolean;
+      is_verified: boolean;
+      created_at?: string;
+      updated_at?: string;
+      last_login_at?: string;
+    }>>(`/admin/users?${query.toString()}`);
+    return res.data;
+  },
+
+  getUsersStats: async () => {
+    const res = await fetchApi<{
+      total_users: number;
+      active_users: number;
+      total_patients: number;
+      total_doctors: number;
+      total_nurses: number;
+      total_admins: number;
+    }>("/admin/users/stats");
+    return res.data;
+  },
+
+  getUser: async (userId: string) => {
+    const res = await fetchApi<{
+      id: string;
+      name: string;
+      phone: string;
+      email?: string;
+      role: string;
+      avatar_url?: string;
+      is_active: boolean;
+      is_verified: boolean;
+      created_at?: string;
+      updated_at?: string;
+      last_login_at?: string;
+    }>(`/admin/users/${userId}`);
+    return res.data;
+  },
+
+  createUser: async (payload: {
+    name: string;
+    phone: string;
+    email: string;
+    role: string;
+    password?: string;
+    avatar_url?: string;
+    is_active?: boolean;
+  }) => {
+    const res = await fetchApi<{
+      id: string;
+      name: string;
+      phone: string;
+      email?: string;
+      role: string;
+      avatar_url?: string;
+      is_active: boolean;
+      is_verified: boolean;
+      created_at?: string;
+    }>("/admin/users", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  updateUser: async (userId: string, payload: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    role?: string;
+    avatar_url?: string;
+    is_active?: boolean;
+  }) => {
+    const res = await fetchApi<{
+      id: string;
+      name: string;
+      phone: string;
+      email?: string;
+      role: string;
+      avatar_url?: string;
+      is_active: boolean;
+      is_verified: boolean;
+      updated_at?: string;
+    }>(`/admin/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  softDeleteUser: async (userId: string) => {
+    const res = await fetchApi<{
+      id: string;
+      name: string;
+      is_active: boolean;
+      is_deleted: boolean;
+    }>(`/admin/users/${userId}`, {
+      method: "DELETE",
+    });
+    return res.data;
+  },
+
+  sendPasswordRecovery: async (userId: string) => {
+    const res = await fetchApi<{
+      message: string;
+      email: string;
+    }>(`/admin/users/${userId}/recover-password`, {
+      method: "POST",
+    });
+    return res.data;
+  },
+
   getAuditLogs: async (page = 1, limit = 50) => {
     const res = await fetchApi<PaginatedData<{
       id?: string;
