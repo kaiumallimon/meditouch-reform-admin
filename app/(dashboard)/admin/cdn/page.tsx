@@ -184,22 +184,6 @@ export default function AdminCDNPage() {
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    // Validate size restrictions: max 500 KB for images, max 1 MB for documents
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const isImage = file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(file.name);
-      if (isImage && file.size > 500 * 1024) {
-        toast.error(`Image "${file.name}" exceeds maximum allowed limit of 500 KB (selected: ${(file.size / 1024).toFixed(0)} KB).`);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
-      if (!isImage && file.size > 1 * 1024 * 1024) {
-        toast.error(`Document "${file.name}" exceeds maximum allowed limit of 1 MB (selected: ${(file.size / (1024 * 1024)).toFixed(2)} MB).`);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
-    }
-
     try {
       setUploading(true);
       for (let i = 0; i < files.length; i++) {

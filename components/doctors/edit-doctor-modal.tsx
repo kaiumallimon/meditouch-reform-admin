@@ -142,12 +142,6 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 500 * 1024) {
-      toast.error(`Profile picture cannot exceed 500 KB (selected file is ${(file.size / 1024).toFixed(0)} KB).`);
-      if (avatarInputRef.current) avatarInputRef.current.value = "";
-      return;
-    }
-
     try {
       setUploadingAvatar(true);
       const res = await mediaApi.uploadAvatar(file);
@@ -168,12 +162,6 @@ export function EditDoctorModal({ doctor, isOpen, onClose, onSuccess }: EditDoct
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 1 * 1024 * 1024) {
-      toast.error(`Uploaded document cannot exceed 1 MB (selected file is ${(file.size / (1024 * 1024)).toFixed(2)} MB).`);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
 
     try {
       setUploadingDoc(true);
