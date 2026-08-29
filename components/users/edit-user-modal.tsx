@@ -256,18 +256,18 @@ export function EditUserModal({ user, isOpen, onClose, onSuccess, currentUserId 
           </div>
 
           {/* Submit Buttons */}
-          <div className="flex items-center justify-end gap-2.5 border-t border-stone-200 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 border-t border-stone-200 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
+              className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 sm:py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-5 py-2 text-xs font-semibold text-white hover:bg-[#4d0ee0] shadow-xs cursor-pointer transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5b15fc] px-5 py-2.5 sm:py-2 text-xs font-semibold text-white hover:bg-[#4d0ee0] shadow-xs cursor-pointer transition-all disabled:opacity-50 text-center"
             >
               {loading ? <Spinner className="size-4 text-white" /> : <Check className="size-4" />}
               <span>Save Changes</span>
