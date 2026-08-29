@@ -124,10 +124,10 @@ export default function AuditLogsAdminPage() {
   const loadStats = useCallback(async () => {
     try {
       setStatsLoading(true);
-      const data = await adminApi.getAuditStats();
-      setStats(data);
-    } catch (err: any) {
-      console.error("Failed to load audit stats:", err);
+      const data = await adminApi.getAuditStats().catch(() => null);
+      if (data) setStats(data);
+    } catch {
+      // Graceful fallback for initial connect
     } finally {
       setStatsLoading(false);
     }
