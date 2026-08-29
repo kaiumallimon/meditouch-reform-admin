@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   Pill,
@@ -29,10 +29,13 @@ import {
   FileCode2,
   ShieldCheck,
   Zap,
-  Radio
+  Radio,
+  Trash2,
+  Minus,
+  Check
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import {
   pharmacyApi,
   MedicineItem,
@@ -92,6 +95,93 @@ export default function PharmacyAdminPage() {
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [triggeringCrawler, setTriggeringCrawler] = useState(false);
+
+  // Table Row Selection & Delete State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    type: "single" | "bulk";
+    id?: string;
+    name?: string;
+    count?: number;
+  }>({
+    open: false,
+    type: "single",
+  });
+  const [deleting, setDeleting] = useState(false);
+
+  // 3-State selection calculations for current page
+  const currentPageIds = useMemo(
+    () => medicines.map((m) => m.id || m.slug || "").filter(Boolean),
+    [medicines]
+  );
+
+  const allSelectedOnPage =
+    currentPageIds.length > 0 &&
+    currentPageIds.every((id) => selectedIds.includes(id));
+
+  const someSelectedOnPage =
+    currentPageIds.some((id) => selectedIds.includes(id));
+
+  const isIndeterminate = someSelectedOnPage && !allSelectedOnPage;
+
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllOnPage = () => {
+    if (allSelectedOnPage) {
+      setSelectedIds((prev) => prev.filter((id) => !currentPageIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...currentPageIds])));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const promptDeleteSingle = (med: MedicineItem) => {
+    setDeleteModal({
+      open: true,
+      type: "single",
+      id: med.id || med.slug,
+      name: med.medicine_name || med.brand,
+    });
+  };
+
+  const promptDeleteBulk = () => {
+    if (selectedIds.length === 0) return;
+    setDeleteModal({
+      open: true,
+      type: "bulk",
+      count: selectedIds.length,
+    });
+  };
+
+  const executeDelete = async () => {
+    try {
+      setDeleting(true);
+      if (deleteModal.type === "single" && deleteModal.id) {
+        await pharmacyApi.deleteMedicine(deleteModal.id);
+        toast.success(`"${deleteModal.name || "Medicine"}" deleted successfully`);
+        setSelectedIds((prev) => prev.filter((id) => id !== deleteModal.id));
+      } else if (deleteModal.type === "bulk" && selectedIds.length > 0) {
+        const res = await pharmacyApi.deleteMedicinesBulk(selectedIds);
+        toast.success(`Successfully deleted ${res.deleted_count || selectedIds.length} medicines`);
+        setSelectedIds([]);
+      }
+      setDeleteModal({ open: false, type: "single" });
+      await loadMedicines();
+      await loadStatsAndCategories();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete medicine");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const terminalBoxRef = useRef<HTMLDivElement>(null);
 
@@ -853,6 +943,27 @@ export default function PharmacyAdminPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-stone-50/80 border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-400">
                 <tr>
+                  <th className="py-3 px-4 w-11">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllOnPage}
+                      title={allSelectedOnPage ? "Deselect all on page" : "Select all on page"}
+                      className={cn(
+                        "flex size-4 items-center justify-center rounded border transition-all cursor-pointer",
+                        allSelectedOnPage
+                          ? "bg-[#5b15fc] border-[#5b15fc] text-white shadow-2xs"
+                          : isIndeterminate
+                          ? "bg-[#5b15fc] border-[#5b15fc] text-white shadow-2xs"
+                          : "bg-white border-stone-300 hover:border-stone-400"
+                      )}
+                    >
+                      {allSelectedOnPage ? (
+                        <Check className="size-3 stroke-[3]" />
+                      ) : isIndeterminate ? (
+                        <Minus className="size-3 stroke-[3]" />
+                      ) : null}
+                    </button>
+                  </th>
                   <th className="py-3 px-4">Product Name & Formulation</th>
                   <th className="py-3 px-4">Dosage / Strength</th>
                   <th className="py-3 px-4">Manufacturer</th>
@@ -862,68 +973,106 @@ export default function PharmacyAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {medicines.map((med) => (
-                  <tr key={med.id || med.slug} className="hover:bg-stone-50/70 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="size-11 shrink-0 rounded-xl bg-stone-50 border border-stone-200 overflow-hidden p-1 flex items-center justify-center">
-                          {med.medicine_image ? (
-                            <img
-                              src={med.medicine_image}
-                              alt={med.medicine_name || med.brand}
-                              className="max-h-full max-w-full object-contain mix-blend-multiply"
-                            />
-                          ) : (
-                            <Pill className="size-5 text-stone-300" />
+                {medicines.map((med) => {
+                  const medKey = med.id || med.slug || "";
+                  const isSelected = selectedIds.includes(medKey);
+                  return (
+                    <tr
+                      key={medKey}
+                      className={cn(
+                        "transition-colors",
+                        isSelected ? "bg-[#5b15fc]/5 hover:bg-[#5b15fc]/10" : "hover:bg-stone-50/70"
+                      )}
+                    >
+                      <td className="py-3 px-4 w-11">
+                        <button
+                          type="button"
+                          onClick={() => toggleSelectRow(medKey)}
+                          title={`Select ${med.medicine_name || med.brand}`}
+                          className={cn(
+                            "flex size-4 items-center justify-center rounded border transition-all cursor-pointer",
+                            isSelected
+                              ? "bg-[#5b15fc] border-[#5b15fc] text-white shadow-2xs"
+                              : "bg-white border-stone-300 hover:border-stone-400"
                           )}
+                        >
+                          {isSelected && <Check className="size-3 stroke-[3]" />}
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="size-11 shrink-0 rounded-xl bg-stone-50 border border-stone-200 overflow-hidden p-1 flex items-center justify-center">
+                            {med.medicine_image ? (
+                              <img
+                                src={med.medicine_image}
+                                alt={med.medicine_name || med.brand}
+                                className="max-h-full max-w-full object-contain mix-blend-multiply"
+                              />
+                            ) : (
+                              <Pill className="size-5 text-stone-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/admin/pharmacy/${med.slug || med.id}`}
+                              className="font-bold text-stone-900 text-xs hover:text-[#5b15fc] transition-colors truncate block cursor-pointer"
+                            >
+                              {med.medicine_name || med.brand}
+                            </Link>
+                            <p className="text-[11px] text-stone-500 truncate">{med.generic_name}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-stone-900 text-xs truncate">
-                            {med.medicine_name || med.brand}
-                          </p>
-                          <p className="text-[11px] text-stone-500 truncate">{med.generic_name}</p>
+                      </td>
+                      <td className="py-3 px-4 text-stone-700">
+                        <span className="rounded-md border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-bold">
+                          {med.dosage_form || med.category_name}
+                        </span>{" "}
+                        {med.strength}
+                      </td>
+                      <td className="py-3 px-4 text-stone-600 font-medium">
+                        {med.manufacturer_name || med.manufacturer}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-stone-900">
+                        {formatCurrency(med.unit_price || 0)}
+                        {med.pack_size && (
+                          <span className="text-[10px] font-normal text-stone-400 block">
+                            {med.pack_size}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {med.rx_required ? (
+                          <span className="inline-flex rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 text-[10px] font-bold">
+                            Rx Required
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
+                            OTC Free
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/admin/pharmacy/${med.slug || med.id}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5b15fc] hover:bg-[#5b15fc] hover:text-white transition-all shadow-2xs cursor-pointer"
+                          >
+                            <span>View</span>
+                            <ExternalLink className="size-3" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => promptDeleteSingle(med)}
+                            title="Delete medicine"
+                            className="inline-flex size-7 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all shadow-2xs cursor-pointer"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-stone-700">
-                      <span className="rounded-md border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-bold">
-                        {med.dosage_form || med.category_name}
-                      </span>{" "}
-                      {med.strength}
-                    </td>
-                    <td className="py-3 px-4 text-stone-600 font-medium">
-                      {med.manufacturer_name || med.manufacturer}
-                    </td>
-                    <td className="py-3 px-4 font-bold text-stone-900">
-                      {formatCurrency(med.unit_price || 0)}
-                      {med.pack_size && (
-                        <span className="text-[10px] font-normal text-stone-400 block">
-                          {med.pack_size}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      {med.rx_required ? (
-                        <span className="inline-flex rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 text-[10px] font-bold">
-                          Rx Required
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
-                          OTC Free
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Link
-                        href={`/admin/pharmacy/${med.slug || med.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5b15fc] hover:bg-[#5b15fc] hover:text-white transition-all shadow-xs cursor-pointer"
-                      >
-                        <span>View</span>
-                        <ExternalLink className="size-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1157,6 +1306,100 @@ export default function PharmacyAdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bulk Selection Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-stone-900/95 text-white px-5 py-3 shadow-2xl backdrop-blur-md border border-stone-700 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className="flex size-5 items-center justify-center rounded-full bg-[#5b15fc] text-[10px] font-bold text-white">
+              {selectedIds.length}
+            </span>
+            <span>selected</span>
+          </div>
+
+          <div className="h-4 w-px bg-stone-700" />
+
+          <button
+            type="button"
+            onClick={toggleSelectAllOnPage}
+            className="text-xs text-stone-300 hover:text-white font-medium cursor-pointer"
+          >
+            {allSelectedOnPage ? "Deselect page" : "Select all on page"}
+          </button>
+
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="text-xs text-stone-400 hover:text-white font-medium cursor-pointer"
+          >
+            Clear
+          </button>
+
+          <div className="h-4 w-px bg-stone-700" />
+
+          <button
+            type="button"
+            onClick={promptDeleteBulk}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+          >
+            <Trash2 className="size-3.5" />
+            <span>Delete Selected ({selectedIds.length})</span>
+          </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="flex size-10 items-center justify-center rounded-full bg-rose-100 shrink-0">
+                <Trash2 className="size-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-heading text-base font-bold text-stone-900">
+                  {deleteModal.type === "bulk" ? "Delete Selected Medicines?" : "Delete Medicine?"}
+                </h3>
+                <p className="text-xs text-stone-500">
+                  This action will remove the record from MongoDB catalog.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-stone-50 border border-stone-200/80 p-3 text-xs text-stone-700">
+              {deleteModal.type === "bulk" ? (
+                <p>
+                  Are you sure you want to permanently delete <strong>{deleteModal.count}</strong> selected medicine(s)?
+                </p>
+              ) : (
+                <p>
+                  Are you sure you want to permanently delete <strong>{deleteModal.name}</strong>?
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteModal({ open: false, type: "single" })}
+                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={executeDelete}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-500 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {deleting ? <Spinner className="size-3.5 text-white" /> : <Trash2 className="size-3.5" />}
+                <span>{deleting ? "Deleting..." : "Confirm Delete"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
