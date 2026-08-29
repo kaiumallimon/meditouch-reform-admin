@@ -761,24 +761,26 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
     }
   };
 
-  // Reusable Mac Terminal UI Component
+  // Reusable Mac Terminal UI Component with inline SDK Language Tabs
   const TerminalWindow = ({
     title,
     code,
     language = "typescript",
     id,
+    showLanguageTabs = false,
   }: {
     title: string;
     code: string;
     language?: string;
     id: string;
+    showLanguageTabs?: boolean;
   }) => {
     return (
       <div className="rounded-xl border border-stone-800 bg-[#0d1117] overflow-hidden shadow-xl text-stone-100">
         {/* Terminal Header */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] border-b border-stone-800 select-none">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] border-b border-stone-800 select-none flex-wrap gap-2">
+          {/* Left: macOS dots + Filename/Title */}
           <div className="flex items-center gap-2">
-            {/* macOS Window Controls */}
             <div className="flex items-center gap-1.5">
               <span className="size-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 inline-block" />
               <span className="size-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 inline-block" />
@@ -789,10 +791,50 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
             </span>
           </div>
 
+          {/* Center/Right: SDK Language Tabs (Inside Terminal Header) + Format Badge + Copy */}
           <div className="flex items-center gap-2">
+            {showLanguageTabs && (
+              <div className="inline-flex rounded-lg border border-stone-700/80 bg-stone-900 p-0.5 text-[11px] font-mono">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLang("nextjs")}
+                  className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                    selectedLang === "nextjs"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
+                  }`}
+                >
+                  Next.js / React
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLang("flutter")}
+                  className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                    selectedLang === "flutter"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
+                  }`}
+                >
+                  Flutter / Dart
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLang("curl")}
+                  className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                    selectedLang === "curl"
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/60"
+                  }`}
+                >
+                  cURL
+                </button>
+              </div>
+            )}
+
             <span className="text-[10px] font-mono font-semibold uppercase text-stone-500 bg-stone-800/80 px-2 py-0.5 rounded">
               {language}
             </span>
+
             <button
               onClick={() => handleCopy(code, id)}
               className="flex items-center gap-1 rounded bg-stone-800/80 hover:bg-stone-700 text-stone-300 px-2 py-1 text-[11px] font-mono transition-all cursor-pointer shadow-xs"
@@ -1155,32 +1197,10 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {/* Global Language Selector */}
-            <div className="inline-flex rounded-lg border border-stone-200 bg-stone-100/70 p-0.5 text-xs">
-              <button
-                onClick={() => setSelectedLang("nextjs")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  selectedLang === "nextjs" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                Next.js / React
-              </button>
-              <button
-                onClick={() => setSelectedLang("flutter")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  selectedLang === "flutter" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                Flutter / Dart
-              </button>
-              <button
-                onClick={() => setSelectedLang("curl")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  selectedLang === "curl" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                cURL
-              </button>
+            {/* Live API Health Status */}
+            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 text-[11px] font-mono font-bold text-emerald-700 shadow-2xs">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>API Online</span>
             </div>
 
             {/* Token Quick Copy */}
@@ -1195,10 +1215,10 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 max-w-5xl space-y-10">
+        <div className="flex-1 overflow-y-auto px-6 sm:px-10 py-8 w-full">
           {/* VIEW 1: INTRODUCTION */}
           {activeSection === "intro" && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="max-w-5xl space-y-8 animate-in fade-in">
               <div>
                 <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
                   Introduction
@@ -1245,46 +1265,41 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
                 />
               </div>
 
-              {/* Quickstart Boilerplates */}
+              {/* Quickstart Boilerplates with inline Language Tabs */}
               <div className="space-y-4">
                 <h2 className="font-heading text-xl font-normal text-stone-900">Client Installation & Setup</h2>
-                {selectedLang === "nextjs" && (
-                  <TerminalWindow
-                    title="terminal.sh"
-                    language="bash"
-                    id="intro-nextjs"
-                    code={`# Initialize Next.js 15 Client Dependencies
-npm install axios @tanstack/react-query lucide-react sonner`}
-                  />
-                )}
-                {selectedLang === "flutter" && (
-                  <TerminalWindow
-                    title="pubspec.yaml"
-                    language="yaml"
-                    id="intro-flutter"
-                    code={`dependencies:
-  flutter:
-    sdk: flutter
-  http: ^1.2.0
-  eventsource: ^0.4.0`}
-                  />
-                )}
-                {selectedLang === "curl" && (
-                  <TerminalWindow
-                    title="terminal.sh"
-                    language="bash"
-                    id="intro-curl"
-                    code={`# Check API Server Status
-curl -X GET "${API_BASE.replace('/api/v1', '')}/health"`}
-                  />
-                )}
+                <TerminalWindow
+                  title={
+                    selectedLang === "nextjs"
+                      ? "terminal.sh"
+                      : selectedLang === "flutter"
+                      ? "pubspec.yaml"
+                      : "terminal.sh"
+                  }
+                  language={
+                    selectedLang === "nextjs"
+                      ? "bash"
+                      : selectedLang === "flutter"
+                      ? "yaml"
+                      : "bash"
+                  }
+                  id={`intro-setup-${selectedLang}`}
+                  showLanguageTabs={true}
+                  code={
+                    selectedLang === "nextjs"
+                      ? `# Initialize Next.js 15 Client Dependencies\nnpm install axios @tanstack/react-query lucide-react sonner`
+                      : selectedLang === "flutter"
+                      ? `dependencies:\n  flutter:\n    sdk: flutter\n  http: ^1.2.0\n  eventsource: ^0.4.0`
+                      : `# Check API Server Status\ncurl -X GET "${API_BASE.replace('/api/v1', '')}/health"`
+                  }
+                />
               </div>
             </div>
           )}
 
           {/* VIEW 2: AUTHENTICATION GUIDE */}
           {activeSection === "auth-guide" && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="max-w-5xl space-y-8 animate-in fade-in">
               <div>
                 <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
                   Authentication & JWT Security
@@ -1315,7 +1330,7 @@ curl -X GET "${API_BASE.replace('/api/v1', '')}/health"`}
 
           {/* VIEW 3: REAL-TIME SSE STREAM GUIDE */}
           {activeSection === "sse-guide" && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="max-w-5xl space-y-8 animate-in fade-in">
               <div>
                 <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
                   Real-Time Server-Sent Events (SSE)
@@ -1366,7 +1381,7 @@ curl -X GET "${API_BASE.replace('/api/v1', '')}/health"`}
 
           {/* VIEW 4: SDK GUIDES (NEXTJS & FLUTTER) */}
           {activeSection === "sdk-nextjs" && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="max-w-5xl space-y-8 animate-in fade-in">
               <div>
                 <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
                   Next.js 15+ (TypeScript) SDK Integration
@@ -1412,7 +1427,7 @@ export const meditouch = {
           )}
 
           {activeSection === "sdk-flutter" && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="max-w-5xl space-y-8 animate-in fade-in">
               <div>
                 <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
                   Flutter (Dart) SDK Integration
@@ -1456,152 +1471,155 @@ class MediTouchApi {
             </div>
           )}
 
-          {/* VIEW 5: ACTIVE ENDPOINT DETAIL */}
+          {/* VIEW 5: ACTIVE ENDPOINT DETAIL (2-Column Stripe / Mintlify Layout) */}
           {activeEndpoint && (
-            <div className="space-y-8 animate-in fade-in">
-              {/* Endpoint Header */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span
-                    className={`rounded-lg px-2.5 py-1 text-xs font-mono font-bold ${
-                      activeEndpoint.method === "GET"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : activeEndpoint.method === "POST"
-                        ? "bg-blue-50 text-blue-700 border border-blue-200"
-                        : "bg-purple-50 text-purple-700 border border-purple-200"
-                    }`}
-                  >
-                    {activeEndpoint.method}
-                  </span>
-                  <span className="font-mono text-base font-bold text-stone-900">{activeEndpoint.path}</span>
-                  {activeEndpoint.authRequired ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                      <Lock className="size-2.5" />
-                      Bearer Token Required
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in w-full items-start">
+              {/* Left Column (lg:col-span-6): Endpoint Info & Parameters */}
+              <div className="lg:col-span-6 space-y-8">
+                {/* Endpoint Header */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span
+                      className={`rounded-lg px-2.5 py-1 text-xs font-mono font-bold ${
+                        activeEndpoint.method === "GET"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : activeEndpoint.method === "POST"
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : "bg-purple-50 text-purple-700 border border-purple-200"
+                      }`}
+                    >
+                      {activeEndpoint.method}
                     </span>
+                    <span className="font-mono text-base font-bold text-stone-900">{activeEndpoint.path}</span>
+                    {activeEndpoint.authRequired ? (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        <Lock className="size-2.5" />
+                        Bearer Token Required
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                        <Globe className="size-2.5" />
+                        Public Endpoint
+                      </span>
+                    )}
+                  </div>
+                  <h1 className="font-heading text-2xl sm:text-3xl font-normal text-stone-900">
+                    {activeEndpoint.title}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    {activeEndpoint.description}
+                  </p>
+                </div>
+
+                {/* Parameters Table */}
+                {activeEndpoint.params && activeEndpoint.params.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-heading text-lg font-normal text-stone-900">Request Parameters</h3>
+                    <div className="overflow-x-auto rounded-xl border border-stone-200">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                          <tr>
+                            <th className="py-2.5 px-3">Field</th>
+                            <th className="py-2.5 px-3">Type</th>
+                            <th className="py-2.5 px-3">In</th>
+                            <th className="py-2.5 px-3">Required</th>
+                            <th className="py-2.5 px-3">Description</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100 bg-white">
+                          {activeEndpoint.params.map((p) => (
+                            <tr key={p.name}>
+                              <td className="py-2.5 px-3 font-mono font-bold text-stone-900">{p.name}</td>
+                              <td className="py-2.5 px-3 font-mono text-purple-700">{p.type}</td>
+                              <td className="py-2.5 px-3 font-mono uppercase text-[10px] text-stone-500">{p.in}</td>
+                              <td className="py-2.5 px-3">
+                                {p.required ? (
+                                  <span className="font-bold text-rose-600">Yes</span>
+                                ) : (
+                                  <span className="text-stone-400">No</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-stone-600">{p.description}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column (lg:col-span-6): Sticky Code Terminal & Live Tester */}
+              <div className="lg:col-span-6 space-y-6 lg:sticky lg:top-4">
+                {/* Multi-Language Code Snippet with Terminal Language Tabs */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-heading text-base font-normal text-stone-900">
+                      Integration Code Snippet
+                    </h3>
+                  </div>
+
+                  <TerminalWindow
+                    title={
+                      selectedLang === "nextjs"
+                        ? `${activeEndpoint.id}.ts`
+                        : selectedLang === "flutter"
+                        ? `${activeEndpoint.id}.dart`
+                        : `request.sh`
+                    }
+                    language={selectedLang === "nextjs" ? "typescript" : selectedLang === "flutter" ? "dart" : "bash"}
+                    id={`code-${activeEndpoint.id}-${selectedLang}`}
+                    showLanguageTabs={true}
+                    code={
+                      selectedLang === "nextjs"
+                        ? activeEndpoint.nextjsSnippet
+                        : selectedLang === "flutter"
+                        ? activeEndpoint.flutterSnippet
+                        : activeEndpoint.curlSnippet
+                    }
+                  />
+                </div>
+
+                {/* 200 OK Response Schema & Live Testing */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-heading text-base font-normal text-stone-900">
+                      200 OK Response & Live Tester
+                    </h3>
+                    <button
+                      onClick={() => executeLiveTest(activeEndpoint)}
+                      disabled={liveTestLoading}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#5b15fc] text-white px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-[#4d0ee0] cursor-pointer disabled:opacity-50 transition-all"
+                    >
+                      {liveTestLoading ? <Spinner className="size-3.5 text-white" /> : <Play className="size-3.5 fill-white" />}
+                      <span>Send Live Request</span>
+                    </button>
+                  </div>
+
+                  {liveTestResult ? (
+                    <div className="space-y-2 animate-in fade-in">
+                      <div className="flex items-center justify-between text-xs font-mono px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
+                        <span className={liveTestResult.status < 400 ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}>
+                          HTTP {liveTestResult.status} {liveTestResult.status === 200 ? "OK" : ""}
+                        </span>
+                        <span className="text-stone-500">{liveTestResult.latencyMs} ms latency</span>
+                      </div>
+                      <TerminalWindow
+                        title="live_response.json"
+                        language="json"
+                        id="live-response-output"
+                        code={JSON.stringify(liveTestResult.data, null, 2)}
+                      />
+                    </div>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                      <Globe className="size-2.5" />
-                      Public Endpoint
-                    </span>
+                    <TerminalWindow
+                      title="example_response.json"
+                      language="json"
+                      id={`res-${activeEndpoint.id}`}
+                      code={JSON.stringify(activeEndpoint.responseExample, null, 2)}
+                    />
                   )}
                 </div>
-                <h1 className="font-heading text-2xl sm:text-3xl font-normal text-stone-900">
-                  {activeEndpoint.title}
-                </h1>
-                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                  {activeEndpoint.description}
-                </p>
-              </div>
-
-              {/* Parameters Table */}
-              {activeEndpoint.params && activeEndpoint.params.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="font-heading text-lg font-normal text-stone-900">Request Parameters</h3>
-                  <div className="overflow-x-auto rounded-xl border border-stone-200">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                        <tr>
-                          <th className="py-2.5 px-3">Field</th>
-                          <th className="py-2.5 px-3">Type</th>
-                          <th className="py-2.5 px-3">In</th>
-                          <th className="py-2.5 px-3">Required</th>
-                          <th className="py-2.5 px-3">Description</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-100 bg-white">
-                        {activeEndpoint.params.map((p) => (
-                          <tr key={p.name}>
-                            <td className="py-2.5 px-3 font-mono font-bold text-stone-900">{p.name}</td>
-                            <td className="py-2.5 px-3 font-mono text-purple-700">{p.type}</td>
-                            <td className="py-2.5 px-3 font-mono uppercase text-[10px] text-stone-500">{p.in}</td>
-                            <td className="py-2.5 px-3">
-                              {p.required ? (
-                                <span className="font-bold text-rose-600">Yes</span>
-                              ) : (
-                                <span className="text-stone-400">No</span>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-3 text-stone-600">{p.description}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Multi-Language Code Snippet */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-lg font-normal text-stone-900">
-                    {selectedLang === "nextjs"
-                      ? "Next.js 15 TypeScript Snippet"
-                      : selectedLang === "flutter"
-                      ? "Flutter Dart Snippet"
-                      : "cURL CLI Command"}
-                  </h3>
-                </div>
-
-                <TerminalWindow
-                  title={
-                    selectedLang === "nextjs"
-                      ? `${activeEndpoint.id}.ts`
-                      : selectedLang === "flutter"
-                      ? `${activeEndpoint.id}.dart`
-                      : `request.sh`
-                  }
-                  language={selectedLang === "nextjs" ? "typescript" : selectedLang === "flutter" ? "dart" : "bash"}
-                  id={`code-${activeEndpoint.id}-${selectedLang}`}
-                  code={
-                    selectedLang === "nextjs"
-                      ? activeEndpoint.nextjsSnippet
-                      : selectedLang === "flutter"
-                      ? activeEndpoint.flutterSnippet
-                      : activeEndpoint.curlSnippet
-                  }
-                />
-              </div>
-
-              {/* 200 OK Response Schema & Live Testing */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-lg font-normal text-stone-900">
-                    200 OK Standard Response
-                  </h3>
-                  <button
-                    onClick={() => executeLiveTest(activeEndpoint)}
-                    disabled={liveTestLoading}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#5b15fc] text-white px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-[#4d0ee0] cursor-pointer disabled:opacity-50 transition-all"
-                  >
-                    {liveTestLoading ? <Spinner className="size-3.5 text-white" /> : <Play className="size-3.5 fill-white" />}
-                    <span>Send Live Request</span>
-                  </button>
-                </div>
-
-                {liveTestResult ? (
-                  <div className="space-y-2 animate-in fade-in">
-                    <div className="flex items-center justify-between text-xs font-mono px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
-                      <span className={liveTestResult.status < 400 ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}>
-                        HTTP {liveTestResult.status} {liveTestResult.status === 200 ? "OK" : ""}
-                      </span>
-                      <span className="text-stone-500">{liveTestResult.latencyMs} ms latency</span>
-                    </div>
-                    <TerminalWindow
-                      title="live_response.json"
-                      language="json"
-                      id="live-response-output"
-                      code={JSON.stringify(liveTestResult.data, null, 2)}
-                    />
-                  </div>
-                ) : (
-                  <TerminalWindow
-                    title="example_response.json"
-                    language="json"
-                    id={`res-${activeEndpoint.id}`}
-                    code={JSON.stringify(activeEndpoint.responseExample, null, 2)}
-                  />
-                )}
               </div>
             </div>
           )}
