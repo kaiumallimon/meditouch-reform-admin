@@ -17,6 +17,16 @@ export function getSession(): UserSession | null {
   }
 }
 
+export function getAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("meditouch_access_token");
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("meditouch_refresh_token");
+}
+
 export function saveSession(user: UserSession, accessToken: string, refreshToken: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem("meditouch_user", JSON.stringify(user));

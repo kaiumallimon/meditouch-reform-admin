@@ -18,12 +18,14 @@ import {
   AlertTriangle,
   Cloud,
   Users,
-  Code2
+  Code2,
+  Bot
 } from "lucide-react";
 import { toast } from "sonner";
 
 const mainNavigation = [
   { name: "Overview", href: "/admin", icon: LayoutDashboard },
+  { name: "AI Assistant", href: "/admin/ai-assistant", icon: Bot, badge: "AI" },
   { name: "User Accounts", href: "/admin/users", icon: Users },
 ];
 
