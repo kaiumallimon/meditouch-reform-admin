@@ -309,20 +309,20 @@ export default function MedicineDetailPage() {
       {/* Main Product Shop Showcase (Compact Full Width Clean E-Commerce Card) */}
       <div className="neo-card rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 shadow-xs">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          {/* Left Column: Product Visual Showcase (Full Bleed Edge-to-Edge Container) */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center">
-            <div className="relative w-full h-64 sm:h-72 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden group">
+          {/* Left Column: Product Visual Showcase (Crisp White Square Stage) */}
+          <div className="lg:col-span-5 flex items-center justify-center">
+            <div className="relative aspect-square max-w-[280px] sm:max-w-[300px] w-full rounded-2xl bg-white border border-stone-200 flex items-center justify-center p-3 overflow-hidden group shadow-xs">
               {rawImage ? (
                 <img
                   src={rawImage}
                   alt={medicine.medicine_name}
-                  className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="size-full object-contain mix-blend-multiply drop-shadow-xs transition-transform duration-300 group-hover:scale-105"
                   onError={(e: any) => {
                     e.target.style.display = "none";
                   }}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center text-stone-300 space-y-1.5">
+                <div className="flex flex-col items-center justify-center text-stone-300 space-y-1.5 p-6">
                   <Pill className="size-12 text-stone-300" />
                   <span className="text-xs text-stone-400 font-medium">No Image Available</span>
                 </div>
