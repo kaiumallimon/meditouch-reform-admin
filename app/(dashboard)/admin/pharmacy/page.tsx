@@ -43,6 +43,19 @@ import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
+function getPaginationRange(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, "...", total];
+  }
+  if (current >= total - 2) {
+    return [1, "...", total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
+
 export default function PharmacyAdminPage() {
   const [medicines, setMedicines] = useState<MedicineItem[]>([]);
   const [stats, setStats] = useState<PharmacyStats | null>(null);
@@ -56,6 +69,7 @@ export default function PharmacyAdminPage() {
   const [selectedRx, setSelectedRx] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(24);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -104,7 +118,7 @@ export default function PharmacyAdminPage() {
       setLoading(true);
       const params: any = {
         page,
-        limit: 24,
+        limit,
       };
       if (search.trim()) params.search = search.trim();
       if (selectedCategory !== "ALL") params.category = selectedCategory;
@@ -278,7 +292,7 @@ export default function PharmacyAdminPage() {
       loadMedicines();
     }, 250);
     return () => clearTimeout(timer);
-  }, [search, selectedCategory, selectedRx, page]);
+  }, [search, selectedCategory, selectedRx, page, limit]);
 
   // Scroll internal console box without moving page window
   useEffect(() => {
@@ -657,8 +671,8 @@ export default function PharmacyAdminPage() {
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      {/* Category Tabs (Wrapped) */}
+      <div className="flex flex-wrap items-center gap-2 py-1">
         <button
           onClick={() => {
             setSelectedCategory("ALL");
@@ -879,33 +893,78 @@ export default function PharmacyAdminPage() {
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 neo-card rounded-2xl bg-white p-3.5 border border-stone-200 shadow-xs">
+      {/* Enhanced Pagination Controls */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs">
+        <div className="flex flex-wrap items-center gap-3">
           <p className="text-xs text-stone-500 font-medium">
-            Showing Page <strong className="text-stone-900">{page}</strong> of <strong className="text-stone-900">{totalPages}</strong> ({totalCount} total medicines)
+            Showing <strong className="text-stone-900">{totalCount > 0 ? (page - 1) * limit + 1 : 0}</strong> - <strong className="text-stone-900">{Math.min(page * limit, totalCount)}</strong> of <strong className="text-stone-900">{totalCount}</strong> medicines
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-stone-600 border-l border-stone-200 pl-3">
+            <span className="text-[11px] font-medium text-stone-400">Show:</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+              className="h-8 rounded-lg border border-stone-200 bg-stone-50 px-2 text-xs font-bold text-stone-800 cursor-pointer shadow-2xs outline-hidden"
+            >
+              <option value={12}>12 per page</option>
+              <option value={24}>24 per page</option>
+              <option value={48}>48 per page</option>
+              <option value={96}>96 per page</option>
+            </select>
+          </div>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 cursor-pointer shadow-2xs transition-all"
             >
               <ChevronLeft className="size-3.5" />
               <span>Previous</span>
             </button>
+
+            {getPaginationRange(page, totalPages).map((pItem, idx) => {
+              if (pItem === "...") {
+                return (
+                  <span key={idx} className="px-2 py-1 text-xs text-stone-400 font-bold select-none">
+                    ...
+                  </span>
+                );
+              }
+              const pageNum = Number(pItem);
+              const isActive = pageNum === page;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setPage(pageNum)}
+                  className={`min-w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-[#5b15fc] text-white shadow-xs"
+                      : "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 cursor-pointer shadow-2xs transition-all"
             >
               <span>Next</span>
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Crawler Settings Modal */}
       {showSettingsModal && (
