@@ -135,12 +135,12 @@ export default function MedicineDetailPage() {
       <div className="neo-card rounded-[24px] bg-white border border-stone-200 p-5 sm:p-7 shadow-xs">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Product Image */}
-          <div className="size-48 sm:size-56 shrink-0 rounded-2xl bg-stone-50 border border-stone-200 p-4 flex items-center justify-center overflow-hidden shadow-inner mx-auto lg:mx-0">
+          <div className="size-48 sm:size-56 shrink-0 rounded-2xl bg-linear-to-b from-stone-50 to-stone-100/70 border border-stone-200 p-4 flex items-center justify-center overflow-hidden shadow-inner mx-auto lg:mx-0">
             {rawImage ? (
               <img
                 src={rawImage}
                 alt={medicine.medicine_name}
-                className="size-full object-contain"
+                className="max-h-full max-w-full object-contain mix-blend-multiply drop-shadow-sm"
                 onError={(e: any) => {
                   e.target.style.display = "none";
                 }}

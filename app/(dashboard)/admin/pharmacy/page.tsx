@@ -757,47 +757,60 @@ export default function PharmacyAdminPage() {
           {medicines.map((med) => (
             <div
               key={med.id || med.slug}
-              className="neo-card rounded-2xl bg-white border border-stone-200 p-4 flex flex-col justify-between hover:shadow-md transition-all group"
+              className="neo-card rounded-2xl bg-white border border-stone-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all group"
             >
-              <div className="space-y-3">
-                {/* Image & Badges */}
-                <div className="relative aspect-4/3 w-full rounded-xl bg-stone-50 border border-stone-100 flex items-center justify-center overflow-hidden p-3">
-                  {med.medicine_image ? (
-                    <img
-                      src={med.medicine_image}
-                      alt={med.medicine_name || med.brand}
-                      className="size-full object-contain group-hover:scale-105 transition-transform duration-300"
-                      onError={(e: any) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
+              {/* Top Full-Bleed Image Frame (Clickable to details) */}
+              <Link
+                href={`/admin/pharmacy/${med.slug || med.id}`}
+                className="relative aspect-4/3 w-full bg-stone-100 flex items-center justify-center overflow-hidden border-b border-stone-100 cursor-pointer group/img block"
+              >
+                {med.medicine_image ? (
+                  <img
+                    src={med.medicine_image}
+                    alt={med.medicine_name || med.brand}
+                    className="size-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                    onError={(e: any) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="size-full flex items-center justify-center bg-stone-50">
                     <Pill className="size-10 text-stone-300" />
-                  )}
-
-                  <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    <span className="rounded-md bg-stone-900/80 text-white backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                      {med.dosage_form || med.category_name || "Tablet"}
-                    </span>
                   </div>
+                )}
 
+                {/* Redesigned Category Badge on top-left */}
+                <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-stone-800 border border-stone-200/90 shadow-xs tracking-wide">
+                    <span className="size-1.5 rounded-full bg-[#5b15fc]" />
+                    {med.dosage_form || med.category_name || "Tablet"}
+                  </span>
+                </div>
+
+                {/* Redesigned Rx/OTC Badge on top-right */}
+                <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
                   {med.rx_required ? (
-                    <span className="absolute top-2 right-2 rounded-md bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 text-[9px] font-bold">
+                    <span className="inline-flex items-center rounded-lg bg-rose-500/95 text-white backdrop-blur-md px-2 py-0.5 text-[10px] font-bold shadow-xs tracking-wider">
                       Rx
                     </span>
                   ) : (
-                    <span className="absolute top-2 right-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold">
+                    <span className="inline-flex items-center rounded-lg bg-emerald-600/95 text-white backdrop-blur-md px-2 py-0.5 text-[10px] font-bold shadow-xs tracking-wider">
                       OTC
                     </span>
                   )}
                 </div>
+              </Link>
 
-                {/* Info */}
+              {/* Card Body Info */}
+              <div className="p-4 flex flex-col justify-between flex-1 space-y-3">
                 <div className="space-y-1">
                   <div className="flex items-start justify-between gap-1">
-                    <h3 className="font-heading text-base font-normal text-stone-900 group-hover:text-[#5b15fc] transition-colors line-clamp-1">
+                    <Link
+                      href={`/admin/pharmacy/${med.slug || med.id}`}
+                      className="font-heading text-base font-normal text-stone-900 hover:text-[#5b15fc] transition-colors line-clamp-1 cursor-pointer"
+                    >
                       {med.medicine_name || med.brand}
-                    </h3>
+                    </Link>
                     {med.strength && (
                       <span className="text-[11px] font-bold text-stone-500 shrink-0">
                         {med.strength}
@@ -811,24 +824,24 @@ export default function PharmacyAdminPage() {
                     {med.manufacturer_name || med.manufacturer}
                   </p>
                 </div>
-              </div>
 
-              {/* Price & Action */}
-              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] text-stone-400 font-medium">Price</p>
-                  <p className="font-bold text-stone-900 text-sm">
-                    {formatCurrency(med.unit_price || 0)}
-                  </p>
+                {/* Price & Action */}
+                <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] text-stone-400 font-medium">Price</p>
+                    <p className="font-bold text-stone-900 text-sm">
+                      {formatCurrency(med.unit_price || 0)}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/admin/pharmacy/${med.slug || med.id}`}
+                    className="inline-flex items-center gap-1 rounded-xl bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-800 hover:bg-[#5b15fc] hover:text-white transition-all shadow-xs cursor-pointer"
+                  >
+                    <span>Details</span>
+                    <ExternalLink className="size-3" />
+                  </Link>
                 </div>
-
-                <Link
-                  href={`/admin/pharmacy/${med.slug || med.id}`}
-                  className="inline-flex items-center gap-1 rounded-xl bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-800 hover:bg-[#5b15fc] hover:text-white transition-all shadow-xs cursor-pointer"
-                >
-                  <span>Details</span>
-                  <ExternalLink className="size-3" />
-                </Link>
               </div>
             </div>
           ))}
@@ -853,12 +866,12 @@ export default function PharmacyAdminPage() {
                   <tr key={med.id || med.slug} className="hover:bg-stone-50/70 transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="size-10 shrink-0 rounded-lg bg-stone-50 border border-stone-200 overflow-hidden p-1 flex items-center justify-center">
+                        <div className="size-11 shrink-0 rounded-xl bg-stone-50 border border-stone-200 overflow-hidden p-1 flex items-center justify-center">
                           {med.medicine_image ? (
                             <img
                               src={med.medicine_image}
                               alt={med.medicine_name || med.brand}
-                              className="size-full object-contain"
+                              className="max-h-full max-w-full object-contain mix-blend-multiply"
                             />
                           ) : (
                             <Pill className="size-5 text-stone-300" />
