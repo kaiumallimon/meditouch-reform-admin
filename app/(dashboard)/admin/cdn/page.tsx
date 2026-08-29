@@ -3,7 +3,9 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { mediaApi } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { formatDate, formatRelativeTime, formatTime } from "@/lib/utils";
 import {
   Cloud,
   UploadCloud,
@@ -256,10 +258,16 @@ export default function AdminCDNPage() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-heading text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.total_assets || 0}
-            </span>
-            <span className="text-xs text-stone-500">Files</span>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-1" />
+            ) : (
+              <>
+                <span className="font-heading text-2xl font-normal text-stone-900">
+                  {stats?.total_assets || 0}
+                </span>
+                <span className="text-xs text-stone-500">Files</span>
+              </>
+            )}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Images, PDFs & doctor documents</p>
         </div>
@@ -275,10 +283,16 @@ export default function AdminCDNPage() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-heading text-2xl font-normal text-emerald-700">
-              {statsLoading ? "..." : stats?.storage_used_formatted || "0 B"}
-            </span>
-            <span className="text-xs text-emerald-600 font-medium">Active</span>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-20 rounded-lg mt-1" />
+            ) : (
+              <>
+                <span className="font-heading text-2xl font-normal text-emerald-700">
+                  {stats?.storage_used_formatted || "0 B"}
+                </span>
+                <span className="text-xs text-emerald-600 font-medium">Active</span>
+              </>
+            )}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">High-availability CDN storage</p>
         </div>
@@ -294,9 +308,13 @@ export default function AdminCDNPage() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-heading text-xl font-normal text-stone-900">
-              {statsLoading ? "..." : `${stats?.total_images || 0} imgs • ${stats?.total_documents || 0} docs`}
-            </span>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-32 rounded-lg mt-1" />
+            ) : (
+              <span className="font-heading text-xl font-normal text-stone-900">
+                {`${stats?.total_images || 0} imgs • ${stats?.total_documents || 0} docs`}
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Prescriptions, BMDC certs & headshots</p>
         </div>
@@ -312,9 +330,13 @@ export default function AdminCDNPage() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-heading text-lg font-normal text-stone-900 truncate">
-              {stats?.cloud_name || "Cloudinary CDN"}
-            </span>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-28 rounded-lg mt-1" />
+            ) : (
+              <span className="font-heading text-lg font-normal text-stone-900 truncate">
+                {stats?.cloud_name || "Cloudinary CDN"}
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-emerald-600 font-semibold mt-1">● SSL Encrypted & Edge-Cached</p>
         </div>
@@ -397,12 +419,88 @@ export default function AdminCDNPage() {
           </div>
         </div>
 
-        {/* Loading Spinner */}
+        {/* Main Content: Grid / Table with Skeletons */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Spinner className="size-8 text-[#5b15fc]" />
-            <p className="text-xs text-stone-500 mt-2">Loading Cloudinary CDN assets...</p>
-          </div>
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={`cdn-grid-skeleton-${i}`}
+                  className="flex flex-col justify-between rounded-2xl border border-stone-200 bg-white p-3.5 shadow-xs space-y-3"
+                >
+                  <Skeleton className="aspect-video w-full rounded-xl" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-3/4 rounded" />
+                    <div className="flex items-center justify-between pt-1">
+                      <Skeleton className="h-3 w-16 rounded" />
+                      <Skeleton className="h-4 w-20 rounded-md" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-stone-100 pt-2.5">
+                    <Skeleton className="h-7 w-20 rounded-lg" />
+                    <div className="flex gap-1.5">
+                      <Skeleton className="size-7 rounded-lg" />
+                      <Skeleton className="size-7 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-stone-200">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-stone-200 bg-stone-50/70 text-[11px] font-bold uppercase tracking-wider text-stone-600">
+                  <tr>
+                    <th className="px-3 py-3 w-12 text-center">#</th>
+                    <th className="px-4 py-3">Asset & Preview</th>
+                    <th className="px-4 py-3">Folder</th>
+                    <th className="px-4 py-3">Format</th>
+                    <th className="px-4 py-3">Size</th>
+                    <th className="px-4 py-3">Uploaded</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 bg-white">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={`cdn-table-skeleton-${i}`} className="hover:bg-stone-50/40">
+                      <td className="px-3 py-3 text-center">
+                        <Skeleton className="h-4 w-5 mx-auto rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="size-10 rounded-lg shrink-0" />
+                          <div className="space-y-1.5 flex-1">
+                            <Skeleton className="h-3.5 w-44 rounded" />
+                            <Skeleton className="h-3 w-28 rounded" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-5 w-24 rounded-md" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-4 w-10 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-4 w-14 rounded" />
+                      </td>
+                      <td className="px-4 py-3 space-y-1">
+                        <Skeleton className="h-3.5 w-16 rounded" />
+                        <Skeleton className="h-3 w-12 rounded" />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Skeleton className="h-7 w-14 rounded-lg" />
+                          <Skeleton className="size-7 rounded-lg" />
+                          <Skeleton className="size-7 rounded-lg" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         ) : assets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 mb-3 border border-stone-200">
@@ -477,7 +575,14 @@ export default function AdminCDNPage() {
                       </p>
                       <div className="flex items-center justify-between text-[11px] text-stone-500 font-mono">
                         <span>{formatFileSize(asset.bytes)}</span>
-                        <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[9px] text-stone-600 truncate max-w-[130px]">
+                        {asset.created_at && (
+                          <span className="text-[10px] text-stone-400">
+                            {formatRelativeTime(asset.created_at)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="pt-0.5">
+                        <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[9px] text-stone-600 truncate block max-w-full font-mono">
                           {asset.folder.replace("meditouch/", "")}
                         </span>
                       </div>
@@ -535,22 +640,28 @@ export default function AdminCDNPage() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-stone-200 bg-stone-50/70 text-[11px] font-bold uppercase tracking-wider text-stone-600">
                 <tr>
+                  <th className="px-3 py-3 w-12 text-center">#</th>
                   <th className="px-4 py-3">Asset & Preview</th>
                   <th className="px-4 py-3">Folder</th>
                   <th className="px-4 py-3">Format</th>
                   <th className="px-4 py-3">Size</th>
-                  <th className="px-4 py-3">Public ID</th>
+                  <th className="px-4 py-3">Uploaded</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 bg-white">
-                {assets.map((asset) => {
+                {assets.map((asset, idx) => {
                   const isImage =
                     asset.resource_type === "image" ||
                     ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(asset.format?.toLowerCase());
 
                   return (
                     <tr key={asset.id || asset.public_id} className="transition-colors hover:bg-stone-50/70">
+                      {/* Index Column */}
+                      <td className="px-3 py-3 text-center font-mono text-[11px] text-stone-400 font-medium">
+                        {(page - 1) * rowsPerPage + idx + 1}
+                      </td>
+
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div
@@ -567,7 +678,7 @@ export default function AdminCDNPage() {
                             <p className="font-bold text-stone-900 truncate" title={asset.original_filename}>
                               {asset.original_filename}
                             </p>
-                            <p className="text-[10px] font-mono text-stone-400 truncate">{asset.secure_url}</p>
+                            <p className="text-[10px] font-mono text-stone-400 truncate">{asset.public_id}</p>
                           </div>
                         </div>
                       </td>
@@ -584,8 +695,13 @@ export default function AdminCDNPage() {
 
                       <td className="px-4 py-3 font-mono text-stone-600">{formatFileSize(asset.bytes)}</td>
 
-                      <td className="px-4 py-3 font-mono text-[11px] text-stone-400 max-w-[150px] truncate">
-                        {asset.public_id}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <p className="text-xs font-semibold text-stone-800">
+                          {formatRelativeTime(asset.created_at)}
+                        </p>
+                        <p className="text-[10px] font-mono text-stone-400">
+                          {formatTime(asset.created_at)}
+                        </p>
                       </td>
 
                       <td className="px-4 py-3 text-right">
