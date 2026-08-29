@@ -414,10 +414,13 @@ export default function MedicineDetailPage() {
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
+      const publicUrl = `${window.location.origin}/pharmacy/${slug}`;
+      navigator.clipboard.writeText(publicUrl);
       setCopiedLink(true);
-      toast.success("Page link copied to clipboard");
-      setTimeout(() => setCopiedLink(false), 2000);
+      toast.success("Public shareable link copied to clipboard", {
+        description: publicUrl,
+      });
+      setTimeout(() => setCopiedLink(false), 2500);
     }
   };
 
@@ -484,10 +487,21 @@ export default function MedicineDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href={`/pharmacy/${slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-[#5b15fc] hover:border-[#5b15fc]/40 shadow-xs cursor-pointer transition-all"
+            title="Open public page in new tab"
+          >
+            <span>Public View</span>
+            <ExternalLink className="size-3.5 text-stone-400" />
+          </Link>
+
           <button
             onClick={handleCopyLink}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all"
-            title="Share page link"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-[#5b15fc] shadow-xs cursor-pointer transition-all"
+            title="Copy public shareable link"
           >
             {copiedLink ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5 text-stone-400" />}
             <span>{copiedLink ? "Link Copied" : "Share"}</span>
