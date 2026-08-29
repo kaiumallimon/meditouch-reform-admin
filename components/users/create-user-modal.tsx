@@ -292,3 +292,4 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
     </div>
   );
 }
+

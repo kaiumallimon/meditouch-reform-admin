@@ -31,6 +31,7 @@ interface UserDetailModalProps {
   onToggleActive: (userId: string, currentStatus: boolean) => void;
   onSendRecovery: (userId: string) => void;
   processingId: string | null;
+  currentUserId?: string | null;
 }
 
 export function UserDetailModal({
@@ -42,8 +43,11 @@ export function UserDetailModal({
   onToggleActive,
   onSendRecovery,
   processingId,
+  currentUserId,
 }: UserDetailModalProps) {
   if (!isOpen || !user) return null;
+
+  const isCurrentUser = currentUserId ? user.id === currentUserId : false;
 
   const roleColors: Record<string, string> = {
     ADMIN: "bg-[#5b15fc]/10 text-[#5b15fc] border-[#5b15fc]/20",
@@ -74,7 +78,11 @@ export function UserDetailModal({
         </div>
 
         {/* Hero Card */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded-2xl border border-stone-200 bg-stone-50/70 p-5">
+        <div className={`flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded-2xl border p-5 ${
+          isCurrentUser
+            ? "border-[#5b15fc]/40 bg-[#5b15fc]/5 ring-1 ring-[#5b15fc]/30"
+            : "border-stone-200 bg-stone-50/70"
+        }`}>
           <div className="size-20 shrink-0 rounded-full border-2 border-stone-200 bg-white overflow-hidden flex items-center justify-center shadow-xs">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.name} className="size-full object-cover" />
@@ -86,9 +94,16 @@ export function UserDetailModal({
           <div className="flex-1 space-y-2 text-center sm:text-left min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="font-heading text-2xl font-normal text-stone-900 truncate">
-                  {user.name}
-                </h2>
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <h2 className="font-heading text-2xl font-normal text-stone-900 truncate">
+                    {user.name}
+                  </h2>
+                  {isCurrentUser && (
+                    <span className="rounded-full bg-[#5b15fc] text-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-xs">
+                      You (Logged In)
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs font-mono text-stone-500 mt-0.5">ID: {user.id}</p>
               </div>
 
@@ -187,11 +202,18 @@ export function UserDetailModal({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
           <div className="flex items-center gap-2">
             <button
+              disabled={isCurrentUser}
               onClick={() => {
+                if (isCurrentUser) return;
                 onClose();
                 onDelete(user);
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 shadow-xs cursor-pointer transition-all"
+              title={isCurrentUser ? "You cannot delete your own logged-in administrator account" : "Soft Delete Account"}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-xs transition-all ${
+                isCurrentUser
+                  ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed opacity-60"
+                  : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer"
+              }`}
             >
               <Trash2 className="size-3.5" />
               <span>Soft Delete Account</span>
@@ -210,18 +232,25 @@ export function UserDetailModal({
           </div>
 
           <button
-            disabled={processingId === user.id}
-            onClick={() => onToggleActive(user.id, user.is_active)}
-            className={`rounded-xl px-4 py-2 text-xs font-semibold shadow-xs cursor-pointer transition-all ${
-              user.is_active
-                ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
-                : "bg-[#5b15fc] text-white hover:bg-[#4d0ee0]"
+            disabled={processingId === user.id || isCurrentUser}
+            onClick={() => {
+              if (isCurrentUser) return;
+              onToggleActive(user.id, user.is_active);
+            }}
+            title={isCurrentUser ? "You cannot deactivate your own logged-in administrator account" : user.is_active ? "Deactivate Account" : "Activate Account"}
+            className={`rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition-all ${
+              isCurrentUser
+                ? "border border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed opacity-60"
+                : user.is_active
+                ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 cursor-pointer"
+                : "bg-[#5b15fc] text-white hover:bg-[#4d0ee0] cursor-pointer"
             }`}
           >
-            {user.is_active ? "Deactivate Account" : "Activate Account"}
+            {isCurrentUser ? "Logged In (Active)" : user.is_active ? "Deactivate Account" : "Activate Account"}
           </button>
         </div>
       </div>
     </div>
   );
 }
+

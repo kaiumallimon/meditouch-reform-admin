@@ -22,9 +22,11 @@ interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  currentUserId?: string | null;
 }
 
-export function EditUserModal({ user, isOpen, onClose, onSuccess }: EditUserModalProps) {
+export function EditUserModal({ user, isOpen, onClose, onSuccess, currentUserId }: EditUserModalProps) {
+  const isCurrentUser = currentUserId ? user?.id === currentUserId : false;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -237,13 +239,19 @@ export function EditUserModal({ user, isOpen, onClose, onSuccess }: EditUserModa
           <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50/50 p-3.5">
             <div>
               <p className="text-xs font-bold text-stone-800">Account Active State</p>
-              <p className="text-[11px] text-stone-500">Deactivating disables user login across all devices</p>
+              <p className="text-[11px] text-stone-500">
+                {isCurrentUser
+                  ? "You cannot deactivate your own logged-in administrator account"
+                  : "Deactivating disables user login across all devices"}
+              </p>
             </div>
             <input
               type="checkbox"
+              disabled={isCurrentUser}
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="size-4 rounded accent-[#5b15fc] cursor-pointer"
+              className="size-4 rounded accent-[#5b15fc] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              title={isCurrentUser ? "You cannot deactivate your own account" : undefined}
             />
           </div>
 
@@ -270,3 +278,4 @@ export function EditUserModal({ user, isOpen, onClose, onSuccess }: EditUserModa
     </div>
   );
 }
+
