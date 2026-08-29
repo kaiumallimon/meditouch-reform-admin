@@ -429,9 +429,6 @@ export default function MedicineDetailPage() {
   // Early Returns AFTER All Hooks
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Spinner className="size-10 text-[#5b15fc]" />
-        <p className="text-xs font-semibold text-stone-500">Loading pharmaceutical details & monograph...</p>
       <div className="space-y-6">
         {/* Top Action Bar Skeleton */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">

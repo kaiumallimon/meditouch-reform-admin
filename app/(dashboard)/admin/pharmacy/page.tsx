@@ -520,9 +520,6 @@ export default function PharmacyAdminPage() {
               <Pill className="size-4" />
             </div>
           </div>
-          <p className="font-heading text-2xl font-normal text-stone-900">
-            {statsLoading ? "..." : (stats?.total_medicines || totalCount).toLocaleString()}
-          </p>
           {statsLoading ? (
             <Skeleton className="h-7 w-20 rounded-lg mt-0.5" />
           ) : (
@@ -545,9 +542,6 @@ export default function PharmacyAdminPage() {
               <CheckCircle2 className="size-4" />
             </div>
           </div>
-          <p className="font-heading text-2xl font-normal text-stone-900">
-            {statsLoading ? "..." : (stats?.in_stock_medicines || 0).toLocaleString()}
-          </p>
           {statsLoading ? (
             <Skeleton className="h-7 w-20 rounded-lg mt-0.5" />
           ) : (
@@ -567,9 +561,6 @@ export default function PharmacyAdminPage() {
               <FolderTree className="size-4" />
             </div>
           </div>
-          <p className="font-heading text-2xl font-normal text-stone-900">
-            {statsLoading ? "..." : (stats?.total_categories || categories.length).toLocaleString()}
-          </p>
           {statsLoading ? (
             <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
           ) : (
@@ -589,9 +580,6 @@ export default function PharmacyAdminPage() {
               <Building2 className="size-4" />
             </div>
           </div>
-          <p className="font-heading text-2xl font-normal text-stone-900">
-            {statsLoading ? "..." : (stats?.total_manufacturers || 0).toLocaleString()}
-          </p>
           {statsLoading ? (
             <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
           ) : (
@@ -849,10 +837,6 @@ export default function PharmacyAdminPage() {
 
       {/* Main Catalog View (Grid or Table) */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 neo-card rounded-2xl bg-white border border-stone-200">
-          <Spinner className="size-8 text-[#5b15fc]" />
-          <p className="text-xs font-semibold text-stone-500 mt-3">Loading medicine catalog...</p>
-        </div>
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
