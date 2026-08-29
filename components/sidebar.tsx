@@ -96,37 +96,6 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <>
       <aside className="flex h-full w-60 flex-col neo-card rounded-[22px] bg-white">
-        {/* Profile Card */}
-        <div className="border-b border-stone-200/80 p-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#5b15fc] text-xs font-bold text-white shadow-xs">
-                {initials}
-              </div>
-              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-500" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="truncate text-xs font-bold text-stone-900">
-                  {fullName}
-                </p>
-                {user?.role === "DEVELOPER" ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 text-[9px] font-bold text-indigo-700 font-mono">
-                    DEV
-                  </span>
-                ) : user?.role === "ADMIN" ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 border border-purple-200 px-1.5 py-0.2 text-[9px] font-bold text-[#5b15fc] font-mono">
-                    ADMIN
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">
-                {user?.email || (user?.role === "DEVELOPER" ? "Platform Developer" : "Platform Admin")}
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Navigation Sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4">
           {user?.role === "DEVELOPER" ? (
@@ -337,50 +306,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </>
           )}
         </div>
-
-        {/* Footer / Sign Out Button */}
-        <div className="border-t border-stone-200/80 p-3">
-          <button
-            onClick={() => setOpenSignOutModal(true)}
-            className="flex w-full items-center gap-2.5 rounded-full px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-          >
-            <LogOut className="size-4" />
-            <span>Sign Out</span>
-          </button>
-        </div>
       </aside>
-
-      {/* Sign Out Confirmation Modal */}
-      {openSignOutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm neo-card rounded-[22px] p-6 shadow-xl animate-in fade-in zoom-in-95">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-                <AlertTriangle className="size-5" />
-              </div>
-              <div>
-                <h3 className="font-heading text-lg font-normal text-stone-900">Sign Out</h3>
-                <p className="text-xs text-stone-500">Are you sure you want to end your session?</p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => setOpenSignOutModal(false)}
-                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="rounded-full bg-rose-600 text-white px-4 py-2 text-xs font-semibold hover:bg-rose-700 shadow-xs cursor-pointer transition-all"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -1157,20 +1157,8 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-stone-200/80 bg-white/80 space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-stone-600 font-medium px-1">
-            <span className="truncate">{session?.name || "Developer"}</span>
-            <span className="font-mono text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded">
-              {session?.role || "DEV"}
-            </span>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-          >
-            <LogOut className="size-3.5" />
-            <span>Sign Out</span>
-          </button>
+        <div className="p-3 border-t border-stone-200/80 bg-white/60 text-[10px] text-stone-400 font-mono text-center">
+          MediTouch Developer API v1.0
         </div>
       </aside>
 
@@ -1214,47 +1202,48 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 sm:px-10 py-8 w-full">
-          {/* VIEW 1: INTRODUCTION */}
-          {activeSection === "intro" && (
-            <div className="max-w-5xl space-y-8 animate-in fade-in">
-              <div>
-                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                  Introduction
-                </h1>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                  The MediTouch Platform provides unified RESTful APIs and low-latency Server-Sent Events (SSE) event streams powering rural telemedicine consultations, MedEasy pharmacy crawling, clinical drug monographs, and encrypted Cloudinary media asset delivery.
-                </p>
-              </div>
-
-              {/* Base URL Box */}
-              <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                  Default API Base URL
-                </span>
-                <div className="flex items-center justify-between font-mono text-xs font-bold text-[#5b15fc]">
-                  <span>{API_BASE}</span>
-                  <button
-                    onClick={() => handleCopy(API_BASE, "base-url")}
-                    className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"
-                  >
-                    {copiedId === "base-url" ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
-                  </button>
+        {/* Main Content Area (Clean Centered Layout) */}
+        <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-10 w-full flex justify-center">
+          <div className="w-full max-w-4xl space-y-10">
+            {/* VIEW 1: INTRODUCTION */}
+            {activeSection === "intro" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Introduction
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    The MediTouch Platform provides unified RESTful APIs and low-latency Server-Sent Events (SSE) event streams powering rural telemedicine consultations, MedEasy pharmacy crawling, clinical drug monographs, and encrypted Cloudinary media asset delivery.
+                  </p>
                 </div>
-              </div>
 
-              {/* Envelope Design */}
-              <div className="space-y-3">
-                <h2 className="font-heading text-xl font-normal text-stone-900">Standardized Response Envelope</h2>
-                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                  All JSON responses adhere to the standard envelope format:
-                </p>
-                <TerminalWindow
-                  title="response_envelope.json"
-                  language="json"
-                  id="envelope-json"
-                  code={`{
+                {/* Base URL Box */}
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                    Default API Base URL
+                  </span>
+                  <div className="flex items-center justify-between font-mono text-xs font-bold text-[#5b15fc]">
+                    <span>{API_BASE}</span>
+                    <button
+                      onClick={() => handleCopy(API_BASE, "base-url")}
+                      className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"
+                    >
+                      {copiedId === "base-url" ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Envelope Design */}
+                <div className="space-y-3">
+                  <h2 className="font-heading text-xl font-normal text-stone-900">Standardized Response Envelope</h2>
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    All JSON responses adhere to the standard envelope format:
+                  </p>
+                  <TerminalWindow
+                    title="response_envelope.json"
+                    language="json"
+                    id="envelope-json"
+                    code={`{
   "success": true,
   "message": "Operation completed successfully",
   "data": {
@@ -1262,140 +1251,140 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
     "total": 120
   }
 }`}
-                />
-              </div>
+                  />
+                </div>
 
-              {/* Quickstart Boilerplates with inline Language Tabs */}
-              <div className="space-y-4">
-                <h2 className="font-heading text-xl font-normal text-stone-900">Client Installation & Setup</h2>
-                <TerminalWindow
-                  title={
-                    selectedLang === "nextjs"
-                      ? "terminal.sh"
-                      : selectedLang === "flutter"
-                      ? "pubspec.yaml"
-                      : "terminal.sh"
-                  }
-                  language={
-                    selectedLang === "nextjs"
-                      ? "bash"
-                      : selectedLang === "flutter"
-                      ? "yaml"
-                      : "bash"
-                  }
-                  id={`intro-setup-${selectedLang}`}
-                  showLanguageTabs={true}
-                  code={
-                    selectedLang === "nextjs"
-                      ? `# Initialize Next.js 15 Client Dependencies\nnpm install axios @tanstack/react-query lucide-react sonner`
-                      : selectedLang === "flutter"
-                      ? `dependencies:\n  flutter:\n    sdk: flutter\n  http: ^1.2.0\n  eventsource: ^0.4.0`
-                      : `# Check API Server Status\ncurl -X GET "${API_BASE.replace('/api/v1', '')}/health"`
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 2: AUTHENTICATION GUIDE */}
-          {activeSection === "auth-guide" && (
-            <div className="max-w-5xl space-y-8 animate-in fade-in">
-              <div>
-                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                  Authentication & JWT Security
-                </h1>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                  MediTouch secures protected endpoints using Bearer JSON Web Tokens (JWT) signed with HMAC SHA-256 algorithm.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-1.5">
-                <h3 className="text-xs font-bold text-indigo-900">HTTP Authorization Header</h3>
-                <p className="text-xs font-mono text-indigo-800">
-                  Authorization: Bearer &lt;YOUR_ACCESS_TOKEN&gt;
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h2 className="font-heading text-xl font-normal text-stone-900">Active Developer Bearer Token</h2>
-                <TerminalWindow
-                  title="jwt_session_token.env"
-                  language="jwt"
-                  id="jwt-token-box"
-                  code={token || "No active token found in session. Please sign in."}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 3: REAL-TIME SSE STREAM GUIDE */}
-          {activeSection === "sse-guide" && (
-            <div className="max-w-5xl space-y-8 animate-in fade-in">
-              <div>
-                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                  Real-Time Server-Sent Events (SSE)
-                </h1>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                  The MediTouch crawler engine broadcasts continuous real-time progress events over persistent HTTP streams using standard Server-Sent Events (<code className="font-mono text-xs text-[#5b15fc] bg-[#5b15fc]/10 px-1 py-0.5 rounded">text/event-stream</code>).
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h2 className="font-heading text-xl font-normal text-stone-900">Event Types & Payload Schemas</h2>
-                <div className="overflow-x-auto rounded-xl border border-stone-200">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                      <tr>
-                        <th className="py-2.5 px-3">Event Name</th>
-                        <th className="py-2.5 px-3">Payload Structure</th>
-                        <th className="py-2.5 px-3">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 bg-white">
-                      <tr>
-                        <td className="py-2.5 px-3 font-mono font-bold text-purple-700">CONNECTED</td>
-                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ timestamp, status, active_jobs }"}</td>
-                        <td className="py-2.5 px-3 text-stone-600">Initial stream handshake acknowledgment</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2.5 px-3 font-mono font-bold text-blue-700">PAGE_SCRAPED</td>
-                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ page, items_found, duration_ms }"}</td>
-                        <td className="py-2.5 px-3 text-stone-600">Emitted when a catalog category page finishes scraping</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">DRUG_INGESTED</td>
-                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ drug_name, generic_name, slug, is_upsert }"}</td>
-                        <td className="py-2.5 px-3 text-stone-600">Emitted when a medicine is inserted or updated in MongoDB</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2.5 px-3 font-mono font-bold text-rose-700">CRAWLER_STOPPED</td>
-                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ reason, total_inserted, total_skipped }"}</td>
-                        <td className="py-2.5 px-3 text-stone-600">Emitted when crawling completes or is halted</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {/* Quickstart Boilerplates with inline Language Tabs */}
+                <div className="space-y-4">
+                  <h2 className="font-heading text-xl font-normal text-stone-900">Client Installation & Setup</h2>
+                  <TerminalWindow
+                    title={
+                      selectedLang === "nextjs"
+                        ? "terminal.sh"
+                        : selectedLang === "flutter"
+                        ? "pubspec.yaml"
+                        : "terminal.sh"
+                    }
+                    language={
+                      selectedLang === "nextjs"
+                        ? "bash"
+                        : selectedLang === "flutter"
+                        ? "yaml"
+                        : "bash"
+                    }
+                    id={`intro-setup-${selectedLang}`}
+                    showLanguageTabs={true}
+                    code={
+                      selectedLang === "nextjs"
+                        ? `# Initialize Next.js 15 Client Dependencies\nnpm install axios @tanstack/react-query lucide-react sonner`
+                        : selectedLang === "flutter"
+                        ? `dependencies:\n  flutter:\n    sdk: flutter\n  http: ^1.2.0\n  eventsource: ^0.4.0`
+                        : `# Check API Server Status\ncurl -X GET "${API_BASE.replace('/api/v1', '')}/health"`
+                    }
+                  />
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* VIEW 4: SDK GUIDES (NEXTJS & FLUTTER) */}
-          {activeSection === "sdk-nextjs" && (
-            <div className="max-w-5xl space-y-8 animate-in fade-in">
-              <div>
-                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                  Next.js 15+ (TypeScript) SDK Integration
-                </h1>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                  Production-ready API client supporting Server Components, Server Actions, Incremental Static Regeneration (ISR), and Client Hooks.
-                </p>
+            {/* VIEW 2: AUTHENTICATION GUIDE */}
+            {activeSection === "auth-guide" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Authentication & JWT Security
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    MediTouch secures protected endpoints using Bearer JSON Web Tokens (JWT) signed with HMAC SHA-256 algorithm.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-1.5">
+                  <h3 className="text-xs font-bold text-indigo-900">HTTP Authorization Header</h3>
+                  <p className="text-xs font-mono text-indigo-800">
+                    Authorization: Bearer &lt;YOUR_ACCESS_TOKEN&gt;
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h2 className="font-heading text-xl font-normal text-stone-900">Active Developer Bearer Token</h2>
+                  <TerminalWindow
+                    title="jwt_session_token.env"
+                    language="jwt"
+                    id="jwt-token-box"
+                    code={token || "No active token found in session. Please sign in."}
+                  />
+                </div>
               </div>
+            )}
 
-              <TerminalWindow
-                title="lib/meditouch-sdk.ts"
-                language="typescript"
-                id="sdk-nextjs-code"
-                code={`import axios from "axios";
+            {/* VIEW 3: REAL-TIME SSE STREAM GUIDE */}
+            {activeSection === "sse-guide" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Real-Time Server-Sent Events (SSE)
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    The MediTouch crawler engine broadcasts continuous real-time progress events over persistent HTTP streams using standard Server-Sent Events (<code className="font-mono text-xs text-[#5b15fc] bg-[#5b15fc]/10 px-1 py-0.5 rounded">text/event-stream</code>).
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h2 className="font-heading text-xl font-normal text-stone-900">Event Types & Payload Schemas</h2>
+                  <div className="overflow-x-auto rounded-xl border border-stone-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                        <tr>
+                          <th className="py-2.5 px-3">Event Name</th>
+                          <th className="py-2.5 px-3">Payload Structure</th>
+                          <th className="py-2.5 px-3">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100 bg-white">
+                        <tr>
+                          <td className="py-2.5 px-3 font-mono font-bold text-purple-700">CONNECTED</td>
+                          <td className="py-2.5 px-3 font-mono text-stone-600">{"{ timestamp, status, active_jobs }"}</td>
+                          <td className="py-2.5 px-3 text-stone-600">Initial stream handshake acknowledgment</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5 px-3 font-mono font-bold text-blue-700">PAGE_SCRAPED</td>
+                          <td className="py-2.5 px-3 font-mono text-stone-600">{"{ page, items_found, duration_ms }"}</td>
+                          <td className="py-2.5 px-3 text-stone-600">Emitted when a catalog category page finishes scraping</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">DRUG_INGESTED</td>
+                          <td className="py-2.5 px-3 font-mono text-stone-600">{"{ drug_name, generic_name, slug, is_upsert }"}</td>
+                          <td className="py-2.5 px-3 text-stone-600">Emitted when a medicine is inserted or updated in MongoDB</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5 px-3 font-mono font-bold text-rose-700">CRAWLER_STOPPED</td>
+                          <td className="py-2.5 px-3 font-mono text-stone-600">{"{ reason, total_inserted, total_skipped }"}</td>
+                          <td className="py-2.5 px-3 text-stone-600">Emitted when crawling completes or is halted</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 4: SDK GUIDES (NEXTJS & FLUTTER) */}
+            {activeSection === "sdk-nextjs" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Next.js 15+ (TypeScript) SDK Integration
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    Production-ready API client supporting Server Components, Server Actions, Incremental Static Regeneration (ISR), and Client Hooks.
+                  </p>
+                </div>
+
+                <TerminalWindow
+                  title="lib/meditouch-sdk.ts"
+                  language="typescript"
+                  id="sdk-nextjs-code"
+                  code={`import axios from "axios";
 
 export const meditouch = {
   baseURL: "${API_BASE}",
@@ -1422,26 +1411,26 @@ export const meditouch = {
     return res.data.data;
   }
 };`}
-              />
-            </div>
-          )}
-
-          {activeSection === "sdk-flutter" && (
-            <div className="max-w-5xl space-y-8 animate-in fade-in">
-              <div>
-                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
-                  Flutter (Dart) SDK Integration
-                </h1>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
-                  Asynchronous Dart service for mobile apps with SSE streaming and JSON serialization.
-                </p>
+                />
               </div>
+            )}
 
-              <TerminalWindow
-                title="lib/services/meditouch_api.dart"
-                language="dart"
-                id="sdk-flutter-code"
-                code={`import 'dart:convert';
+            {activeSection === "sdk-flutter" && (
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                    Flutter (Dart) SDK Integration
+                  </h1>
+                  <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                    Asynchronous Dart service for mobile apps with SSE streaming and JSON serialization.
+                  </p>
+                </div>
+
+                <TerminalWindow
+                  title="lib/services/meditouch_api.dart"
+                  language="dart"
+                  id="sdk-flutter-code"
+                  code={`import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:eventsource/eventsource.dart';
 
@@ -1467,17 +1456,15 @@ class MediTouchApi {
     }
   }
 }`}
-              />
-            </div>
-          )}
+                />
+              </div>
+            )}
 
-          {/* VIEW 5: ACTIVE ENDPOINT DETAIL (2-Column Stripe / Mintlify Layout) */}
-          {activeEndpoint && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in w-full items-start">
-              {/* Left Column (lg:col-span-6): Endpoint Info & Parameters */}
-              <div className="lg:col-span-6 space-y-8">
-                {/* Endpoint Header */}
-                <div className="space-y-2">
+            {/* VIEW 5: ACTIVE ENDPOINT DETAIL (Centered Single-Column Flow) */}
+            {activeEndpoint && (
+              <div className="space-y-10 animate-in fade-in">
+                {/* 1. Endpoint Header */}
+                <div className="space-y-3 border-b border-stone-200/80 pb-6">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span
                       className={`rounded-lg px-2.5 py-1 text-xs font-mono font-bold ${
@@ -1511,11 +1498,11 @@ class MediTouchApi {
                   </p>
                 </div>
 
-                {/* Parameters Table */}
+                {/* 2. Request Parameters */}
                 {activeEndpoint.params && activeEndpoint.params.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="font-heading text-lg font-normal text-stone-900">Request Parameters</h3>
-                    <div className="overflow-x-auto rounded-xl border border-stone-200">
+                    <div className="overflow-x-auto rounded-xl border border-stone-200 shadow-2xs">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
                           <tr>
@@ -1547,17 +1534,12 @@ class MediTouchApi {
                     </div>
                   </div>
                 )}
-              </div>
 
-              {/* Right Column (lg:col-span-6): Sticky Code Terminal & Live Tester */}
-              <div className="lg:col-span-6 space-y-6 lg:sticky lg:top-4">
-                {/* Multi-Language Code Snippet with Terminal Language Tabs */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-heading text-base font-normal text-stone-900">
-                      Integration Code Snippet
-                    </h3>
-                  </div>
+                {/* 3. Multi-Language Code Snippet with Terminal Language Tabs */}
+                <div className="space-y-3">
+                  <h3 className="font-heading text-lg font-normal text-stone-900">
+                    Integration Code Snippet
+                  </h3>
 
                   <TerminalWindow
                     title={
@@ -1580,11 +1562,11 @@ class MediTouchApi {
                   />
                 </div>
 
-                {/* 200 OK Response Schema & Live Testing */}
-                <div className="space-y-2">
+                {/* 4. 200 OK Response Schema & Live Testing */}
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-heading text-base font-normal text-stone-900">
-                      200 OK Response & Live Tester
+                    <h3 className="font-heading text-lg font-normal text-stone-900">
+                      200 OK Standard Response
                     </h3>
                     <button
                       onClick={() => executeLiveTest(activeEndpoint)}
@@ -1621,8 +1603,8 @@ class MediTouchApi {
                   )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
