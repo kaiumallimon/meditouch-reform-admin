@@ -16,12 +16,14 @@ import {
   Settings,
   LogOut,
   AlertTriangle,
-  Cloud
+  Cloud,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 
 const mainNavigation = [
   { name: "Overview", href: "/admin", icon: LayoutDashboard },
+  { name: "User Accounts", href: "/admin/users", icon: Users },
 ];
 
 const telemedicineNavigation = [
