@@ -460,9 +460,36 @@ export const adminApi = {
     return res.data;
   },
 
-  getAuditLogs: async (page = 1, limit = 50) => {
+  getAuditLogs: async (
+    paramsOrPage?:
+      | {
+          page?: number;
+          limit?: number;
+          search?: string;
+          action?: string;
+          target_type?: string;
+          user_id?: string;
+          sort_by?: string;
+        }
+      | number,
+    limitParam?: number
+  ) => {
+    const params =
+      typeof paramsOrPage === "number"
+        ? { page: paramsOrPage, limit: limitParam || 25 }
+        : paramsOrPage || {};
+
+    const query = new URLSearchParams();
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+    if (params.search) query.append("search", params.search);
+    if (params.action && params.action !== "ALL") query.append("action", params.action);
+    if (params.target_type && params.target_type !== "ALL") query.append("target_type", params.target_type);
+    if (params.user_id) query.append("user_id", params.user_id);
+    if (params.sort_by) query.append("sort_by", params.sort_by);
+
     const res = await fetchApi<PaginatedData<{
-      id?: string;
+      id: string;
       user_id?: string;
       action: string;
       target_type: string;
@@ -470,7 +497,19 @@ export const adminApi = {
       details?: Record<string, any>;
       ip_address?: string;
       created_at: string;
-    }>>(`/admin/audit-logs?page=${page}&limit=${limit}`);
+      message?: string;
+    }>>(`/admin/audit-logs?${query.toString()}`);
+    return res.data;
+  },
+
+  getAuditStats: async () => {
+    const res = await fetchApi<{
+      total_logs: number;
+      auth_events: number;
+      pharmacy_events: number;
+      clinical_events: number;
+      admin_events: number;
+    }>("/admin/audit-logs/stats");
     return res.data;
   },
 };
