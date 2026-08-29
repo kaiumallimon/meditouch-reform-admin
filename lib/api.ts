@@ -749,8 +749,8 @@ export const pharmacyApi = {
     requires_prescription?: boolean;
     in_stock_only?: boolean;
     min_price?: number;
-    max_price?: number;
     manufacturer?: string;
+    sort_by?: string;
     page?: number;
     limit?: number;
   }) => {
@@ -765,6 +765,7 @@ export const pharmacyApi = {
     if (params.min_price !== undefined) query.append("min_price", String(params.min_price));
     if (params.max_price !== undefined) query.append("max_price", String(params.max_price));
     if (params.manufacturer) query.append("manufacturer", params.manufacturer);
+    if (params.sort_by) query.append("sort_by", params.sort_by);
     if (params.page) query.append("page", String(params.page));
     if (params.limit) query.append("limit", String(params.limit));
 

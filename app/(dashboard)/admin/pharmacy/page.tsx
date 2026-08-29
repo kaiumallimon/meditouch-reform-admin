@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Info,
   SlidersHorizontal,
+  ArrowUpDown,
   X,
   FileCode2,
   ShieldCheck,
@@ -67,6 +68,7 @@ export default function PharmacyAdminPage() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [selectedRx, setSelectedRx] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<string>("name_asc");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(24);
@@ -119,6 +121,7 @@ export default function PharmacyAdminPage() {
       const params: any = {
         page,
         limit,
+        sort_by: sortBy,
       };
       if (search.trim()) params.search = search.trim();
       if (selectedCategory !== "ALL") params.category = selectedCategory;
@@ -292,7 +295,7 @@ export default function PharmacyAdminPage() {
       loadMedicines();
     }, 250);
     return () => clearTimeout(timer);
-  }, [search, selectedCategory, selectedRx, page, limit]);
+  }, [search, selectedCategory, selectedRx, sortBy, page, limit]);
 
   // Scroll internal console box without moving page window
   useEffect(() => {
@@ -642,6 +645,27 @@ export default function PharmacyAdminPage() {
             <option value="OTC">OTC Only (No Rx)</option>
             <option value="RX">Prescription Required (Rx)</option>
           </select>
+
+          {/* Server-Side Sort Dropdown */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 shadow-xs">
+            <ArrowUpDown className="size-3.5 text-stone-400 shrink-0" />
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setPage(1);
+              }}
+              className="h-10 text-xs font-semibold text-stone-700 bg-transparent cursor-pointer outline-hidden pr-1"
+            >
+              <option value="name_asc">Name: A to Z</option>
+              <option value="name_desc">Name: Z to A</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="created_desc">Recently Added (Newest)</option>
+              <option value="created_asc">First Added (Oldest)</option>
+              <option value="manufacturer_asc">Manufacturer: A to Z</option>
+            </select>
+          </div>
 
           {/* View mode toggle */}
           <div className="flex items-center rounded-xl border border-stone-200 bg-stone-50 p-1 shadow-xs">
