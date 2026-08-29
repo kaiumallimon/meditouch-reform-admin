@@ -25,8 +25,9 @@ export function LoginForm() {
     try {
       const data = await authApi.login(identifier, password);
       
-      if (data.role !== "ADMIN") {
-        throw new Error("Access Denied: This portal is restricted to platform administrators only.");
+      const allowedRoles = ["ADMIN", "DEVELOPER"];
+      if (!allowedRoles.includes(data.role)) {
+        throw new Error("Access Denied: This portal is restricted to platform administrators and developers.");
       }
 
       saveSession(
@@ -42,11 +43,15 @@ export function LoginForm() {
       );
 
       toast.success("Welcome back!", {
-        description: `Signed in as ${data.name}`,
+        description: `Signed in as ${data.name} (${data.role === "DEVELOPER" ? "Developer" : "Admin"})`,
         icon: <CheckCircle2 className="size-4 text-emerald-600" />,
       });
 
-      router.push("/admin");
+      if (data.role === "DEVELOPER") {
+        router.push("/admin/docs");
+      } else {
+        router.push("/admin");
+      }
     } catch (err: any) {
       const msg = err.message || "Failed to sign in. Please verify your credentials.";
       setError(msg);

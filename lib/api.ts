@@ -366,6 +366,7 @@ export const adminApi = {
       total_doctors: number;
       total_nurses: number;
       total_admins: number;
+      total_developers?: number;
     }>("/admin/users/stats");
     return res.data;
   },

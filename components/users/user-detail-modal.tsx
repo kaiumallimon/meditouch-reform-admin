@@ -46,6 +46,7 @@ export function UserDetailModal({
 
   const roleColors: Record<string, string> = {
     ADMIN: "bg-[#5b15fc]/10 text-[#5b15fc] border-[#5b15fc]/20",
+    DEVELOPER: "bg-indigo-50 text-indigo-700 border-indigo-200",
     NURSE: "bg-teal-50 text-teal-700 border-teal-200",
     DOCTOR: "bg-blue-50 text-blue-700 border-blue-200",
     USER: "bg-amber-50 text-amber-700 border-amber-200",

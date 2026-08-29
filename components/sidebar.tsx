@@ -17,13 +17,18 @@ import {
   LogOut,
   AlertTriangle,
   Cloud,
-  Users
+  Users,
+  Code2
 } from "lucide-react";
 import { toast } from "sonner";
 
 const mainNavigation = [
   { name: "Overview", href: "/admin", icon: LayoutDashboard },
   { name: "User Accounts", href: "/admin/users", icon: Users },
+];
+
+const developerNavigation = [
+  { name: "API Docs & SDKs", href: "/admin/docs", icon: Code2, badge: "SDK" },
 ];
 
 const telemedicineNavigation = [
@@ -101,13 +106,22 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-500" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="truncate text-xs font-bold text-stone-900">
                   {fullName}
                 </p>
+                {user?.role === "DEVELOPER" ? (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 text-[9px] font-bold text-indigo-700 font-mono">
+                    DEV
+                  </span>
+                ) : user?.role === "ADMIN" ? (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 border border-purple-200 px-1.5 py-0.2 text-[9px] font-bold text-[#5b15fc] font-mono">
+                    ADMIN
+                  </span>
+                ) : null}
               </div>
               <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">
-                {user?.email || "Platform Admin"}
+                {user?.email || (user?.role === "DEVELOPER" ? "Platform Developer" : "Platform Admin")}
               </p>
             </div>
           </div>
@@ -138,6 +152,52 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               );
             })}
           </nav>
+
+          {/* Developer / API Section */}
+          <div>
+            <div className="flex items-center justify-between px-3 mb-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                Developer Hub
+              </p>
+              <span className="rounded bg-indigo-100/80 text-indigo-700 px-1.5 py-0.2 text-[9px] font-mono font-bold">
+                API & SDK
+              </span>
+            </div>
+            <nav className="space-y-1">
+              {developerNavigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = isRouteActive(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={cn(
+                      "flex items-center justify-between rounded-full px-3.5 py-2 text-xs transition-all group",
+                      isActive
+                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="size-4 shrink-0" />
+                      <span>{item.name}</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-tight",
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-indigo-50 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-100"
+                      )}
+                    >
+                      {item.badge}
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
           {/* Telemedicine Section */}
           <div>

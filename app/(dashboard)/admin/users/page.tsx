@@ -28,9 +28,11 @@ import {
   HeartPulse,
   KeyRound,
   Shield,
-  Send
+  Send,
+  Code2
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -46,6 +48,7 @@ export default function UsersAdminPage() {
     total_doctors: number;
     total_nurses: number;
     total_admins: number;
+    total_developers?: number;
   } | null>(null);
 
   // Pagination states (Server-side)
@@ -219,6 +222,8 @@ export default function UsersAdminPage() {
     switch (role?.toUpperCase()) {
       case "ADMIN":
         return "bg-[#5b15fc]/10 text-[#5b15fc] border-[#5b15fc]/20";
+      case "DEVELOPER":
+        return "bg-indigo-50 text-indigo-700 border-indigo-200";
       case "NURSE":
         return "bg-teal-50 text-teal-700 border-teal-200";
       case "DOCTOR":
@@ -265,8 +270,8 @@ export default function UsersAdminPage() {
         </div>
       </div>
 
-      {/* 2. STAT CARDS (6 DEDICATED METRICS) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
+      {/* 2. STAT CARDS (7 DEDICATED METRICS) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-3.5">
         {/* Total Users */}
         <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between">
@@ -276,9 +281,13 @@ export default function UsersAdminPage() {
             </div>
           </div>
           <div>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.total_users || 0}
-            </p>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.total_users || 0}
+              </p>
+            )}
             <p className="text-[10px] text-stone-400 truncate mt-0.5">Platform accounts</p>
           </div>
         </div>
@@ -292,9 +301,13 @@ export default function UsersAdminPage() {
             </div>
           </div>
           <div>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.active_users || 0}
-            </p>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.active_users || 0}
+              </p>
+            )}
             <p className="text-[10px] text-stone-400 truncate mt-0.5">Live access</p>
           </div>
         </div>
@@ -308,10 +321,34 @@ export default function UsersAdminPage() {
             </div>
           </div>
           <div>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.total_regular_users || 0}
-            </p>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.total_regular_users || 0}
+              </p>
+            )}
             <p className="text-[10px] text-stone-400 truncate mt-0.5">Service consumers</p>
+          </div>
+        </div>
+
+        {/* Developers */}
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Developers</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+              <Code2 className="size-4" />
+            </div>
+          </div>
+          <div>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.total_developers || 0}
+              </p>
+            )}
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">API Integrators</p>
           </div>
         </div>
 
@@ -324,9 +361,13 @@ export default function UsersAdminPage() {
             </div>
           </div>
           <div>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.total_doctors || 0}
-            </p>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.total_doctors || 0}
+              </p>
+            )}
             <p className="text-[10px] text-stone-400 truncate mt-0.5">Practitioners</p>
           </div>
         </div>
@@ -340,9 +381,13 @@ export default function UsersAdminPage() {
             </div>
           </div>
           <div>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.total_nurses || 0}
-            </p>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.total_nurses || 0}
+              </p>
+            )}
             <p className="text-[10px] text-stone-400 truncate mt-0.5">Healthcare staff</p>
           </div>
         </div>
@@ -356,9 +401,13 @@ export default function UsersAdminPage() {
             </div>
           </div>
           <div>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
-              {statsLoading ? "..." : stats?.total_admins || 0}
-            </p>
+            {statsLoading ? (
+              <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+            ) : (
+              <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+                {stats?.total_admins || 0}
+              </p>
+            )}
             <p className="text-[10px] text-stone-400 truncate mt-0.5">System managers</p>
           </div>
         </div>
@@ -393,6 +442,7 @@ export default function UsersAdminPage() {
               >
                 <option value="ALL">All Roles</option>
                 <option value="ADMIN">ADMIN</option>
+                <option value="DEVELOPER">DEVELOPER</option>
                 <option value="NURSE">NURSE</option>
                 <option value="DOCTOR">DOCTOR</option>
                 <option value="USER">USER</option>
@@ -462,12 +512,94 @@ export default function UsersAdminPage() {
 
       {/* 4. MAIN DATA VIEW (TABLE OR GRID) */}
       {loading ? (
-        <div className="flex min-h-[350px] items-center justify-center neo-card rounded-[22px] bg-white p-8">
-          <div className="text-center space-y-3">
-            <Spinner className="size-8 text-[#5b15fc] mx-auto" />
-            <p className="text-xs font-semibold text-stone-500">Loading user directory...</p>
+        viewMode === "table" ? (
+          <div className="neo-card rounded-[22px] bg-white overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-stone-200/80 bg-stone-50/70 text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                    <th className="py-3 px-4 w-10">
+                      <Skeleton className="size-4 rounded" />
+                    </th>
+                    <th className="py-3 px-4">User Details</th>
+                    <th className="py-3 px-4">Role</th>
+                    <th className="py-3 px-4">Phone (Login)</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Created Date</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={`user-table-skeleton-${i}`} className="hover:bg-stone-50/40">
+                      <td className="py-3 px-4">
+                        <Skeleton className="size-4 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="size-9 rounded-full shrink-0" />
+                          <div className="space-y-1.5 flex-1">
+                            <Skeleton className="h-3.5 w-32 rounded" />
+                            <Skeleton className="h-2.5 w-20 rounded" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-3.5 w-24 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-3.5 w-36 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-3.5 w-20 rounded" />
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Skeleton className="size-7 rounded-lg" />
+                          <Skeleton className="size-7 rounded-lg" />
+                          <Skeleton className="size-7 rounded-lg" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={`user-grid-skeleton-${i}`}
+                className="neo-card rounded-2xl bg-white p-4 shadow-xs space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <Skeleton className="size-10 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                  <Skeleton className="h-3 w-2/3 rounded" />
+                </div>
+                <div className="pt-2 border-t border-stone-100 flex items-center justify-between">
+                  <Skeleton className="h-4 w-16 rounded" />
+                  <div className="flex gap-1">
+                    <Skeleton className="size-7 rounded-lg" />
+                    <Skeleton className="size-7 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : users.length === 0 ? (
         <div className="flex min-h-[350px] flex-col items-center justify-center neo-card rounded-[22px] bg-white p-8 text-center">
           <div className="flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 mb-3">

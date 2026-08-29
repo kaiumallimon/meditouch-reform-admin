@@ -178,6 +178,7 @@ export function EditUserModal({ user, isOpen, onClose, onSuccess, currentUserId 
                 className="w-full h-10 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-800 shadow-xs outline-hidden cursor-pointer"
               >
                 <option value="ADMIN">ADMIN (Administrator)</option>
+                <option value="DEVELOPER">DEVELOPER (API & Technical Integrator)</option>
                 <option value="NURSE">NURSE (Healthcare Staff)</option>
                 <option value="DOCTOR">DOCTOR (Service Practitioner)</option>
                 <option value="USER">USER (General User)</option>

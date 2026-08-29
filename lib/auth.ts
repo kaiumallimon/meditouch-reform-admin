@@ -44,3 +44,13 @@ export function isAdmin(): boolean {
   return session?.role === "ADMIN";
 }
 
+export function isDeveloper(): boolean {
+  const session = getSession();
+  return session?.role === "DEVELOPER";
+}
+
+export function isStaff(): boolean {
+  const session = getSession();
+  return session?.role === "ADMIN" || session?.role === "DEVELOPER";
+}
+
