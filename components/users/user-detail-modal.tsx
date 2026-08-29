@@ -55,10 +55,10 @@ export function UserDetailModal({
   const roleBadgeClass = roleColors[currentRole] || roleColors.USER;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-3 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in">
-      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto neo-card rounded-[24px] bg-white p-5 sm:p-6 md:p-7 shadow-2xl space-y-5 sm:space-y-6 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in">
+      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto neo-card rounded-[24px] bg-white p-6 sm:p-7 shadow-2xl space-y-6 my-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-200 pb-3.5 sm:pb-4">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-500">
             <Shield className="size-4 text-[#5b15fc] shrink-0" />
             <span className="truncate">Account Security & Profile Details</span>
@@ -72,9 +72,9 @@ export function UserDetailModal({
         </div>
 
         {/* Hero Card */}
-        <div className={`flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded-2xl border p-4 sm:p-5 ${
+        <div className={`flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded-2xl border p-5 ${
           isCurrentUser
-            ? "border-[#5b15fc]/40 bg-[#5b15fc]/5 ring-1 ring-[#5b15fc]/30"
+            ? "border-[#5b15fc]/30 bg-[#5b15fc]/5"
             : "border-stone-200 bg-stone-50/70"
         }`}>
           <div className="size-16 sm:size-20 shrink-0 rounded-full border-2 border-stone-200 bg-white overflow-hidden flex items-center justify-center shadow-xs">
@@ -98,20 +98,20 @@ export function UserDetailModal({
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-mono text-stone-500 mt-1 break-all">ID: {user.id}</p>
+                <p className="text-xs font-mono text-stone-400 mt-1 break-all">ID: {user.id}</p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
-                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider border whitespace-nowrap ${roleBadgeClass}`}>
+              <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${roleBadgeClass}`}>
                   {user.role}
                 </span>
                 {user.is_active ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-1 text-xs font-semibold border border-emerald-300 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-0.5 text-[10px] font-bold border border-emerald-200 whitespace-nowrap">
                     <span className="size-1.5 rounded-full bg-emerald-500" />
                     Active
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200 text-stone-600 px-2.5 py-1 text-xs font-semibold whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 text-stone-600 px-2.5 py-0.5 text-[10px] font-bold border border-stone-200 whitespace-nowrap">
                     <span className="size-1.5 rounded-full bg-stone-400" />
                     Inactive
                   </span>
@@ -122,7 +122,7 @@ export function UserDetailModal({
         </div>
 
         {/* Information Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
           <div className="rounded-xl border border-stone-200 bg-white p-3.5 space-y-1 shadow-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
               <Phone className="size-3.5 text-stone-500 shrink-0" />
@@ -192,56 +192,52 @@ export function UserDetailModal({
           </p>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 border-t border-stone-200 pt-4">
-          <div className="flex flex-col xs:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-            <button
-              disabled={isCurrentUser}
-              onClick={() => {
-                if (isCurrentUser) return;
-                onClose();
-                onDelete(user);
-              }}
-              title={isCurrentUser ? "You cannot delete your own logged-in administrator account" : "Soft Delete Account"}
-              className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2.5 sm:py-2 text-xs font-semibold shadow-xs transition-all whitespace-nowrap ${
-                isCurrentUser
-                  ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed opacity-60"
-                  : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer"
-              }`}
-            >
-              <Trash2 className="size-3.5 shrink-0" />
-              <span>Soft Delete Account</span>
-            </button>
+        {/* Modal Footer Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
+          <div className="flex items-center gap-2">
+            {!isCurrentUser && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onDelete(user);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 shadow-xs cursor-pointer transition-all whitespace-nowrap"
+              >
+                <Trash2 className="size-3.5 shrink-0" />
+                <span>Soft Delete Account</span>
+              </button>
+            )}
 
             <button
               onClick={() => {
                 onClose();
                 onEdit(user);
               }}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer transition-all whitespace-nowrap"
             >
               <Edit2 className="size-3.5 shrink-0" />
               <span>Edit Account</span>
             </button>
           </div>
 
-          <button
-            disabled={processingId === user.id || isCurrentUser}
-            onClick={() => {
-              if (isCurrentUser) return;
-              onToggleActive(user.id, user.is_active);
-            }}
-            title={isCurrentUser ? "You cannot deactivate your own logged-in administrator account" : user.is_active ? "Deactivate Account" : "Activate Account"}
-            className={`w-full sm:w-auto rounded-xl px-4 py-2.5 sm:py-2 text-xs font-semibold shadow-xs transition-all whitespace-nowrap text-center ${
-              isCurrentUser
-                ? "border border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed opacity-60"
-                : user.is_active
-                ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 cursor-pointer"
-                : "bg-[#5b15fc] text-white hover:bg-[#4d0ee0] cursor-pointer"
-            }`}
-          >
-            {isCurrentUser ? "Logged In (Active)" : user.is_active ? "Deactivate Account" : "Activate Account"}
-          </button>
+          {!isCurrentUser ? (
+            <button
+              disabled={processingId === user.id}
+              onClick={() => onToggleActive(user.id, user.is_active)}
+              className={`rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition-all whitespace-nowrap cursor-pointer ${
+                user.is_active
+                  ? "border border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
+                  : "bg-[#5b15fc] text-white hover:bg-[#4d0ee0]"
+              }`}
+            >
+              {user.is_active ? "Deactivate Account" : "Activate Account"}
+            </button>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-stone-50 border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-500 whitespace-nowrap">
+              <Shield className="size-3.5 text-[#5b15fc]" />
+              <span>Current Active Session</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

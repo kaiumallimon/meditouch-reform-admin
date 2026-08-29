@@ -27,7 +27,7 @@ const mainNavigation = [
 ];
 
 const telemedicineNavigation = [
-  { name: "Doctor Verification", href: "/admin/doctors", icon: UserCheck },
+  { name: "Doctors", href: "/admin/doctors", icon: UserCheck },
   { name: "Appointments", href: "/admin/appointments", icon: Calendar },
   { name: "Consultations", href: "/admin/consultations", icon: Video },
 ];
