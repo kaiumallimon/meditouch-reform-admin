@@ -475,34 +475,6 @@ export const adminApi = {
   },
 };
 
-// 3. Pharmacy & Catalog API
-export const pharmacyApi = {
-  ingestMedEasy: async () => {
-    const res = await fetchApi<{ count: number }>("/pharmacy/admin/ingest-medeasy", {
-      method: "POST",
-    });
-    return res.data;
-  },
-
-  listMedicines: async (page = 1, limit = 20) => {
-    const res = await fetchApi<PaginatedData<{
-      id: string;
-      name: string;
-      brand: string;
-      generic_name: string;
-      strength: string;
-      dosage_form: string;
-      category: string;
-      manufacturer: string;
-      unit_price: number;
-      pack_size: string;
-      in_stock: boolean;
-      stock_count: number;
-    }>>(`/pharmacy/medicines?page=${page}&limit=${limit}`);
-    return res.data;
-  },
-};
-
 // 4. Orders API
 export const ordersApi = {
   listAllOrders: async (page = 1, limit = 20, status?: string) => {
@@ -669,3 +641,193 @@ export const mediaApi = {
     return res.data;
   },
 };
+
+// 7. E-Pharmacy & MedEasy Crawler API
+export interface UnitPriceItem {
+  id?: any;
+  unit: string;
+  unit_size: number;
+  price: number;
+}
+
+export interface MedicineItem {
+  id: string;
+  medeasy_id?: number;
+  medicine_name?: string;
+  name?: string;
+  brand: string;
+  generic_name: string;
+  strength: string;
+  dosage_form: string;
+  category?: string;
+  category_name?: string;
+  category_slug?: string;
+  slug?: string;
+  manufacturer: string;
+  manufacturer_name?: string;
+  manufacturer_slug?: string;
+  unit_price: number;
+  pack_size: string;
+  unit_prices: UnitPriceItem[];
+  discount_type?: string;
+  discount_value: number;
+  is_discountable: boolean;
+  is_available: boolean;
+  rx_required: boolean;
+  requires_prescription: boolean;
+  medicine_image?: string;
+  description?: string;
+  in_stock: boolean;
+  stock_count: number;
+  is_active: boolean;
+  source?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MedicineDetailData {
+  id?: string;
+  medicine_id?: string;
+  slug: string;
+  medicine_name: string;
+  generic_name: string;
+  category_name?: string;
+  category_slug?: string;
+  manufacturer_name?: string;
+  meta_title?: string;
+  meta_description?: string;
+  product_info?: any;
+  medicine_details?: Record<string, string>;
+  related_medicines?: any[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CrawlerSettings {
+  api_base_url: string;
+  next_data_base_url: string;
+  session_id: string;
+  category_slug: string;
+  category_name: string;
+  rate_limit_delay_seconds: number;
+  max_pages?: number | null;
+  updated_at?: string;
+}
+
+export interface CrawlerStatus {
+  job_id?: string | null;
+  is_running: boolean;
+  status: string;
+  category_slug: string;
+  current_page: number;
+  total_pages: number;
+  total_products_found: number;
+  inserted_count: number;
+  skipped_count: number;
+  failed_count: number;
+  started_at?: string | null;
+  finished_at?: string | null;
+  logs: string[];
+}
+
+export interface PharmacyStats {
+  total_medicines: number;
+  in_stock_medicines: number;
+  total_categories: number;
+  total_manufacturers: number;
+  last_crawled_at?: string | null;
+  crawler_status: string;
+}
+
+export const pharmacyApi = {
+  listMedicines: async (params: {
+    search?: string;
+    generic_name?: string;
+    category?: string;
+    category_slug?: string;
+    category_name?: string;
+    requires_prescription?: boolean;
+    in_stock_only?: boolean;
+    min_price?: number;
+    max_price?: number;
+    manufacturer?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append("search", params.search);
+    if (params.generic_name) query.append("generic_name", params.generic_name);
+    if (params.category) query.append("category", params.category);
+    if (params.category_slug) query.append("category_slug", params.category_slug);
+    if (params.category_name) query.append("category_name", params.category_name);
+    if (params.requires_prescription !== undefined) query.append("requires_prescription", String(params.requires_prescription));
+    if (params.in_stock_only !== undefined) query.append("in_stock_only", String(params.in_stock_only));
+    if (params.min_price !== undefined) query.append("min_price", String(params.min_price));
+    if (params.max_price !== undefined) query.append("max_price", String(params.max_price));
+    if (params.manufacturer) query.append("manufacturer", params.manufacturer);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+
+    const res = await fetchApi<PaginatedData<MedicineItem>>(`/pharmacy/medicines?${query.toString()}`);
+    return res.data;
+  },
+
+  getMedicine: async (slugOrId: string) => {
+    const res = await fetchApi<MedicineItem>(`/pharmacy/medicines/${slugOrId}`);
+    return res.data;
+  },
+
+  getMedicineDetails: async (slug: string) => {
+    const res = await fetchApi<MedicineDetailData>(`/pharmacy/medicines/${slug}/details`);
+    return res.data;
+  },
+
+  getCategories: async () => {
+    const res = await fetchApi<Array<{ category: string; count: number }>>("/pharmacy/categories");
+    return res.data;
+  },
+
+  getStats: async () => {
+    const res = await fetchApi<PharmacyStats>("/pharmacy/stats");
+    return res.data;
+  },
+
+  getCrawlerSettings: async () => {
+    const res = await fetchApi<CrawlerSettings>("/pharmacy/crawler/settings");
+    return res.data;
+  },
+
+  updateCrawlerSettings: async (payload: Partial<CrawlerSettings>) => {
+    const res = await fetchApi<CrawlerSettings>("/pharmacy/crawler/settings", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  startCrawler: async (payload?: { category_slug?: string; start_page?: number; max_pages?: number }) => {
+    const res = await fetchApi<CrawlerStatus>("/pharmacy/crawler/start", {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    });
+    return res.data;
+  },
+
+  stopCrawler: async () => {
+    const res = await fetchApi<CrawlerStatus>("/pharmacy/crawler/stop", {
+      method: "POST",
+    });
+    return res.data;
+  },
+
+  getCrawlerStatus: async () => {
+    const res = await fetchApi<CrawlerStatus>("/pharmacy/crawler/status");
+    return res.data;
+  },
+
+  getCrawlerHistory: async () => {
+    const res = await fetchApi<any[]>("/pharmacy/crawler/history");
+    return res.data;
+  },
+};
+

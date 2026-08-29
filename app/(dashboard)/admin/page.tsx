@@ -74,9 +74,9 @@ export default function AdminDashboardPage() {
   const handleSyncMedEasy = async () => {
     try {
       setSyncingCatalog(true);
-      const res = await pharmacyApi.ingestMedEasy();
-      toast.success("MedEasy Catalog Ingested", {
-        description: `Successfully synchronized ${res.count} medicine records.`,
+      const res = await pharmacyApi.startCrawler({ category_slug: "otc-medicine" });
+      toast.success("MedEasy Catalog Crawler Started", {
+        description: `Initiated background ingestion for OTC medicines.`,
       });
       await loadDashboardData();
     } catch (err: any) {

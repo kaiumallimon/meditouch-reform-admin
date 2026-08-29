@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
-import { pharmacyApi } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   Pill,
   Search,
@@ -11,22 +10,106 @@ import {
   CheckCircle2,
   AlertCircle,
   Package,
-  Sparkles
+  Sparkles,
+  Settings2,
+  FolderTree,
+  Building2,
+  Activity,
+  Play,
+  Square,
+  LayoutGrid,
+  Table as TableIcon,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Info,
+  SlidersHorizontal,
+  X,
+  FileCode2,
+  ShieldCheck,
+  Zap
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { formatCurrency } from "@/lib/utils";
+import {
+  pharmacyApi,
+  MedicineItem,
+  PharmacyStats,
+  CrawlerSettings,
+  CrawlerStatus
+} from "@/lib/api";
 import { toast } from "sonner";
 
 export default function PharmacyAdminPage() {
-  const [medicines, setMedicines] = useState<any[]>([]);
+  const [medicines, setMedicines] = useState<MedicineItem[]>([]);
+  const [stats, setStats] = useState<PharmacyStats | null>(null);
+  const [categories, setCategories] = useState<Array<{ category: string; count: number }>>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [search, setSearch] = useState("");
+  const [statsLoading, setStatsLoading] = useState(true);
 
+  // Filters & Pagination
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [selectedRx, setSelectedRx] = useState<string>("ALL");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Crawler State
+  const [crawlerStatus, setCrawlerStatus] = useState<CrawlerStatus | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showCrawlerLogs, setShowCrawlerLogs] = useState(false);
+  const [crawlerSettings, setCrawlerSettings] = useState<CrawlerSettings>({
+    api_base_url: "https://api.medeasy.health",
+    next_data_base_url: "https://medeasy.health",
+    session_id: "uWWQE90f364vl5aK7aV00",
+    category_slug: "otc-medicine",
+    category_name: "OTC Medicine",
+    rate_limit_delay_seconds: 0.3,
+    max_pages: null
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [triggeringCrawler, setTriggeringCrawler] = useState(false);
+
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. Fetch Stats & Categories
+  const loadStatsAndCategories = async () => {
+    try {
+      setStatsLoading(true);
+      const [statsData, catsData, settingsData] = await Promise.all([
+        pharmacyApi.getStats().catch(() => null),
+        pharmacyApi.getCategories().catch(() => []),
+        pharmacyApi.getCrawlerSettings().catch(() => null),
+      ]);
+      if (statsData) setStats(statsData);
+      if (catsData) setCategories(catsData);
+      if (settingsData) setCrawlerSettings(settingsData);
+    } catch (err: any) {
+      console.error("Stats load error:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // 2. Fetch Medicines with pagination & filters
   const loadMedicines = async () => {
     try {
       setLoading(true);
-      const data = await pharmacyApi.listMedicines(1, 100);
+      const params: any = {
+        page,
+        limit: 24,
+      };
+      if (search.trim()) params.search = search.trim();
+      if (selectedCategory !== "ALL") params.category = selectedCategory;
+      if (selectedRx === "RX") params.requires_prescription = true;
+      if (selectedRx === "OTC") params.requires_prescription = false;
+
+      const data = await pharmacyApi.listMedicines(params);
       setMedicines(data.items || []);
+      setTotalPages(data.total_pages || 1);
+      setTotalCount(data.total || 0);
     } catch (err: any) {
       toast.error("Failed to load medicine catalog", { description: err.message });
     } finally {
@@ -34,66 +117,149 @@ export default function PharmacyAdminPage() {
     }
   };
 
-  useEffect(() => {
-    loadMedicines();
-  }, []);
-
-  const handleSyncMedEasy = async () => {
+  // 3. Poll Crawler Status
+  const pollCrawlerStatus = async () => {
     try {
-      setSyncing(true);
-      const res = await pharmacyApi.ingestMedEasy();
-      toast.success("MedEasy Sync Complete", {
-        description: `Successfully ingested/updated ${res.count} medicines.`,
-      });
-      await loadMedicines();
-    } catch (err: any) {
-      toast.error("Ingestion failed", { description: err.message });
-    } finally {
-      setSyncing(false);
+      const status = await pharmacyApi.getCrawlerStatus();
+      setCrawlerStatus(status);
+    } catch (err) {
+      // silent poll error
     }
   };
 
-  const filtered = medicines.filter((m) =>
-    m.brand?.toLowerCase().includes(search.toLowerCase()) ||
-    m.generic_name?.toLowerCase().includes(search.toLowerCase()) ||
-    m.manufacturer?.toLowerCase().includes(search.toLowerCase()) ||
-    m.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    loadStatsAndCategories();
+    pollCrawlerStatus();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadMedicines();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search, selectedCategory, selectedRx, page]);
+
+  // Polling interval when crawler is running
+  useEffect(() => {
+    let interval: any;
+    if (crawlerStatus?.is_running) {
+      interval = setInterval(() => {
+        pollCrawlerStatus();
+        loadStatsAndCategories();
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [crawlerStatus?.is_running]);
+
+  // Auto-scroll logs
+  useEffect(() => {
+    if (showCrawlerLogs && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [crawlerStatus?.logs, showCrawlerLogs]);
+
+  // Handlers
+  const handleStartCrawler = async () => {
+    try {
+      setTriggeringCrawler(true);
+      const status = await pharmacyApi.startCrawler({
+        category_slug: crawlerSettings.category_slug,
+        start_page: 1,
+      });
+      setCrawlerStatus(status);
+      setShowCrawlerLogs(true);
+      toast.success("MedEasy Crawler Launched", {
+        description: `Ingesting category '${crawlerSettings.category_slug}' with duplicate skipping.`,
+      });
+    } catch (err: any) {
+      toast.error("Crawler start failed", { description: err.message });
+    } finally {
+      setTriggeringCrawler(false);
+    }
+  };
+
+  const handleStopCrawler = async () => {
+    try {
+      const status = await pharmacyApi.stopCrawler();
+      setCrawlerStatus(status);
+      toast.info("Crawler Stop Requested");
+    } catch (err: any) {
+      toast.error("Failed to stop crawler", { description: err.message });
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSavingSettings(true);
+      const updated = await pharmacyApi.updateCrawlerSettings(crawlerSettings);
+      setCrawlerSettings(updated);
+      setShowSettingsModal(false);
+      toast.success("Crawler Settings Saved", {
+        description: "API base URLs and session configurations updated successfully.",
+      });
+    } catch (err: any) {
+      toast.error("Failed to save crawler settings", { description: err.message });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900">
-            Medicine Catalog & Inventory
+            Medicine Catalog & Discovery
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Pharmaceutical database synchronized with MedEasy Bangladesh catalog.
+            Comprehensive pharmaceutical database synchronized with MedEasy Bangladesh catalog.
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleSyncMedEasy}
-            disabled={syncing}
-            className="flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50"
-          >
-            {syncing ? (
-              <>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {crawlerStatus?.is_running ? (
+            <button
+              onClick={handleStopCrawler}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 shadow-xs cursor-pointer transition-all"
+            >
+              <Square className="size-3.5 fill-rose-700" />
+              <span>Stop Crawl</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleStartCrawler}
+              disabled={triggeringCrawler}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold neo-button shadow-[2px_2px_0px_0px_#1C1917] hover:bg-[#4d0ee0] disabled:opacity-50 cursor-pointer transition-all"
+            >
+              {triggeringCrawler ? (
                 <Spinner className="size-3.5 text-white" />
-                <span>Ingesting Catalog...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="size-3.5" />
-                <span>Sync MedEasy Catalog</span>
-              </>
-            )}
-          </button>
+              ) : (
+                <Play className="size-3.5 fill-white" />
+              )}
+              <span>Run MedEasy Crawler</span>
+            </button>
+          )}
+
           <button
-            onClick={loadMedicines}
+            onClick={() => setShowSettingsModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
+          >
+            <Settings2 className="size-3.5 text-stone-500" />
+            <span>Crawler Settings</span>
+          </button>
+
+          <button
+            onClick={() => {
+              loadMedicines();
+              loadStatsAndCategories();
+              pollCrawlerStatus();
+            }}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
           >
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
@@ -101,100 +267,652 @@ export default function PharmacyAdminPage() {
         </div>
       </div>
 
-      {/* Search Filter */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Top 5 Stat Metrics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="neo-card rounded-2xl bg-white p-4 space-y-2 border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              Total Catalog
+            </span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc]">
+              <Pill className="size-4" />
+            </div>
+          </div>
+          <p className="font-heading text-2xl font-normal text-stone-900">
+            {statsLoading ? "..." : (stats?.total_medicines || totalCount).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-stone-500 flex items-center gap-1 font-medium">
+            <span className="size-1.5 rounded-full bg-[#5b15fc]" />
+            Indexed Drugs
+          </p>
+        </div>
+
+        <div className="neo-card rounded-2xl bg-white p-4 space-y-2 border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              In Stock
+            </span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200">
+              <CheckCircle2 className="size-4" />
+            </div>
+          </div>
+          <p className="font-heading text-2xl font-normal text-stone-900">
+            {statsLoading ? "..." : (stats?.in_stock_medicines || 0).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-emerald-700 font-medium">Available for Order</p>
+        </div>
+
+        <div className="neo-card rounded-2xl bg-white p-4 space-y-2 border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              Categories
+            </span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+              <FolderTree className="size-4" />
+            </div>
+          </div>
+          <p className="font-heading text-2xl font-normal text-stone-900">
+            {statsLoading ? "..." : (stats?.total_categories || categories.length).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-stone-500 font-medium">Dosage Form Classifications</p>
+        </div>
+
+        <div className="neo-card rounded-2xl bg-white p-4 space-y-2 border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              Manufacturers
+            </span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+              <Building2 className="size-4" />
+            </div>
+          </div>
+          <p className="font-heading text-2xl font-normal text-stone-900">
+            {statsLoading ? "..." : (stats?.total_manufacturers || 0).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-stone-500 font-medium">Pharma Companies</p>
+        </div>
+
+        <div className="neo-card rounded-2xl bg-white p-4 space-y-2 border border-stone-200 shadow-xs col-span-2 md:col-span-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              Crawler Engine
+            </span>
+            <div className={`flex size-7 items-center justify-center rounded-lg ${
+              crawlerStatus?.is_running ? "bg-[#5b15fc] text-white animate-pulse" : "bg-purple-50 text-purple-700 border border-purple-200"
+            }`}>
+              <Activity className="size-4" />
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className={`size-2 rounded-full ${
+              crawlerStatus?.is_running ? "bg-[#5b15fc] animate-ping" : "bg-emerald-500"
+            }`} />
+            <p className="font-heading text-lg font-normal text-stone-900 capitalize truncate">
+              {crawlerStatus?.is_running ? "Crawling Live" : (crawlerStatus?.status || "Idle")}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCrawlerLogs(!showCrawlerLogs)}
+            className="text-[10px] text-[#5b15fc] font-bold hover:underline cursor-pointer block"
+          >
+            {showCrawlerLogs ? "Hide Console Logs" : "View Live Console Logs"}
+          </button>
+        </div>
+      </div>
+
+      {/* Live Crawler Status Banner / Progress */}
+      {crawlerStatus?.is_running && (
+        <div className="rounded-2xl border border-[#5b15fc]/30 bg-[#5b15fc]/5 p-4 sm:p-5 space-y-3 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-[#5b15fc] text-white shadow-xs">
+                <Sparkles className="size-5 animate-spin" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                  <span>Crawling Category:</span>
+                  <span className="font-mono text-[#5b15fc] bg-[#5b15fc]/10 px-2 py-0.5 rounded-md text-xs">
+                    {crawlerStatus.category_slug}
+                  </span>
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Page {crawlerStatus.current_page} of {crawlerStatus.total_pages || "..."} • Scanned {crawlerStatus.total_products_found} medicines
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold shadow-xs">
+                <span className="text-emerald-700 flex items-center gap-1">
+                  <CheckCircle2 className="size-3.5" /> {crawlerStatus.inserted_count} Inserted
+                </span>
+                <span className="text-stone-400">|</span>
+                <span className="text-amber-700 flex items-center gap-1">
+                  <Info className="size-3.5" /> {crawlerStatus.skipped_count} Skipped
+                </span>
+              </div>
+              <button
+                onClick={handleStopCrawler}
+                className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50 cursor-pointer shadow-xs"
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-[#5b15fc] h-full transition-all duration-500 rounded-full"
+              style={{
+                width: crawlerStatus.total_pages > 0
+                  ? `${Math.min(100, Math.round((crawlerStatus.current_page / crawlerStatus.total_pages) * 100))}%`
+                  : "20%"
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Live Console Logs Drawer */}
+      {showCrawlerLogs && (
+        <div className="rounded-2xl border border-stone-800 bg-stone-950 p-4 space-y-2 text-stone-200 font-mono text-xs shadow-xl animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-stone-800 pb-2">
+            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <Zap className="size-3.5" />
+              <span>Crawler Console Terminal Output</span>
+            </div>
+            <button
+              onClick={() => setShowCrawlerLogs(false)}
+              className="text-stone-400 hover:text-stone-200 cursor-pointer"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto space-y-1 text-[11px] pr-2 scrollbar-thin">
+            {crawlerStatus?.logs && crawlerStatus.logs.length > 0 ? (
+              crawlerStatus.logs.map((log, idx) => (
+                <p key={idx} className="leading-relaxed">
+                  <span className="text-stone-500 mr-1">$</span>
+                  <span className={log.includes("Inserted") ? "text-emerald-400 font-semibold" : log.includes("Skipped") ? "text-amber-400" : log.includes("Error") || log.includes("Failed") ? "text-rose-400 font-bold" : "text-stone-300"}>
+                    {log}
+                  </span>
+                </p>
+              ))
+            ) : (
+              <p className="text-stone-500 italic">No crawler logs recorded yet. Start crawler to view real-time events.</p>
+            )}
+            <div ref={logsEndRef} />
+          </div>
+        </div>
+      )}
+
+      {/* Search & Filter Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 neo-card rounded-2xl bg-white p-3.5 border border-stone-200 shadow-xs">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-stone-400" />
           <input
             placeholder="Search by brand name, generic formulation, manufacturer..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl pl-9 pr-4 text-xs font-medium text-stone-900 neo-input outline-hidden placeholder:text-stone-400"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="h-10 w-full rounded-xl pl-9 pr-4 text-xs font-medium text-stone-900 neo-input outline-hidden placeholder:text-stone-400"
           />
         </div>
-        <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-          Showing {filtered.length} Items
-        </span>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Rx Filter */}
+          <select
+            value={selectedRx}
+            onChange={(e) => {
+              setSelectedRx(e.target.value);
+              setPage(1);
+            }}
+            className="h-10 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 cursor-pointer shadow-xs outline-hidden"
+          >
+            <option value="ALL">All Prescription Types</option>
+            <option value="OTC">OTC Only (No Rx)</option>
+            <option value="RX">Prescription Required (Rx)</option>
+          </select>
+
+          {/* View mode toggle */}
+          <div className="flex items-center rounded-xl border border-stone-200 bg-stone-50 p-1 shadow-xs">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`rounded-lg p-1.5 transition-all cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-white text-[#5b15fc] shadow-xs font-bold"
+                  : "text-stone-500 hover:text-stone-800"
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`rounded-lg p-1.5 transition-all cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white text-[#5b15fc] shadow-xs font-bold"
+                  : "text-stone-500 hover:text-stone-800"
+              }`}
+              title="Table View"
+            >
+              <TableIcon className="size-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Catalog Table */}
-      <div className="neo-card rounded-[22px] p-6 bg-white">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Spinner className="size-8 text-[#5b15fc]" />
+      {/* Category Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          onClick={() => {
+            setSelectedCategory("ALL");
+            setPage(1);
+          }}
+          className={`rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            selectedCategory === "ALL"
+              ? "bg-[#5b15fc] text-white shadow-xs"
+              : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
+          }`}
+        >
+          All Medicines ({totalCount})
+        </button>
+        {categories.map((cat, idx) => (
+          <button
+            key={idx}
+            onClick={() => {
+              setSelectedCategory(cat.category);
+              setPage(1);
+            }}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              selectedCategory === cat.category
+                ? "bg-[#5b15fc] text-white shadow-xs"
+                : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
+            }`}
+          >
+            {cat.category} ({cat.count})
+          </button>
+        ))}
+      </div>
+
+      {/* Main Catalog View (Grid or Table) */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24 neo-card rounded-2xl bg-white border border-stone-200">
+          <Spinner className="size-8 text-[#5b15fc]" />
+          <p className="text-xs font-semibold text-stone-500 mt-3">Loading medicine catalog...</p>
+        </div>
+      ) : medicines.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 neo-card rounded-2xl bg-white border border-stone-200 text-center p-6">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 border border-stone-200 mb-3">
+            <Pill className="size-7" />
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 border border-stone-200 mb-2">
-              <Pill className="size-6" />
+          <h3 className="text-base font-bold text-stone-900">No Medicines Found</h3>
+          <p className="text-xs text-stone-500 max-w-md mt-1 mb-4">
+            No pharmaceutical products match your current search or category filter. Launch the crawler to populate catalog.
+          </p>
+          <button
+            onClick={handleStartCrawler}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#5b15fc] text-white px-4 py-2 text-xs font-bold shadow-xs hover:bg-[#4d0ee0] cursor-pointer"
+          >
+            <Sparkles className="size-4" />
+            <span>Launch MedEasy Crawler</span>
+          </button>
+        </div>
+      ) : viewMode === "grid" ? (
+        /* GRID VIEW */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {medicines.map((med) => (
+            <div
+              key={med.id || med.slug}
+              className="neo-card rounded-2xl bg-white border border-stone-200 p-4 flex flex-col justify-between hover:shadow-md transition-all group"
+            >
+              <div className="space-y-3">
+                {/* Image & Badges */}
+                <div className="relative aspect-4/3 w-full rounded-xl bg-stone-50 border border-stone-100 flex items-center justify-center overflow-hidden p-3">
+                  {med.medicine_image ? (
+                    <img
+                      src={med.medicine_image}
+                      alt={med.medicine_name || med.brand}
+                      className="size-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      onError={(e: any) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <Pill className="size-10 text-stone-300" />
+                  )}
+
+                  <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    <span className="rounded-md bg-stone-900/80 text-white backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                      {med.dosage_form || med.category_name || "Tablet"}
+                    </span>
+                  </div>
+
+                  {med.rx_required ? (
+                    <span className="absolute top-2 right-2 rounded-md bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 text-[9px] font-bold">
+                      Rx
+                    </span>
+                  ) : (
+                    <span className="absolute top-2 right-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold">
+                      OTC
+                    </span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-1">
+                    <h3 className="font-heading text-base font-normal text-stone-900 group-hover:text-[#5b15fc] transition-colors line-clamp-1">
+                      {med.medicine_name || med.brand}
+                    </h3>
+                    {med.strength && (
+                      <span className="text-[11px] font-bold text-stone-500 shrink-0">
+                        {med.strength}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-stone-500 line-clamp-1 italic font-medium">
+                    {med.generic_name}
+                  </p>
+                  <p className="text-[11px] text-stone-400 line-clamp-1">
+                    {med.manufacturer_name || med.manufacturer}
+                  </p>
+                </div>
+              </div>
+
+              {/* Price & Action */}
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] text-stone-400 font-medium">Price</p>
+                  <p className="font-bold text-stone-900 text-sm">
+                    {formatCurrency(med.unit_price || 0)}
+                  </p>
+                </div>
+
+                <Link
+                  href={`/admin/pharmacy/${med.slug || med.id}`}
+                  className="inline-flex items-center gap-1 rounded-xl bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-800 hover:bg-[#5b15fc] hover:text-white transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Details</span>
+                  <ExternalLink className="size-3" />
+                </Link>
+              </div>
             </div>
-            <p className="text-sm font-bold text-stone-900">No Medicines Found</p>
-            <p className="text-xs text-stone-500 mt-1">
-              Click &quot;Sync MedEasy Catalog&quot; to ingest the verified Bangladesh drug database.
-            </p>
-          </div>
-        ) : (
+          ))}
+        </div>
+      ) : (
+        /* TABLE VIEW */
+        <div className="neo-card rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                  <th className="pb-3 pr-4">Brand / Generic Name</th>
-                  <th className="pb-3 px-4">Dosage / Strength</th>
-                  <th className="pb-3 px-4">Manufacturer</th>
-                  <th className="pb-3 px-4">Unit Price</th>
-                  <th className="pb-3 px-4">Pack Size</th>
-                  <th className="pb-3 pl-4 text-right">Availability</th>
+              <thead className="bg-stone-50/80 border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                <tr>
+                  <th className="py-3 px-4">Product Name & Formulation</th>
+                  <th className="py-3 px-4">Dosage / Strength</th>
+                  <th className="py-3 px-4">Manufacturer</th>
+                  <th className="py-3 px-4">Unit Pricing</th>
+                  <th className="py-3 px-4">Rx Required</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-stone-50/70 transition-colors">
-                    <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20">
-                          <Package className="size-4" />
+                {medicines.map((med) => (
+                  <tr key={med.id || med.slug} className="hover:bg-stone-50/70 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 shrink-0 rounded-lg bg-stone-50 border border-stone-200 overflow-hidden p-1 flex items-center justify-center">
+                          {med.medicine_image ? (
+                            <img
+                              src={med.medicine_image}
+                              alt={med.medicine_name || med.brand}
+                              className="size-full object-contain"
+                            />
+                          ) : (
+                            <Pill className="size-5 text-stone-300" />
+                          )}
                         </div>
-                        <div>
-                          <p className="font-bold text-stone-900 text-xs">{item.brand}</p>
-                          <p className="text-[11px] text-stone-500">{item.generic_name}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-stone-900 text-xs truncate">
+                            {med.medicine_name || med.brand}
+                          </p>
+                          <p className="text-[11px] text-stone-500 truncate">{med.generic_name}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-stone-700">
-                      <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-mono font-bold">
-                        {item.dosage_form}
+                    <td className="py-3 px-4 text-stone-700">
+                      <span className="rounded-md border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-bold">
+                        {med.dosage_form || med.category_name}
                       </span>{" "}
-                      {item.strength}
+                      {med.strength}
                     </td>
-                    <td className="py-3.5 px-4 text-stone-600 font-medium">
-                      {item.manufacturer}
+                    <td className="py-3 px-4 text-stone-600 font-medium">
+                      {med.manufacturer_name || med.manufacturer}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-stone-900">
-                      {formatCurrency(item.unit_price)}
-                    </td>
-                    <td className="py-3.5 px-4 text-stone-500 font-medium">
-                      {item.pack_size || "Per Unit"}
-                    </td>
-                    <td className="py-3.5 pl-4 text-right">
-                      {item.in_stock ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold uppercase">
-                          <CheckCircle2 className="size-3" />
-                          In Stock ({item.stock_count || 100})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 text-[10px] font-bold uppercase">
-                          <AlertCircle className="size-3" />
-                          Out of Stock
+                    <td className="py-3 px-4 font-bold text-stone-900">
+                      {formatCurrency(med.unit_price || 0)}
+                      {med.pack_size && (
+                        <span className="text-[10px] font-normal text-stone-400 block">
+                          {med.pack_size}
                         </span>
                       )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {med.rx_required ? (
+                        <span className="inline-flex rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 text-[10px] font-bold">
+                          Rx Required
+                        </span>
+                      ) : (
+                        <span className="inline-flex rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
+                          OTC Free
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Link
+                        href={`/admin/pharmacy/${med.slug || med.id}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5b15fc] hover:bg-[#5b15fc] hover:text-white transition-all shadow-xs cursor-pointer"
+                      >
+                        <span>View</span>
+                        <ExternalLink className="size-3" />
+                      </Link>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 neo-card rounded-2xl bg-white p-3.5 border border-stone-200 shadow-xs">
+          <p className="text-xs text-stone-500 font-medium">
+            Showing Page <strong className="text-stone-900">{page}</strong> of <strong className="text-stone-900">{totalPages}</strong> ({totalCount} total medicines)
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 cursor-pointer"
+            >
+              <ChevronLeft className="size-3.5" />
+              <span>Previous</span>
+            </button>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 cursor-pointer"
+            >
+              <span>Next</span>
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Crawler Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in">
+          <div className="w-full max-w-xl neo-card rounded-[24px] bg-white p-6 sm:p-7 shadow-2xl space-y-5 my-auto">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc]">
+                  <Settings2 className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-xl font-normal text-stone-900">Crawler Configuration</h3>
+                  <p className="text-xs text-stone-500">Customize external API endpoints, build session ID, and rates</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  API Base URL (Catalog Products & Images)
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={crawlerSettings.api_base_url}
+                  onChange={(e) =>
+                    setCrawlerSettings({ ...crawlerSettings, api_base_url: e.target.value })
+                  }
+                  placeholder="https://api.medeasy.health"
+                  className="h-9 w-full rounded-xl px-3 text-xs font-medium neo-input outline-hidden"
+                />
+                <p className="text-[10px] text-stone-400 mt-1">
+                  Used for category endpoints and full image resolution.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  Next.js Data Base URL (Medicine Details Endpoint)
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={crawlerSettings.next_data_base_url}
+                  onChange={(e) =>
+                    setCrawlerSettings({ ...crawlerSettings, next_data_base_url: e.target.value })
+                  }
+                  placeholder="https://medeasy.health"
+                  className="h-9 w-full rounded-xl px-3 text-xs font-medium neo-input outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Next.js Build Session ID
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={crawlerSettings.session_id}
+                    onChange={(e) =>
+                      setCrawlerSettings({ ...crawlerSettings, session_id: e.target.value })
+                    }
+                    placeholder="uWWQE90f364vl5aK7aV00"
+                    className="h-9 w-full rounded-xl px-3 text-xs font-mono font-bold neo-input outline-hidden text-[#5b15fc]"
+                  />
+                  <p className="text-[10px] text-stone-400 mt-1">
+                    Session build hash for Next.js data routing.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Target Category Slug
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={crawlerSettings.category_slug}
+                    onChange={(e) =>
+                      setCrawlerSettings({ ...crawlerSettings, category_slug: e.target.value })
+                    }
+                    placeholder="otc-medicine"
+                    className="h-9 w-full rounded-xl px-3 text-xs font-mono neo-input outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Rate Limit Delay (Seconds)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={crawlerSettings.rate_limit_delay_seconds}
+                    onChange={(e) =>
+                      setCrawlerSettings({
+                        ...crawlerSettings,
+                        rate_limit_delay_seconds: parseFloat(e.target.value) || 0.3,
+                      })
+                    }
+                    className="h-9 w-full rounded-xl px-3 text-xs font-medium neo-input outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Max Pages Limit (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={crawlerSettings.max_pages || ""}
+                    onChange={(e) =>
+                      setCrawlerSettings({
+                        ...crawlerSettings,
+                        max_pages: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                    placeholder="All Available Pages"
+                    className="h-9 w-full rounded-xl px-3 text-xs font-medium neo-input outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-stone-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(false)}
+                  className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-2 text-xs font-bold text-white hover:bg-[#4d0ee0] shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {savingSettings ? <Spinner className="size-3.5 text-white" /> : <CheckCircle2 className="size-3.5" />}
+                  <span>Save Configuration</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
