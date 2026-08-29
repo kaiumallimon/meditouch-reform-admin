@@ -240,7 +240,8 @@ export default function PublicMedicineDetailPage() {
         const data = await pharmacyApi.getMedicineDetails(slug);
         setMedicine(data);
       } catch (err: any) {
-        toast.error("Failed to load medicine details");
+        console.error("Medicine not found or failed to load:", err);
+        setMedicine(null);
       } finally {
         setLoading(false);
       }
