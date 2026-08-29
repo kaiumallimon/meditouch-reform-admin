@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated, isAdmin } from "@/lib/auth";
+import { isAuthenticated, isStaff } from "@/lib/auth";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { Sidebar } from "@/components/sidebar";
 import { Spinner } from "@/components/ui/spinner";
@@ -17,7 +17,7 @@ export default function DashboardLayout({
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated() || !isAdmin()) {
+    if (!isAuthenticated() || !isStaff()) {
       router.push("/login");
     } else {
       setAuthorized(true);
