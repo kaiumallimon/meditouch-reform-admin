@@ -25,6 +25,7 @@ import {
   X,
   Copy,
   ChevronRight,
+  ChevronDown,
   Stethoscope,
   Clock,
   AlertTriangle,
@@ -41,6 +42,189 @@ import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/utils";
 import { pharmacyApi, MedicineDetailData } from "@/lib/api";
 import { toast } from "sonner";
+
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+function parseFaqContent(rawContent: string): FaqItem[] {
+  if (!rawContent) return [];
+
+  // Normalize line breaks and remove extra HTML tags
+  const normalized = rawContent
+    .replace(/<br\s*[\/]?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+
+  const items: FaqItem[] = [];
+
+  // Split by Question markers (e.g. Q:, Question 1:, Q1., etc.)
+  const chunks = normalized.split(/(?=(?:^|\n)\s*(?:Q\s*\d*[:\.\-]|Question\s*\d*[:\.\-]))/i);
+
+  for (const chunk of chunks) {
+    const trimmedChunk = chunk.trim();
+    if (!trimmedChunk) continue;
+
+    // Check if chunk contains an Answer marker
+    const answerSplit = trimmedChunk.split(/(?:^|\n|\s{2,})(?:A\s*\d*[:\.\-]|Answer\s*\d*[:\.\-])\s*/i);
+    if (answerSplit.length >= 2) {
+      const qText = answerSplit[0].replace(/^(?:Q\s*\d*[:\.\-]|Question\s*\d*[:\.\-])\s*/i, "").trim();
+      const aText = answerSplit.slice(1).join(" ").trim();
+      if (qText && aText) {
+        items.push({ question: qText, answer: aText });
+      }
+    }
+  }
+
+  // Fallback: If chunk split found nothing, try line-by-line parsing
+  if (items.length === 0) {
+    const lines = normalized.split("\n").map((l) => l.trim()).filter(Boolean);
+    let currentQ = "";
+    let currentA = "";
+
+    for (const line of lines) {
+      if (/^(?:Q\s*\d*[:\.\-]|Question\s*\d*[:\.\-])/i.test(line)) {
+        if (currentQ && currentA) {
+          items.push({ question: currentQ, answer: currentA });
+          currentQ = "";
+          currentA = "";
+        }
+        currentQ = line.replace(/^(?:Q\s*\d*[:\.\-]|Question\s*\d*[:\.\-])\s*/i, "").trim();
+      } else if (/^(?:A\s*\d*[:\.\-]|Answer\s*\d*[:\.\-])/i.test(line)) {
+        currentA = line.replace(/^(?:A\s*\d*[:\.\-]|Answer\s*\d*[:\.\-])\s*/i, "").trim();
+      } else if (currentA) {
+        currentA += " " + line;
+      } else if (currentQ) {
+        currentQ += " " + line;
+      }
+    }
+
+    if (currentQ && currentA) {
+      items.push({ question: currentQ, answer: currentA });
+    }
+  }
+
+  return items;
+}
+
+function FaqAccordion({ content }: { content: string }) {
+  const faqItems = useMemo(() => parseFaqContent(content), [content]);
+  const [openIndices, setOpenIndices] = useState<number[]>([0]); // First FAQ item open by default
+
+  const toggleItem = (idx: number) => {
+    setOpenIndices((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
+  };
+
+  const expandAll = () => {
+    setOpenIndices(faqItems.map((_, i) => i));
+  };
+
+  const collapseAll = () => {
+    setOpenIndices([]);
+  };
+
+  if (faqItems.length === 0) {
+    return (
+      <div
+        className="prose prose-stone max-w-none text-xs sm:text-sm text-stone-700 leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between pb-1">
+        <span className="text-xs text-stone-500 font-medium">
+          {faqItems.length} clinical questions answered
+        </span>
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={expandAll}
+            className="text-[#5b15fc] hover:underline font-semibold cursor-pointer"
+          >
+            Expand all
+          </button>
+          <span className="text-stone-300">•</span>
+          <button
+            type="button"
+            onClick={collapseAll}
+            className="text-stone-500 hover:underline font-semibold cursor-pointer"
+          >
+            Collapse all
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        {faqItems.map((item, idx) => {
+          const isOpen = openIndices.includes(idx);
+          return (
+            <div
+              key={idx}
+              className={`rounded-2xl border transition-all duration-200 ${
+                isOpen
+                  ? "border-[#5b15fc]/30 bg-white shadow-xs"
+                  : "border-stone-200/90 bg-stone-50/50 hover:bg-stone-50 hover:border-stone-300"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleItem(idx)}
+                aria-expanded={isOpen}
+                className="w-full flex items-center justify-between gap-3.5 p-4 text-left cursor-pointer group"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold mt-0.5 transition-colors ${
+                      isOpen
+                        ? "bg-[#5b15fc] text-white"
+                        : "bg-[#5b15fc]/10 text-[#5b15fc] group-hover:bg-[#5b15fc]/20"
+                    }`}
+                  >
+                    Q{idx + 1}
+                  </div>
+                  <span className="font-heading text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-[#5b15fc] transition-colors leading-snug">
+                    {item.question}
+                  </span>
+                </div>
+                <div
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-xl transition-all ${
+                    isOpen
+                      ? "bg-[#5b15fc]/10 text-[#5b15fc]"
+                      : "bg-stone-100 text-stone-500 group-hover:bg-stone-200/80 group-hover:text-stone-800"
+                  }`}
+                >
+                  <ChevronDown
+                    className={`size-4 transition-transform duration-300 ${
+                      isOpen ? "rotate-180 text-[#5b15fc]" : ""
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {isOpen && (
+                <div className="px-4 pb-4 pt-1 border-t border-stone-100">
+                  <div className="pl-9 pr-2">
+                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed whitespace-pre-line">
+                      {item.answer}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function MedicineDetailPage() {
   const params = useParams();
@@ -147,6 +331,19 @@ export default function MedicineDetailPage() {
         content: details["Faq"] || details["FAQ"],
       },
     ].filter((s) => s.content && s.content.trim() !== "");
+
+    // Add Generic Alternatives to navigation index only when available
+    if (medicine.related_medicines && medicine.related_medicines.length > 0) {
+      sections.push({
+        id: "alternatives",
+        icon: Layers,
+        label: `Generic Alternatives (${medicine.related_medicines.length})`,
+        tag: "Alternatives",
+        content: "__ALTERNATIVES_SECTION__",
+      });
+    }
+
+    return sections;
   }, [medicine]);
 
   // ScrollSpy: Update active navigation section based on scroll position (supporting overflow containers)
@@ -497,34 +694,45 @@ export default function MedicineDetailPage() {
                   </span>
                 </div>
 
-                <nav className="space-y-0.5 max-h-[calc(100vh-140px)] overflow-y-auto pr-0.5 scrollbar-thin">
+                <nav className="space-y-0.5">
                   {monographSections.map((sec) => {
                     const IconComponent = sec.icon;
                     const isActive = activeSectionId === sec.id;
+                    const isAlternatives = sec.id === "alternatives";
                     return (
-                      <a
-                        key={sec.id}
-                        href={`#${sec.id}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const el = document.getElementById(sec.id);
-                          if (el) {
-                            el.scrollIntoView({ behavior: "smooth", block: "start" });
-                            setActiveSectionId(sec.id);
-                          }
-                        }}
-                        className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-[#5b15fc] text-white shadow-xs"
-                            : "text-stone-600 hover:bg-[#5b15fc]/10 hover:text-[#5b15fc]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <IconComponent className={`size-3.5 shrink-0 ${isActive ? "text-white" : "text-stone-400"}`} />
-                          <span className="truncate text-[11px]">{sec.label}</span>
-                        </div>
-                        <ChevronRight className={`size-2.5 shrink-0 ${isActive ? "text-white/80" : "text-stone-300"}`} />
-                      </a>
+                      <React.Fragment key={sec.id}>
+                        {isAlternatives && (
+                          <div className="pt-1.5 pb-0.5 border-t border-stone-100 my-1">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 px-1">
+                              Related Formulations
+                            </span>
+                          </div>
+                        )}
+                        <a
+                          href={`#${sec.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const el = document.getElementById(sec.id);
+                            if (el) {
+                              el.scrollIntoView({ behavior: "smooth", block: "start" });
+                              setActiveSectionId(sec.id);
+                            }
+                          }}
+                          className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-[#5b15fc] text-white shadow-xs"
+                              : isAlternatives
+                              ? "text-[#5b15fc] bg-[#5b15fc]/5 hover:bg-[#5b15fc]/15 font-bold"
+                              : "text-stone-600 hover:bg-[#5b15fc]/10 hover:text-[#5b15fc]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <IconComponent className={`size-3.5 shrink-0 ${isActive ? "text-white" : isAlternatives ? "text-[#5b15fc]" : "text-stone-400"}`} />
+                            <span className="truncate text-[11px]">{sec.label}</span>
+                          </div>
+                          <ChevronRight className={`size-2.5 shrink-0 ${isActive ? "text-white/80" : isAlternatives ? "text-[#5b15fc]" : "text-stone-300"}`} />
+                        </a>
+                      </React.Fragment>
                     );
                   })}
                 </nav>
@@ -539,46 +747,172 @@ export default function MedicineDetailPage() {
 
             {/* Enlarged Right Main Monograph Descriptions & Stacked Sections */}
             <div className="lg:col-span-9 space-y-5">
-              {monographSections.map((sec) => {
-                const IconComponent = sec.icon;
-                return (
-                  <section
-                    key={sec.id}
-                    id={sec.id}
-                    className="neo-card rounded-2xl bg-white border border-stone-200 p-6 sm:p-7 space-y-3 shadow-xs scroll-mt-2"
-                  >
-                    {/* Section Header */}
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc]">
-                          <IconComponent className="size-4" />
+              {monographSections
+                .filter((sec) => sec.content !== "__ALTERNATIVES_SECTION__")
+                .map((sec) => {
+                  const IconComponent = sec.icon;
+                  return (
+                    <section
+                      key={sec.id}
+                      id={sec.id}
+                      className="neo-card rounded-2xl bg-white border border-stone-200 p-6 sm:p-7 space-y-3 shadow-xs scroll-mt-2"
+                    >
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex size-8 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc]">
+                            <IconComponent className="size-4" />
+                          </div>
+                          <h3 className="text-base font-bold text-stone-900">
+                            {sec.label}
+                          </h3>
                         </div>
-                        <h3 className="text-base font-bold text-stone-900">
-                          {sec.label}
-                        </h3>
+                        <span className="text-[11px] font-semibold text-stone-400 bg-stone-50 px-2 py-0.5 rounded-md border border-stone-100">
+                          {sec.tag}
+                        </span>
                       </div>
-                      <span className="text-[11px] font-semibold text-stone-400 bg-stone-50 px-2 py-0.5 rounded-md border border-stone-100">
-                        {sec.tag}
-                      </span>
-                    </div>
 
-                    {/* Rich HTML Description */}
-                    <div
-                      className="prose prose-stone max-w-none text-xs sm:text-sm text-stone-700 leading-relaxed space-y-2.5
-                        [&_table]:w-full [&_table]:border-collapse [&_table]:my-3
-                        [&_thead]:bg-stone-50 [&_th]:border-b [&_th]:border-stone-200 [&_th]:p-2.5 [&_th]:font-bold [&_th]:text-stone-800 [&_th]:text-left
-                        [&_td]:border-b [&_td]:border-stone-100 [&_td]:p-2.5 [&_td]:text-stone-700
-                        [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
-                        [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1
-                        [&_strong]:text-stone-900 [&_strong]:font-bold
-                        [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-stone-900 [&_h2]:mt-3 [&_h2]:mb-1
-                        [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-stone-800 [&_h3]:mt-2 [&_h3]:mb-1
-                        [&_p]:leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: sec.content || "" }}
-                    />
-                  </section>
-                );
-              })}
+                      {/* Content: HeroUI Accordion for FAQ, rich HTML for others */}
+                      {sec.id === "faq" ? (
+                        <div className="pt-2">
+                          <FaqAccordion content={sec.content || ""} />
+                        </div>
+                      ) : (
+                        <div
+                          className="prose prose-stone max-w-none text-xs sm:text-sm text-stone-700 leading-relaxed space-y-2.5
+                            [&_table]:w-full [&_table]:border-collapse [&_table]:my-3
+                            [&_thead]:bg-stone-50 [&_th]:border-b [&_th]:border-stone-200 [&_th]:p-2.5 [&_th]:font-bold [&_th]:text-stone-800 [&_th]:text-left
+                            [&_td]:border-b [&_td]:border-stone-100 [&_td]:p-2.5 [&_td]:text-stone-700
+                            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
+                            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1
+                            [&_strong]:text-stone-900 [&_strong]:font-bold
+                            [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-stone-900 [&_h2]:mt-3 [&_h2]:mb-1
+                            [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-stone-800 [&_h3]:mt-2 [&_h3]:mb-1
+                            [&_p]:leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: sec.content || "" }}
+                        />
+                      )}
+                    </section>
+                  );
+                })}
+
+              {/* Related Generic Alternatives Section (Embedded in Main Column with ScrollSpy) */}
+              {medicine.related_medicines && medicine.related_medicines.length > 0 && (
+                <section
+                  id="alternatives"
+                  className="neo-card rounded-2xl bg-white border border-stone-200 p-6 sm:p-7 space-y-4 shadow-xs scroll-mt-2"
+                >
+                  <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex size-8 items-center justify-center rounded-lg bg-[#5b15fc]/10 text-[#5b15fc]">
+                        <Layers className="size-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-stone-900">
+                          Related Generic Alternatives ({medicine.related_medicines.length})
+                        </h3>
+                        <p className="text-[11px] text-stone-400">
+                          Therapeutically equivalent products with identical active generic formulation
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#5b15fc] bg-[#5b15fc]/10 px-2 py-0.5 rounded-md">
+                      Same Generic
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pt-1">
+                    {medicine.related_medicines.map((rel, idx) => (
+                      <div
+                        key={idx}
+                        className="neo-card rounded-xl bg-white border border-stone-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all group"
+                      >
+                        {/* Top Full-Bleed Image Frame (Clickable to details) */}
+                        <Link
+                          href={`/admin/pharmacy/${rel.slug}`}
+                          className="relative aspect-4/3 w-full bg-stone-100 flex items-center justify-center overflow-hidden border-b border-stone-100 cursor-pointer group/img block"
+                        >
+                          {rel.medicine_image ? (
+                            <img
+                              src={rel.medicine_image}
+                              alt={rel.medicine_name}
+                              className="size-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                              onError={(e: any) => {
+                                e.target.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="size-full flex items-center justify-center bg-stone-50">
+                              <Pill className="size-8 text-stone-300" />
+                            </div>
+                          )}
+
+                          {/* Redesigned Category Badge on top-left */}
+                          <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-white/95 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-bold text-stone-800 border border-stone-200/90 shadow-2xs tracking-wide">
+                              <span className="size-1 rounded-full bg-[#5b15fc]" />
+                              {rel.category_name || "Tablet"}
+                            </span>
+                          </div>
+
+                          {/* Redesigned Rx/OTC Badge on top-right if available */}
+                          <div className="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                            {rel.rx_required ? (
+                              <span className="inline-flex items-center rounded-md bg-rose-500/95 text-white backdrop-blur-md px-1.5 py-0.5 text-[8px] font-bold shadow-2xs tracking-wider">
+                                Rx
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-md bg-emerald-600/95 text-white backdrop-blur-md px-1.5 py-0.5 text-[8px] font-bold shadow-2xs tracking-wider">
+                                OTC
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+
+                        {/* Card Body Info */}
+                        <div className="p-2.5 flex flex-col justify-between flex-1 space-y-2">
+                          <div className="space-y-0.5">
+                            <div className="flex items-start justify-between gap-1">
+                              <Link
+                                href={`/admin/pharmacy/${rel.slug}`}
+                                className="font-heading text-xs font-semibold text-stone-900 hover:text-[#5b15fc] transition-colors line-clamp-1 cursor-pointer"
+                              >
+                                {rel.medicine_name}
+                              </Link>
+                            </div>
+                            <p className="text-[10px] text-stone-500 line-clamp-1 italic font-medium">
+                              {medicine.generic_name}
+                            </p>
+                            <p className="text-[10px] text-stone-400 line-clamp-1">
+                              {rel.manufacturer_name}
+                            </p>
+                          </div>
+
+                          {/* Price & Action */}
+                          <div className="pt-2 border-t border-stone-100 flex items-center justify-between gap-1">
+                            <div>
+                              <p className="text-[9px] text-stone-400 font-medium leading-none">Price</p>
+                              <p className="font-bold text-stone-900 text-xs mt-0.5">
+                                {rel.unit_prices && rel.unit_prices[0]
+                                  ? formatCurrency(parseFloat(rel.unit_prices[0].price) || 0)
+                                  : "Available"}
+                              </p>
+                            </div>
+
+                            <Link
+                              href={`/admin/pharmacy/${rel.slug}`}
+                              className="inline-flex items-center gap-0.5 rounded-lg bg-stone-100 px-2 py-1 text-[10px] font-semibold text-stone-800 hover:bg-[#5b15fc] hover:text-white transition-all shadow-2xs cursor-pointer"
+                            >
+                              <span>Details</span>
+                              <ExternalLink className="size-2.5" />
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         ) : (
@@ -591,116 +925,6 @@ export default function MedicineDetailPage() {
           </div>
         )}
       </div>
-
-      {/* Related Generic Alternatives Section */}
-      {medicine.related_medicines && medicine.related_medicines.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-            <div>
-              <h3 className="text-xl font-bold text-stone-900">
-                Related Generic Alternatives ({medicine.related_medicines.length})
-              </h3>
-              <p className="text-xs text-stone-500">
-                Therapeutically equivalent products with identical active generic formulation
-              </p>
-            </div>
-            <span className="text-xs font-bold text-stone-600 bg-stone-100 px-2.5 py-0.5 rounded-full">
-              Same Generic
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {medicine.related_medicines.map((rel, idx) => (
-              <div
-                key={idx}
-                className="neo-card rounded-xl bg-white border border-stone-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all group"
-              >
-                {/* Top Full-Bleed Image Frame (Clickable to details) */}
-                <Link
-                  href={`/admin/pharmacy/${rel.slug}`}
-                  className="relative aspect-4/3 w-full bg-stone-100 flex items-center justify-center overflow-hidden border-b border-stone-100 cursor-pointer group/img block"
-                >
-                  {rel.medicine_image ? (
-                    <img
-                      src={rel.medicine_image}
-                      alt={rel.medicine_name}
-                      className="size-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                      onError={(e: any) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="size-full flex items-center justify-center bg-stone-50">
-                      <Pill className="size-8 text-stone-300" />
-                    </div>
-                  )}
-
-                  {/* Redesigned Category Badge on top-left */}
-                  <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-white/95 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-bold text-stone-800 border border-stone-200/90 shadow-2xs tracking-wide">
-                      <span className="size-1 rounded-full bg-[#5b15fc]" />
-                      {rel.category_name || "Tablet"}
-                    </span>
-                  </div>
-
-                  {/* Redesigned Rx/OTC Badge on top-right if available */}
-                  <div className="absolute top-1.5 right-1.5 z-10 pointer-events-none">
-                    {rel.rx_required ? (
-                      <span className="inline-flex items-center rounded-md bg-rose-500/95 text-white backdrop-blur-md px-1.5 py-0.5 text-[8px] font-bold shadow-2xs tracking-wider">
-                        Rx
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-md bg-emerald-600/95 text-white backdrop-blur-md px-1.5 py-0.5 text-[8px] font-bold shadow-2xs tracking-wider">
-                        OTC
-                      </span>
-                    )}
-                  </div>
-                </Link>
-
-                {/* Card Body Info */}
-                <div className="p-2.5 flex flex-col justify-between flex-1 space-y-2">
-                  <div className="space-y-0.5">
-                    <div className="flex items-start justify-between gap-1">
-                      <Link
-                        href={`/admin/pharmacy/${rel.slug}`}
-                        className="font-heading text-xs font-semibold text-stone-900 hover:text-[#5b15fc] transition-colors line-clamp-1 cursor-pointer"
-                      >
-                        {rel.medicine_name}
-                      </Link>
-                    </div>
-                    <p className="text-[10px] text-stone-500 line-clamp-1 italic font-medium">
-                      {medicine.generic_name}
-                    </p>
-                    <p className="text-[10px] text-stone-400 line-clamp-1">
-                      {rel.manufacturer_name}
-                    </p>
-                  </div>
-
-                  {/* Price & Action */}
-                  <div className="pt-2 border-t border-stone-100 flex items-center justify-between gap-1">
-                    <div>
-                      <p className="text-[9px] text-stone-400 font-medium leading-none">Price</p>
-                      <p className="font-bold text-stone-900 text-xs mt-0.5">
-                        {rel.unit_prices && rel.unit_prices[0]
-                          ? formatCurrency(parseFloat(rel.unit_prices[0].price) || 0)
-                          : "Available"}
-                      </p>
-                    </div>
-
-                    <Link
-                      href={`/admin/pharmacy/${rel.slug}`}
-                      className="inline-flex items-center gap-0.5 rounded-lg bg-stone-100 px-2 py-1 text-[10px] font-semibold text-stone-800 hover:bg-[#5b15fc] hover:text-white transition-all shadow-2xs cursor-pointer"
-                    >
-                      <span>Details</span>
-                      <ExternalLink className="size-2.5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Raw JSON Inspector Modal */}
       {showRawJson && (
