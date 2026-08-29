@@ -24,6 +24,8 @@ import {
   AlertTriangle,
   Eye,
   User,
+  UserCheck,
+  HeartPulse,
   KeyRound,
   Shield,
   Send
@@ -263,63 +265,101 @@ export default function UsersAdminPage() {
         </div>
       </div>
 
-      {/* 2. STAT CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. STAT CARDS (6 DEDICATED METRICS) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5">
         {/* Total Users */}
-        <div className="neo-card rounded-2xl bg-white p-4 sm:p-5 flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#5b15fc]/10 text-[#5b15fc]">
-            <Users className="size-6" />
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Total Users</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc]">
+              <Users className="size-4" />
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Total Users</p>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900 mt-0.5">
+          <div>
+            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
               {statsLoading ? "..." : stats?.total_users || 0}
             </p>
-            <p className="text-[11px] text-stone-500 truncate">Platform-wide profiles</p>
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">Platform accounts</p>
           </div>
         </div>
 
         {/* Active Accounts */}
-        <div className="neo-card rounded-2xl bg-white p-4 sm:p-5 flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-            <ShieldCheck className="size-6" />
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Active</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+              <ShieldCheck className="size-4" />
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Active Accounts</p>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900 mt-0.5">
+          <div>
+            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
               {statsLoading ? "..." : stats?.active_users || 0}
             </p>
-            <p className="text-[11px] text-stone-500 truncate">Live authorized access</p>
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">Live access</p>
           </div>
         </div>
 
-        {/* Standard Users Count */}
-        <div className="neo-card rounded-2xl bg-white p-4 sm:p-5 flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
-            <User className="size-6" />
+        {/* Standard Users */}
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Users</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+              <User className="size-4" />
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Standard Users</p>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900 mt-0.5">
+          <div>
+            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
               {statsLoading ? "..." : stats?.total_regular_users || 0}
             </p>
-            <p className="text-[11px] text-stone-500 truncate">Registered service users</p>
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">Service consumers</p>
           </div>
         </div>
 
-        {/* Staff & Admins */}
-        <div className="neo-card rounded-2xl bg-white p-4 sm:p-5 flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 border border-teal-100">
-            <Shield className="size-6" />
+        {/* Doctors */}
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Doctors</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+              <UserCheck className="size-4" />
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Admins & Staff</p>
-            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900 mt-0.5">
-              {statsLoading ? "..." : (stats?.total_admins || 0) + (stats?.total_nurses || 0)}
+          <div>
+            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+              {statsLoading ? "..." : stats?.total_doctors || 0}
             </p>
-            <p className="text-[11px] text-stone-500 truncate">
-              {stats?.total_admins || 0} Admins • {stats?.total_nurses || 0} Nurses
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">Practitioners</p>
+          </div>
+        </div>
+
+        {/* Nurses */}
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Nurses</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
+              <HeartPulse className="size-4" />
+            </div>
+          </div>
+          <div>
+            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+              {statsLoading ? "..." : stats?.total_nurses || 0}
             </p>
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">Healthcare staff</p>
+          </div>
+        </div>
+
+        {/* Administrators */}
+        <div className="neo-card rounded-2xl bg-white p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 truncate">Admins</p>
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+              <Shield className="size-4" />
+            </div>
+          </div>
+          <div>
+            <p className="font-heading text-xl sm:text-2xl font-normal text-stone-900">
+              {statsLoading ? "..." : stats?.total_admins || 0}
+            </p>
+            <p className="text-[10px] text-stone-400 truncate mt-0.5">System managers</p>
           </div>
         </div>
       </div>
