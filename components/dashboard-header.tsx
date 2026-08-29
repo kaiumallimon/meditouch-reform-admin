@@ -16,12 +16,15 @@ import {
   Video,
   ShieldCheck,
   LayoutDashboard,
-  Settings
+  Settings,
+  Code2
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
+import { getSession } from "@/lib/auth";
 
-const QUICK_SEARCH_ITEMS = [
+const ADMIN_SEARCH_ITEMS = [
   { name: "Dashboard Overview", href: "/admin", icon: LayoutDashboard, group: "General" },
+  { name: "API Documentation & SDKs", href: "/admin/docs", icon: Code2, group: "Developer Hub" },
   { name: "Doctor Directory & Verification", href: "/admin/doctors", icon: Stethoscope, group: "Telemedicine" },
   { name: "Appointments Calendar", href: "/admin/appointments", icon: Calendar, group: "Telemedicine" },
   { name: "Live Video Consultations", href: "/admin/consultations", icon: Video, group: "Telemedicine" },
@@ -31,11 +34,25 @@ const QUICK_SEARCH_ITEMS = [
   { name: "System Settings", href: "/admin/settings", icon: Settings, group: "System" },
 ];
 
+const DEVELOPER_SEARCH_ITEMS = [
+  { name: "API Documentation & SDKs", href: "/admin/docs", icon: Code2, group: "Developer Hub" },
+];
+
 export function DashboardHeader() {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [userRole, setUserRole] = useState<string>("ADMIN");
+
+  useEffect(() => {
+    const session = getSession();
+    if (session?.role) {
+      setUserRole(session.role);
+    }
+  }, []);
+
+  const searchItems = userRole === "DEVELOPER" ? DEVELOPER_SEARCH_ITEMS : ADMIN_SEARCH_ITEMS;
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -53,17 +70,19 @@ export function DashboardHeader() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  const filteredItems = QUICK_SEARCH_ITEMS.filter((item) =>
+  const filteredItems = searchItems.filter((item) =>
     item.name.toLowerCase().includes(query.toLowerCase()) ||
     item.group.toLowerCase().includes(query.toLowerCase())
   );
+
+  const homeHref = userRole === "DEVELOPER" ? "/admin/docs" : "/admin";
 
   return (
     <>
       <header className="flex h-14 items-center justify-between neo-card rounded-2xl px-4 z-20">
         {/* Brand & Home */}
         <div className="flex items-center gap-6">
-          <Link href="/admin" className="flex items-center gap-2.5">
+          <Link href={homeHref} className="flex items-center gap-2.5">
             <Image
               src="/logo.svg"
               alt="MediTouch"
@@ -72,9 +91,15 @@ export function DashboardHeader() {
               className="h-7 w-auto object-contain"
               priority
             />
-            <span className="rounded-full bg-[#5b15fc]/10 border border-[#5b15fc]/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#5b15fc]">
-              Admin Portal
-            </span>
+            {userRole === "DEVELOPER" ? (
+              <span className="rounded-full bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                Developer Portal
+              </span>
+            ) : (
+              <span className="rounded-full bg-[#5b15fc]/10 border border-[#5b15fc]/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#5b15fc]">
+                Admin Portal
+              </span>
+            )}
           </Link>
         </div>
 

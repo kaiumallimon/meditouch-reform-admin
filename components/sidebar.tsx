@@ -129,162 +129,213 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
         {/* Navigation Sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4">
-          {/* Main Section */}
-          <nav className="space-y-1">
-            {mainNavigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = isRouteActive(item.href);
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
-                    isActive
-                      ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
-                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Developer / API Section */}
-          <div>
-            <div className="flex items-center justify-between px-3 mb-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                Developer Hub
-              </p>
-              <span className="rounded bg-indigo-100/80 text-indigo-700 px-1.5 py-0.2 text-[9px] font-mono font-bold">
-                API & SDK
-              </span>
-            </div>
-            <nav className="space-y-1">
-              {developerNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = isRouteActive(item.href);
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={onNavigate}
-                    className={cn(
-                      "flex items-center justify-between rounded-full px-3.5 py-2 text-xs transition-all group",
-                      isActive
-                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="size-4 shrink-0" />
-                      <span>{item.name}</span>
-                    </div>
-                    <span
+          {user?.role === "DEVELOPER" ? (
+            /* Developer Exclusive Navigation */
+            <div>
+              <div className="flex items-center justify-between px-3 mb-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                  Developer Portal
+                </p>
+                <span className="rounded bg-indigo-100/80 text-indigo-700 px-1.5 py-0.2 text-[9px] font-mono font-bold">
+                  API & SDK
+                </span>
+              </div>
+              <nav className="space-y-1">
+                {developerNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = isRouteActive(item.href);
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={onNavigate}
                       className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-tight",
+                        "flex items-center justify-between rounded-full px-3.5 py-2 text-xs transition-all group",
                         isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-indigo-50 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-100"
+                          ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                          : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
                       )}
                     >
-                      {item.badge}
-                    </span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="size-4 shrink-0" />
+                        <span>{item.name}</span>
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-tight",
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-indigo-50 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-100"
+                        )}
+                      >
+                        {item.badge}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ) : (
+            /* Administrator Full Navigation */
+            <>
+              {/* Main Section */}
+              <nav className="space-y-1">
+                {mainNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = isRouteActive(item.href);
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
+                        isActive
+                          ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                          : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                      )}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
 
-          {/* Telemedicine Section */}
-          <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
-              Telemedicine
-            </p>
-            <nav className="space-y-1">
-              {telemedicineNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = isRouteActive(item.href);
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={onNavigate}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
-                      isActive
-                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
-                    )}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+              {/* Developer / API Section */}
+              <div>
+                <div className="flex items-center justify-between px-3 mb-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                    Developer Hub
+                  </p>
+                  <span className="rounded bg-indigo-100/80 text-indigo-700 px-1.5 py-0.2 text-[9px] font-mono font-bold">
+                    API & SDK
+                  </span>
+                </div>
+                <nav className="space-y-1">
+                  {developerNavigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isRouteActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center justify-between rounded-full px-3.5 py-2 text-xs transition-all group",
+                          isActive
+                            ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                            : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className="size-4 shrink-0" />
+                          <span>{item.name}</span>
+                        </div>
+                        <span
+                          className={cn(
+                            "rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-tight",
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-indigo-50 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-100"
+                          )}
+                        >
+                          {item.badge}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
 
-          {/* E-Pharmacy Section */}
-          <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
-              E-Pharmacy
-            </p>
-            <nav className="space-y-1">
-              {pharmacyNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = isRouteActive(item.href);
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={onNavigate}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
-                      isActive
-                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
-                    )}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+              {/* Telemedicine Section */}
+              <div>
+                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                  Telemedicine
+                </p>
+                <nav className="space-y-1">
+                  {telemedicineNavigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isRouteActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
+                          isActive
+                            ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                            : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        )}
+                      >
+                        <Icon className="size-4 shrink-0" />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
 
-          {/* System Section */}
-          <div>
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
-              System
-            </p>
-            <nav className="space-y-1">
-              {systemNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = isRouteActive(item.href);
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={onNavigate}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
-                      isActive
-                        ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
-                        : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
-                    )}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+              {/* E-Pharmacy Section */}
+              <div>
+                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                  E-Pharmacy
+                </p>
+                <nav className="space-y-1">
+                  {pharmacyNavigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isRouteActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
+                          isActive
+                            ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                            : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        )}
+                      >
+                        <Icon className="size-4 shrink-0" />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* System Section */}
+              <div>
+                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                  System
+                </p>
+                <nav className="space-y-1">
+                  {systemNavigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isRouteActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs transition-all",
+                          isActive
+                            ? "bg-[#5b15fc] text-white font-semibold shadow-xs"
+                            : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium"
+                        )}
+                      >
+                        <Icon className="size-4 shrink-0" />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer / Sign Out Button */}

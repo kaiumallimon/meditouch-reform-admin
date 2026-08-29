@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { isAuthenticated, isStaff } from "@/lib/auth";
+import { usePathname, useRouter } from "next/navigation";
+import { isAuthenticated, isStaff, isDeveloper } from "@/lib/auth";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { Sidebar } from "@/components/sidebar";
 import { Spinner } from "@/components/ui/spinner";
@@ -14,22 +14,31 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated() || !isStaff()) {
       router.push("/login");
-    } else {
-      setAuthorized(true);
+      return;
     }
-  }, [router]);
+
+    if (isDeveloper() && pathname !== "/admin/docs") {
+      router.replace("/admin/docs");
+      return;
+    }
+
+    setAuthorized(true);
+  }, [router, pathname]);
 
   if (authorized === null) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#F7F4EE]">
         <div className="flex flex-col items-center gap-3 neo-card rounded-2xl p-6">
           <Spinner className="size-8 text-[#5b15fc]" />
-          <p className="text-xs font-bold uppercase tracking-wider text-stone-800">Authenticating Admin Workspace...</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-stone-800">
+            {isDeveloper() ? "Authenticating Developer Workspace..." : "Authenticating Admin Workspace..."}
+          </p>
         </div>
       </div>
     );
