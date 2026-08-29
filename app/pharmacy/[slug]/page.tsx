@@ -239,8 +239,8 @@ export default function PublicMedicineDetailPage() {
         setLoading(true);
         const data = await pharmacyApi.getMedicineDetails(slug);
         setMedicine(data);
-      } catch (err: any) {
-        console.error("Medicine not found or failed to load:", err);
+      } catch {
+        // Medicine not found in catalog; render clean in-page 404 UI state
         setMedicine(null);
       } finally {
         setLoading(false);
