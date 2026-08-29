@@ -27,7 +27,8 @@ import {
   X,
   FileCode2,
   ShieldCheck,
-  Zap
+  Zap,
+  Radio
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/utils";
@@ -39,6 +40,8 @@ import {
   CrawlerStatus
 } from "@/lib/api";
 import { toast } from "sonner";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export default function PharmacyAdminPage() {
   const [medicines, setMedicines] = useState<MedicineItem[]>([]);
@@ -56,10 +59,12 @@ export default function PharmacyAdminPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Crawler State
+  // Real-Time SSE & Crawler State
   const [crawlerStatus, setCrawlerStatus] = useState<CrawlerStatus | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCrawlerLogs, setShowCrawlerLogs] = useState(false);
+  const [sseConnected, setSseConnected] = useState(false);
+  const [latestAddedDrug, setLatestAddedDrug] = useState<string | null>(null);
   const [crawlerSettings, setCrawlerSettings] = useState<CrawlerSettings>({
     api_base_url: "https://api.medeasy.health",
     next_data_base_url: "https://medeasy.health",
@@ -71,6 +76,7 @@ export default function PharmacyAdminPage() {
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [triggeringCrawler, setTriggeringCrawler] = useState(false);
+  const [clearingCatalog, setClearingCatalog] = useState(false);
 
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -117,21 +123,157 @@ export default function PharmacyAdminPage() {
     }
   };
 
-  // 3. Poll Crawler Status
-  const pollCrawlerStatus = async () => {
-    try {
-      const status = await pharmacyApi.getCrawlerStatus();
-      setCrawlerStatus(status);
-    } catch (err) {
-      // silent poll error
-    }
-  };
-
+  // 3. Setup Persistent SSE Real-Time Stream (Persistent background execution)
   useEffect(() => {
     loadStatsAndCategories();
-    pollCrawlerStatus();
+    loadMedicines();
+
+    let eventSource: EventSource | null = null;
+    let retryTimer: any = null;
+
+    const connectSSE = () => {
+      try {
+        const streamUrl = `${API_BASE_URL}/pharmacy/crawler/stream`;
+        eventSource = new EventSource(streamUrl);
+
+        eventSource.onopen = () => {
+          setSseConnected(true);
+        };
+
+        eventSource.onmessage = (e) => {
+          try {
+            if (!e.data || e.data.startsWith(":")) return;
+            const event = JSON.parse(e.data);
+            const { type, data } = event;
+
+            if (type === "INIT") {
+              if (data?.job) {
+                setCrawlerStatus(data.job);
+              }
+            } else if (type === "CRAWL_STARTED") {
+              setCrawlerStatus((prev) => ({
+                ...(prev || {
+                  category_slug: data.category_slug || "otc-medicine",
+                  current_page: data.start_page || 1,
+                  total_pages: 0,
+                  total_products_found: 0,
+                  inserted_count: 0,
+                  skipped_count: 0,
+                  failed_count: 0,
+                  logs: [],
+                }),
+                is_running: true,
+                status: "RUNNING",
+                category_slug: data.category_slug,
+                current_page: data.start_page || 1,
+              }));
+              setShowCrawlerLogs(true);
+            } else if (type === "PAGE_STARTED") {
+              setCrawlerStatus((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      current_page: data.current_page,
+                      total_pages: data.total_pages,
+                      total_products_found: data.total_products_found,
+                      inserted_count: data.inserted_count ?? prev.inserted_count,
+                      skipped_count: data.skipped_count ?? prev.skipped_count,
+                    }
+                  : null
+              );
+            } else if (type === "MEDICINE_INSERTED") {
+              const med = data.medicine;
+              if (med) {
+                setLatestAddedDrug(`${med.medicine_name || med.brand} ${med.strength || ""}`.trim());
+                // Live prepend into UI catalog grid
+                setMedicines((prev) => {
+                  const exists = prev.some((m) => m.slug === med.slug || m.id === med.id);
+                  if (exists) return prev;
+                  return [med, ...prev];
+                });
+              }
+              setCrawlerStatus((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      inserted_count: data.inserted_count,
+                      skipped_count: data.skipped_count ?? prev.skipped_count,
+                      current_page: data.current_page ?? prev.current_page,
+                      total_pages: data.total_pages ?? prev.total_pages,
+                    }
+                  : null
+              );
+              setStats((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      total_medicines: prev.total_medicines + 1,
+                      in_stock_medicines: prev.in_stock_medicines + 1,
+                    }
+                  : null
+              );
+            } else if (type === "MEDICINE_SKIPPED") {
+              setCrawlerStatus((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      skipped_count: data.skipped_count,
+                      inserted_count: data.inserted_count ?? prev.inserted_count,
+                    }
+                  : null
+              );
+            } else if (type === "LOG") {
+              if (data?.log) {
+                setCrawlerStatus((prev) => {
+                  if (!prev) return null;
+                  const newLogs = [...(prev.logs || []), data.log];
+                  return {
+                    ...prev,
+                    logs: newLogs.slice(-100),
+                  };
+                });
+              }
+            } else if (type === "COMPLETED" || type === "STOPPED" || type === "FAILED") {
+              setCrawlerStatus((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      is_running: false,
+                      status: type,
+                      inserted_count: data.inserted_count ?? prev.inserted_count,
+                      skipped_count: data.skipped_count ?? prev.skipped_count,
+                    }
+                  : null
+              );
+              loadStatsAndCategories();
+            }
+          } catch (err) {
+            // Keepalive comment ignore
+          }
+        };
+
+        eventSource.onerror = () => {
+          setSseConnected(false);
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          retryTimer = setTimeout(connectSSE, 4000);
+        };
+      } catch (err) {
+        console.error("SSE connection error:", err);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
 
+  // Filter debounce reload
   useEffect(() => {
     const timer = setTimeout(() => {
       loadMedicines();
@@ -139,21 +281,7 @@ export default function PharmacyAdminPage() {
     return () => clearTimeout(timer);
   }, [search, selectedCategory, selectedRx, page]);
 
-  // Polling interval when crawler is running
-  useEffect(() => {
-    let interval: any;
-    if (crawlerStatus?.is_running) {
-      interval = setInterval(() => {
-        pollCrawlerStatus();
-        loadStatsAndCategories();
-      }, 2000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [crawlerStatus?.is_running]);
-
-  // Auto-scroll logs
+  // Auto-scroll logs in console drawer
   useEffect(() => {
     if (showCrawlerLogs && logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -171,7 +299,7 @@ export default function PharmacyAdminPage() {
       setCrawlerStatus(status);
       setShowCrawlerLogs(true);
       toast.success("MedEasy Crawler Launched", {
-        description: `Ingesting category '${crawlerSettings.category_slug}' with duplicate skipping.`,
+        description: `Ingesting category '${crawlerSettings.category_slug}' with real-time SSE stream.`,
       });
     } catch (err: any) {
       toast.error("Crawler start failed", { description: err.message });
@@ -207,16 +335,43 @@ export default function PharmacyAdminPage() {
     }
   };
 
+  const handleClearCatalog = async () => {
+    if (!window.confirm("Are you sure you want to delete all medicine records and details from the database? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setClearingCatalog(true);
+      const res = await pharmacyApi.clearAllMedicines();
+      toast.success("Catalog Cleared", {
+        description: `Successfully removed ${res.deleted_count} medicine records from database.`,
+      });
+      await loadMedicines();
+      await loadStatsAndCategories();
+    } catch (err: any) {
+      toast.error("Failed to clear catalog", { description: err.message });
+    } finally {
+      setClearingCatalog(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900">
-            Medicine Catalog & Discovery
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900">
+              Medicine Catalog & Discovery
+            </h1>
+            {sseConnected && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                SSE Stream
+              </span>
+            )}
+          </div>
           <p className="text-xs text-stone-500 mt-1">
-            Comprehensive pharmaceutical database synchronized with MedEasy Bangladesh catalog.
+            Comprehensive pharmaceutical database synchronized in real-time with MedEasy Bangladesh catalog.
           </p>
         </div>
 
@@ -253,10 +408,19 @@ export default function PharmacyAdminPage() {
           </button>
 
           <button
+            onClick={handleClearCatalog}
+            disabled={clearingCatalog}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            title="Wipe all medicines from database"
+          >
+            {clearingCatalog ? <Spinner className="size-3.5 text-rose-700" /> : <X className="size-3.5 text-rose-600" />}
+            <span>Clear Catalog</span>
+          </button>
+
+          <button
             onClick={() => {
               loadMedicines();
               loadStatsAndCategories();
-              pollCrawlerStatus();
             }}
             disabled={loading}
             className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
@@ -360,7 +524,7 @@ export default function PharmacyAdminPage() {
         </div>
       </div>
 
-      {/* Live Crawler Status Banner / Progress */}
+      {/* Real-Time Live SSE Stream Banner & Progress */}
       {crawlerStatus?.is_running && (
         <div className="rounded-2xl border border-[#5b15fc]/30 bg-[#5b15fc]/5 p-4 sm:p-5 space-y-3 animate-in fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -369,13 +533,19 @@ export default function PharmacyAdminPage() {
                 <Sparkles className="size-5 animate-spin" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                  <span>Crawling Category:</span>
-                  <span className="font-mono text-[#5b15fc] bg-[#5b15fc]/10 px-2 py-0.5 rounded-md text-xs">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-stone-900">
+                    Live Crawling Category:
+                  </h3>
+                  <span className="font-mono text-[#5b15fc] bg-[#5b15fc]/10 px-2 py-0.5 rounded-md text-xs font-bold">
                     {crawlerStatus.category_slug}
                   </span>
-                </h3>
-                <p className="text-xs text-stone-500">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.2 text-[9px] font-bold">
+                    <span className="size-1 rounded-full bg-emerald-600 animate-ping" />
+                    Live SSE Stream
+                  </span>
+                </div>
+                <p className="text-xs text-stone-500 mt-0.5">
                   Page {crawlerStatus.current_page} of {crawlerStatus.total_pages || "..."} • Scanned {crawlerStatus.total_products_found} medicines
                 </p>
               </div>
@@ -383,11 +553,11 @@ export default function PharmacyAdminPage() {
 
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold shadow-xs">
-                <span className="text-emerald-700 flex items-center gap-1">
+                <span className="text-emerald-700 flex items-center gap-1 font-bold">
                   <CheckCircle2 className="size-3.5" /> {crawlerStatus.inserted_count} Inserted
                 </span>
                 <span className="text-stone-400">|</span>
-                <span className="text-amber-700 flex items-center gap-1">
+                <span className="text-amber-700 flex items-center gap-1 font-bold">
                   <Info className="size-3.5" /> {crawlerStatus.skipped_count} Skipped
                 </span>
               </div>
@@ -399,6 +569,15 @@ export default function PharmacyAdminPage() {
               </button>
             </div>
           </div>
+
+          {/* Live Added Medicine Beacon */}
+          {latestAddedDrug && (
+            <div className="flex items-center gap-2 text-xs bg-white/80 rounded-xl px-3 py-1.5 border border-[#5b15fc]/20 text-stone-800 animate-in fade-in">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="text-stone-500 font-medium shrink-0">Just added to DB:</span>
+              <span className="font-bold text-[#5b15fc] truncate">{latestAddedDrug}</span>
+            </div>
+          )}
 
           {/* Progress bar */}
           <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
@@ -420,7 +599,7 @@ export default function PharmacyAdminPage() {
           <div className="flex items-center justify-between border-b border-stone-800 pb-2">
             <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
               <Zap className="size-3.5" />
-              <span>Crawler Console Terminal Output</span>
+              <span>Real-Time SSE Crawler Terminal Output</span>
             </div>
             <button
               onClick={() => setShowCrawlerLogs(false)}
@@ -441,7 +620,7 @@ export default function PharmacyAdminPage() {
                 </p>
               ))
             ) : (
-              <p className="text-stone-500 italic">No crawler logs recorded yet. Start crawler to view real-time events.</p>
+              <p className="text-stone-500 italic">No crawler logs recorded yet. Start crawler to stream real-time events.</p>
             )}
             <div ref={logsEndRef} />
           </div>
@@ -552,7 +731,7 @@ export default function PharmacyAdminPage() {
           </div>
           <h3 className="text-base font-bold text-stone-900">No Medicines Found</h3>
           <p className="text-xs text-stone-500 max-w-md mt-1 mb-4">
-            No pharmaceutical products match your current search or category filter. Launch the crawler to populate catalog.
+            No pharmaceutical products match your current search or category filter. Launch the crawler to populate catalog with real-time SSE stream.
           </p>
           <button
             onClick={handleStartCrawler}

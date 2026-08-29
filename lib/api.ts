@@ -829,5 +829,12 @@ export const pharmacyApi = {
     const res = await fetchApi<any[]>("/pharmacy/crawler/history");
     return res.data;
   },
+
+  clearAllMedicines: async () => {
+    const res = await fetchApi<{ deleted_count: number }>("/pharmacy/admin/medicines/clear", {
+      method: "DELETE",
+    });
+    return res.data;
+  },
 };
 
