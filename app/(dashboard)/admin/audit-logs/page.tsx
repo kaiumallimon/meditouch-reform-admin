@@ -30,7 +30,7 @@ import {
   Eye,
   Info
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 interface AuditLogItem {
@@ -203,7 +203,7 @@ export default function AuditLogsAdminPage() {
             </div>
           </div>
           {statsLoading ? (
-            <div className="h-7 w-16 animate-pulse rounded bg-stone-100 mt-1" />
+            <Skeleton className="h-7 w-20 rounded-lg mt-1" />
           ) : (
             <p className="font-heading text-2xl font-bold text-stone-900">
               {stats?.total_logs?.toLocaleString() || totalCount.toLocaleString()}
@@ -221,7 +221,7 @@ export default function AuditLogsAdminPage() {
             </div>
           </div>
           {statsLoading ? (
-            <div className="h-7 w-16 animate-pulse rounded bg-stone-100 mt-1" />
+            <Skeleton className="h-7 w-16 rounded-lg mt-1" />
           ) : (
             <p className="font-heading text-2xl font-bold text-stone-900">
               {stats?.auth_events?.toLocaleString() || 0}
@@ -239,7 +239,7 @@ export default function AuditLogsAdminPage() {
             </div>
           </div>
           {statsLoading ? (
-            <div className="h-7 w-16 animate-pulse rounded bg-stone-100 mt-1" />
+            <Skeleton className="h-7 w-16 rounded-lg mt-1" />
           ) : (
             <p className="font-heading text-2xl font-bold text-stone-900">
               {stats?.pharmacy_events?.toLocaleString() || 0}
@@ -257,7 +257,7 @@ export default function AuditLogsAdminPage() {
             </div>
           </div>
           {statsLoading ? (
-            <div className="h-7 w-16 animate-pulse rounded bg-stone-100 mt-1" />
+            <Skeleton className="h-7 w-16 rounded-lg mt-1" />
           ) : (
             <p className="font-heading text-2xl font-bold text-stone-900">
               {stats?.clinical_events?.toLocaleString() || 0}
@@ -275,7 +275,7 @@ export default function AuditLogsAdminPage() {
             </div>
           </div>
           {statsLoading ? (
-            <div className="h-7 w-16 animate-pulse rounded bg-stone-100 mt-1" />
+            <Skeleton className="h-7 w-16 rounded-lg mt-1" />
           ) : (
             <p className="font-heading text-2xl font-bold text-stone-900">
               {stats?.admin_events?.toLocaleString() || 0}
@@ -357,11 +357,56 @@ export default function AuditLogsAdminPage() {
       {/* Main Table */}
       <div className="neo-card rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-xs">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Spinner className="size-8 text-[#5b15fc]" />
-            <p className="text-xs font-bold uppercase tracking-wider text-stone-600">
-              Loading Audit Records...
-            </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-stone-50/80 border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                <tr>
+                  <th className="py-3 px-3 w-12 text-center">#</th>
+                  <th className="py-3 px-4 w-44">Action Event</th>
+                  <th className="py-3 px-4">What Happened</th>
+                  <th className="py-3 px-4 w-36">Target Entity</th>
+                  <th className="py-3 px-4 w-32">Actor / User</th>
+                  <th className="py-3 px-4 w-32">Client IP</th>
+                  <th className="py-3 px-4 w-36 text-right">Timestamp</th>
+                  <th className="py-3 px-3 w-16 text-center">Payload</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={`audit-skeleton-${i}`} className="hover:bg-stone-50/40">
+                    <td className="py-3.5 px-3 text-center">
+                      <Skeleton className="h-4 w-5 mx-auto rounded" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="h-5 w-28 rounded-lg" />
+                    </td>
+                    <td className="py-3.5 px-4 space-y-1.5">
+                      <Skeleton className="h-3.5 w-5/6 rounded" />
+                      <Skeleton className="h-3 w-1/2 rounded" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-4 w-12 rounded" />
+                        <Skeleton className="h-3.5 w-14 rounded" />
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="h-4 w-16 rounded" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="h-3.5 w-20 rounded" />
+                    </td>
+                    <td className="py-3.5 px-4 text-right space-y-1">
+                      <Skeleton className="h-3.5 w-14 ml-auto rounded" />
+                      <Skeleton className="h-3 w-12 ml-auto rounded" />
+                    </td>
+                    <td className="py-3.5 px-3 text-center">
+                      <Skeleton className="size-7 mx-auto rounded-lg" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center p-6 space-y-3">
