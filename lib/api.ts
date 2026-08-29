@@ -749,6 +749,7 @@ export const pharmacyApi = {
     requires_prescription?: boolean;
     in_stock_only?: boolean;
     min_price?: number;
+    max_price?: number;
     manufacturer?: string;
     sort_by?: string;
     page?: number;
