@@ -780,9 +780,13 @@ export default function MedicineDetailPage() {
                       ) : (
                         <div
                           className="prose prose-stone max-w-none text-xs sm:text-sm text-stone-700 leading-relaxed space-y-2.5
-                            [&_table]:w-full [&_table]:border-collapse [&_table]:my-3
-                            [&_thead]:bg-stone-50 [&_th]:border-b [&_th]:border-stone-200 [&_th]:p-2.5 [&_th]:font-bold [&_th]:text-stone-800 [&_th]:text-left
-                            [&_td]:border-b [&_td]:border-stone-100 [&_td]:p-2.5 [&_td]:text-stone-700
+                            [&_table]:w-full [&_table]:border-collapse [&_table]:my-4 [&_table]:rounded-xl [&_table]:overflow-hidden [&_table]:border [&_table]:border-stone-300 [&_table]:shadow-2xs
+                            [&_thead]:bg-stone-100/90
+                            [&_th]:border [&_th]:border-stone-300 [&_th]:py-2.5 [&_th]:px-3.5 [&_th]:font-bold [&_th]:text-stone-900 [&_th]:text-left [&_th]:text-xs [&_th]:tracking-wide
+                            [&_tbody_tr]:border-b [&_tbody_tr]:border-stone-200
+                            [&_tbody_tr:nth-child(even)]:bg-stone-50/50
+                            [&_tbody_tr:hover]:bg-[#5b15fc]/5
+                            [&_td]:border [&_td]:border-stone-200 [&_td]:py-2.5 [&_td]:px-3.5 [&_td]:text-stone-700 [&_td]:text-xs [&_td]:align-top
                             [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
                             [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1
                             [&_strong]:text-stone-900 [&_strong]:font-bold
