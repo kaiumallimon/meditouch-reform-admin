@@ -39,6 +39,7 @@ import {
   Bookmark
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { pharmacyApi, MedicineDetailData } from "@/lib/api";
 import { toast } from "sonner";
@@ -431,6 +432,137 @@ export default function MedicineDetailPage() {
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
         <Spinner className="size-10 text-[#5b15fc]" />
         <p className="text-xs font-semibold text-stone-500">Loading pharmaceutical details & monograph...</p>
+      <div className="space-y-6">
+        {/* Top Action Bar Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-24 rounded" />
+            <span className="text-stone-300">/</span>
+            <Skeleton className="h-5 w-20 rounded-md" />
+            <span className="text-stone-300">/</span>
+            <Skeleton className="h-4 w-40 rounded" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-28 rounded-xl" />
+            <Skeleton className="h-9 w-28 rounded-xl" />
+            <Skeleton className="h-9 w-24 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Hero Showcase Card Skeleton */}
+        <div className="neo-card rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 shadow-xs">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Left Product Image Skeleton */}
+            <div className="lg:col-span-5 flex items-center justify-center">
+              <Skeleton className="w-full aspect-4/3 rounded-2xl" />
+            </div>
+
+            {/* Right Product Details Skeleton */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="space-y-2 border-b border-stone-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-28 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+                <Skeleton className="h-8 w-3/4 rounded-xl" />
+                <Skeleton className="h-4 w-1/2 rounded-lg" />
+                <Skeleton className="h-3.5 w-2/5 rounded-lg" />
+              </div>
+
+              {/* Price Skeleton */}
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-28 rounded-md" />
+                <Skeleton className="h-10 w-44 rounded-xl" />
+              </div>
+
+              {/* Pack Size Pills Skeleton */}
+              <div className="space-y-2 pt-1">
+                <Skeleton className="h-3 w-32 rounded-md" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 w-28 rounded-xl" />
+                  <Skeleton className="h-10 w-28 rounded-xl" />
+                  <Skeleton className="h-10 w-28 rounded-xl" />
+                </div>
+              </div>
+
+              {/* Specs 4-Grid Skeleton */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-stone-100">
+                <Skeleton className="h-14 rounded-xl" />
+                <Skeleton className="h-14 rounded-xl" />
+                <Skeleton className="h-14 rounded-xl" />
+                <Skeleton className="h-14 rounded-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Monograph Sections Skeleton */}
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1">
+            <Skeleton className="h-7 w-64 rounded-xl" />
+            <Skeleton className="h-4 w-96 rounded-lg" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Index Column Skeleton */}
+            <div className="lg:col-span-3 space-y-2.5">
+              <div className="neo-card rounded-2xl bg-white border border-stone-200 p-3 space-y-2 shadow-xs">
+                <Skeleton className="h-6 w-full rounded-lg mb-2" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+                <Skeleton className="h-7 w-full rounded-lg" />
+              </div>
+            </div>
+
+            {/* Stacked Cards Skeleton */}
+            <div className="lg:col-span-9 space-y-5">
+              {/* Monograph Card 1 */}
+              <div className="neo-card rounded-2xl bg-white border border-stone-200 p-6 sm:p-7 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <Skeleton className="h-7 w-48 rounded-lg" />
+                  <Skeleton className="h-5 w-24 rounded-md" />
+                </div>
+                <div className="space-y-2.5">
+                  <Skeleton className="h-3.5 w-full rounded-md" />
+                  <Skeleton className="h-3.5 w-11/12 rounded-md" />
+                  <Skeleton className="h-3.5 w-4/5 rounded-md" />
+                  <Skeleton className="h-3.5 w-3/4 rounded-md" />
+                </div>
+              </div>
+
+              {/* Monograph Card 2 (Dosage) */}
+              <div className="neo-card rounded-2xl bg-white border border-stone-200 p-6 sm:p-7 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <Skeleton className="h-7 w-56 rounded-lg" />
+                  <Skeleton className="h-5 w-24 rounded-md" />
+                </div>
+                <div className="space-y-2.5">
+                  <Skeleton className="h-3.5 w-full rounded-md" />
+                  <Skeleton className="h-3.5 w-5/6 rounded-md" />
+                  <Skeleton className="h-24 w-full rounded-xl" />
+                </div>
+              </div>
+
+              {/* FAQ Card Skeleton */}
+              <div className="neo-card rounded-2xl bg-white border border-stone-200 p-6 sm:p-7 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <Skeleton className="h-7 w-56 rounded-lg" />
+                  <Skeleton className="h-5 w-20 rounded-md" />
+                </div>
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

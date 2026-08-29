@@ -35,6 +35,7 @@ import {
   Check
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, cn } from "@/lib/utils";
 import {
   pharmacyApi,
@@ -522,6 +523,13 @@ export default function PharmacyAdminPage() {
           <p className="font-heading text-2xl font-normal text-stone-900">
             {statsLoading ? "..." : (stats?.total_medicines || totalCount).toLocaleString()}
           </p>
+          {statsLoading ? (
+            <Skeleton className="h-7 w-20 rounded-lg mt-0.5" />
+          ) : (
+            <p className="font-heading text-2xl font-normal text-stone-900">
+              {(stats?.total_medicines || totalCount).toLocaleString()}
+            </p>
+          )}
           <p className="text-[10px] text-stone-500 flex items-center gap-1 font-medium">
             <span className="size-1.5 rounded-full bg-[#5b15fc]" />
             Indexed Drugs
@@ -540,6 +548,13 @@ export default function PharmacyAdminPage() {
           <p className="font-heading text-2xl font-normal text-stone-900">
             {statsLoading ? "..." : (stats?.in_stock_medicines || 0).toLocaleString()}
           </p>
+          {statsLoading ? (
+            <Skeleton className="h-7 w-20 rounded-lg mt-0.5" />
+          ) : (
+            <p className="font-heading text-2xl font-normal text-stone-900">
+              {(stats?.in_stock_medicines || 0).toLocaleString()}
+            </p>
+          )}
           <p className="text-[10px] text-emerald-700 font-medium">Available for Order</p>
         </div>
 
@@ -555,6 +570,13 @@ export default function PharmacyAdminPage() {
           <p className="font-heading text-2xl font-normal text-stone-900">
             {statsLoading ? "..." : (stats?.total_categories || categories.length).toLocaleString()}
           </p>
+          {statsLoading ? (
+            <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+          ) : (
+            <p className="font-heading text-2xl font-normal text-stone-900">
+              {(stats?.total_categories || categories.length).toLocaleString()}
+            </p>
+          )}
           <p className="text-[10px] text-stone-500 font-medium">Dosage Form Classifications</p>
         </div>
 
@@ -570,6 +592,13 @@ export default function PharmacyAdminPage() {
           <p className="font-heading text-2xl font-normal text-stone-900">
             {statsLoading ? "..." : (stats?.total_manufacturers || 0).toLocaleString()}
           </p>
+          {statsLoading ? (
+            <Skeleton className="h-7 w-16 rounded-lg mt-0.5" />
+          ) : (
+            <p className="font-heading text-2xl font-normal text-stone-900">
+              {(stats?.total_manufacturers || 0).toLocaleString()}
+            </p>
+          )}
           <p className="text-[10px] text-stone-500 font-medium">Pharma Companies</p>
         </div>
 
@@ -824,6 +853,94 @@ export default function PharmacyAdminPage() {
           <Spinner className="size-8 text-[#5b15fc]" />
           <p className="text-xs font-semibold text-stone-500 mt-3">Loading medicine catalog...</p>
         </div>
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={`pharmacy-grid-skeleton-${i}`}
+                className="neo-card rounded-2xl bg-white border border-stone-200 overflow-hidden flex flex-col justify-between shadow-xs"
+              >
+                <Skeleton className="aspect-4/3 w-full rounded-none" />
+                <div className="p-4 space-y-3">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-4/5 rounded" />
+                    <Skeleton className="h-3 w-3/5 rounded" />
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                  </div>
+                  <div className="pt-2 border-t border-stone-100 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Skeleton className="h-2.5 w-12 rounded" />
+                      <Skeleton className="h-5 w-20 rounded" />
+                    </div>
+                    <div className="flex gap-1">
+                      <Skeleton className="h-7 w-14 rounded-lg" />
+                      <Skeleton className="size-7 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="neo-card rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-stone-200 bg-stone-50/80 text-[11px] font-bold uppercase tracking-wider text-stone-600">
+                  <tr>
+                    <th className="py-3 px-4 w-11">
+                      <Skeleton className="size-4 rounded" />
+                    </th>
+                    <th className="py-3 px-4">Product Name & Formulation</th>
+                    <th className="py-3 px-4">Dosage / Strength</th>
+                    <th className="py-3 px-4">Manufacturer</th>
+                    <th className="py-3 px-4">Unit Pricing</th>
+                    <th className="py-3 px-4">Rx Required</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 bg-white">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={`pharmacy-table-skeleton-${i}`} className="hover:bg-stone-50/40">
+                      <td className="py-3 px-4 w-11">
+                        <Skeleton className="size-4 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="size-11 rounded-xl shrink-0" />
+                          <div className="space-y-1.5 flex-1">
+                            <Skeleton className="h-3.5 w-36 rounded" />
+                            <Skeleton className="h-3 w-24 rounded" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 space-y-1">
+                        <Skeleton className="h-3.5 w-20 rounded" />
+                        <Skeleton className="h-4 w-14 rounded-md" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-3.5 w-28 rounded" />
+                      </td>
+                      <td className="py-3 px-4 space-y-1">
+                        <Skeleton className="h-4 w-16 rounded" />
+                        <Skeleton className="h-2.5 w-12 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-5 w-12 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Skeleton className="h-7 w-12 rounded-lg" />
+                          <Skeleton className="size-7 rounded-lg" />
+                          <Skeleton className="size-7 rounded-lg" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
       ) : medicines.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 neo-card rounded-2xl bg-white border border-stone-200 text-center p-6">
           <div className="flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 border border-stone-200 mb-3">
