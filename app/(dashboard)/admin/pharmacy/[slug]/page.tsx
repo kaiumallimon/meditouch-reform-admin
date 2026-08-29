@@ -259,7 +259,7 @@ export default function MedicineDetailPage() {
   const monographSections = useMemo(() => {
     if (!medicine) return [];
     const details = medicine.medicine_details || {};
-    return [
+    const sections = [
       {
         id: "indications",
         icon: Stethoscope,
