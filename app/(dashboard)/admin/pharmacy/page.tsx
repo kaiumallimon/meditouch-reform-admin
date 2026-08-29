@@ -76,9 +76,8 @@ export default function PharmacyAdminPage() {
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [triggeringCrawler, setTriggeringCrawler] = useState(false);
-  const [clearingCatalog, setClearingCatalog] = useState(false);
 
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const terminalBoxRef = useRef<HTMLDivElement>(null);
 
   // 1. Fetch Stats & Categories
   const loadStatsAndCategories = async () => {
@@ -281,10 +280,10 @@ export default function PharmacyAdminPage() {
     return () => clearTimeout(timer);
   }, [search, selectedCategory, selectedRx, page]);
 
-  // Auto-scroll logs in console drawer
+  // Scroll internal console box without moving page window
   useEffect(() => {
-    if (showCrawlerLogs && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (showCrawlerLogs && terminalBoxRef.current) {
+      terminalBoxRef.current.scrollTop = terminalBoxRef.current.scrollHeight;
     }
   }, [crawlerStatus?.logs, showCrawlerLogs]);
 
@@ -332,25 +331,6 @@ export default function PharmacyAdminPage() {
       toast.error("Failed to save crawler settings", { description: err.message });
     } finally {
       setSavingSettings(false);
-    }
-  };
-
-  const handleClearCatalog = async () => {
-    if (!window.confirm("Are you sure you want to delete all medicine records and details from the database? This action cannot be undone.")) {
-      return;
-    }
-    try {
-      setClearingCatalog(true);
-      const res = await pharmacyApi.clearAllMedicines();
-      toast.success("Catalog Cleared", {
-        description: `Successfully removed ${res.deleted_count} medicine records from database.`,
-      });
-      await loadMedicines();
-      await loadStatsAndCategories();
-    } catch (err: any) {
-      toast.error("Failed to clear catalog", { description: err.message });
-    } finally {
-      setClearingCatalog(false);
     }
   };
 
@@ -405,16 +385,6 @@ export default function PharmacyAdminPage() {
           >
             <Settings2 className="size-3.5 text-stone-500" />
             <span>Crawler Settings</span>
-          </button>
-
-          <button
-            onClick={handleClearCatalog}
-            disabled={clearingCatalog}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            title="Wipe all medicines from database"
-          >
-            {clearingCatalog ? <Spinner className="size-3.5 text-rose-700" /> : <X className="size-3.5 text-rose-600" />}
-            <span>Clear Catalog</span>
           </button>
 
           <button
@@ -609,7 +579,10 @@ export default function PharmacyAdminPage() {
             </button>
           </div>
 
-          <div className="max-h-60 overflow-y-auto space-y-1 text-[11px] pr-2 scrollbar-thin">
+          <div
+            ref={terminalBoxRef}
+            className="max-h-60 overflow-y-auto space-y-1 text-[11px] pr-2 scrollbar-thin"
+          >
             {crawlerStatus?.logs && crawlerStatus.logs.length > 0 ? (
               crawlerStatus.logs.map((log, idx) => (
                 <p key={idx} className="leading-relaxed">
@@ -622,7 +595,6 @@ export default function PharmacyAdminPage() {
             ) : (
               <p className="text-stone-500 italic">No crawler logs recorded yet. Start crawler to stream real-time events.</p>
             )}
-            <div ref={logsEndRef} />
           </div>
         </div>
       )}
