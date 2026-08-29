@@ -390,12 +390,20 @@ export function DoctorDetailModal({
             </div>
 
             {/* Document / Image Viewer Body */}
-            <div className="flex-1 min-h-[380px] max-h-[500px] overflow-hidden rounded-xl border border-stone-200 bg-stone-100 flex items-center justify-center p-2">
-              <img
-                src={getDocumentPreviewUrl(previewDoc.url)}
-                alt={previewDoc.type}
-                className="size-full max-h-[480px] object-contain rounded-xl shadow-xs"
-              />
+            <div className="flex-1 min-h-[420px] max-h-[520px] overflow-hidden rounded-xl border border-stone-200 bg-stone-100 flex items-center justify-center">
+              {previewDoc.url.toLowerCase().endsWith(".pdf") || previewDoc.type.toLowerCase().includes("pdf") ? (
+                <iframe
+                  src={previewDoc.url}
+                  className="size-full min-h-[460px] rounded-xl border-0 bg-white"
+                  title={previewDoc.type}
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.type}
+                  className="size-full max-h-[480px] object-contain rounded-xl shadow-xs p-2"
+                />
+              )}
             </div>
 
             {/* Lightbox Footer Actions */}
@@ -420,7 +428,7 @@ export function DoctorDetailModal({
                   <span>Download Document</span>
                 </button>
                 <a
-                  href={getDocumentPreviewUrl(previewDoc.url)}
+                  href={previewDoc.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-2 font-semibold text-white hover:bg-[#4d0ee0] shadow-xs"
