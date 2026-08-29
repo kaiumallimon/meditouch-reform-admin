@@ -147,12 +147,19 @@ export function MessageScrollerItem({
   className,
   children,
   scrollAnchor = false,
+  messageId,
   ...props
 }: MessageScrollerItemProps) {
   const itemRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <div ref={itemRef} className={cn("w-full transition-opacity duration-200", className)} {...props}>
+    <div
+      ref={itemRef}
+      data-message-id={messageId}
+      data-scroll-anchor={scrollAnchor}
+      className={cn("w-full transition-opacity duration-200", className)}
+      {...props}
+    >
       {children}
     </div>
   );

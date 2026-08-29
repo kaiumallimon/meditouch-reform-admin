@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bot, Sparkles, X, Maximize2, Minimize2, ChevronRight } from "lucide-react";
+import { Bot, Sparkles, X, Maximize2, Minimize2 } from "lucide-react";
 import { AIChatInterface } from "@/components/chat/ai-chat-interface";
 import { getSession } from "@/lib/auth";
 
@@ -18,23 +18,23 @@ export function FloatingAIAssistant() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 group flex items-center gap-2 rounded-full border border-teal-500/40 bg-slate-950/90 px-4 py-3 text-slate-100 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-teal-400 hover:shadow-teal-500/20 active:scale-95"
+          className="fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 rounded-full border-2 border-stone-800 bg-[#5b15fc] px-4 py-3 text-white shadow-[4px_4px_0px_#000000] transition-all hover:scale-105 hover:bg-[#4a0fd4] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_#000000]"
           aria-label="Open MediTouch AI Assistant"
         >
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 shadow-inner">
-            <Bot className="h-4.5 w-4.5 transition-transform group-hover:rotate-12" />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
+          <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white">
+            <Bot className="h-4 w-4 transition-transform group-hover:rotate-12" />
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
             </span>
           </div>
-          <div className="text-left pr-1">
-            <div className="flex items-center gap-1 text-xs font-semibold tracking-wide text-slate-100">
+          <div className="text-left pr-0.5">
+            <div className="flex items-center gap-1 text-xs font-bold tracking-wide text-white">
               <span>MediTouch AI</span>
-              <Sparkles className="h-3 w-3 text-teal-400" />
+              <Sparkles className="h-3 w-3 text-amber-300" />
             </div>
-            <p className="text-[10px] text-slate-400 font-mono">
-              {userRole === "ADMIN" ? "Executive Assistant" : "Clinical Assistant"}
+            <p className="text-[10px] text-white/80 font-medium">
+              {userRole === "ADMIN" ? "Admin Assistant" : "Health Assistant"}
             </p>
           </div>
         </button>
@@ -43,44 +43,50 @@ export function FloatingAIAssistant() {
       {/* Floating Side Drawer Panel */}
       {isOpen && (
         <div
-          className={`fixed top-3 bottom-3 right-3 z-50 flex flex-col rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-2xl transition-all duration-300 animate-in slide-in-from-right ${
-            isExpanded ? "w-[620px]" : "w-[440px] max-w-[calc(100vw-1.5rem)]"
+          className={`fixed z-50 flex flex-col overflow-hidden rounded-2xl border-2 border-stone-800 bg-white shadow-[6px_6px_0px_rgba(0,0,0,0.15)] transition-all duration-300 animate-in slide-in-from-right ${
+            isExpanded
+              ? "inset-x-3 bottom-3 top-14 sm:inset-auto sm:right-4 sm:bottom-4 sm:top-14 sm:w-[640px] sm:h-[calc(100vh-5rem)]"
+              : "inset-x-2 bottom-2 top-14 sm:inset-auto sm:right-4 sm:bottom-4 sm:top-auto sm:w-[440px] sm:h-[620px] md:h-[660px]"
           }`}
         >
-          {/* Top Panel Control Bar */}
-          <div className="flex items-center justify-between border-b border-slate-800 px-3.5 py-2 bg-slate-900/80 rounded-t-2xl">
+          {/* Header Controls */}
+          <div className="flex items-center justify-between border-b-2 border-stone-800 bg-[#5b15fc] px-4 py-2.5 text-white">
             <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-500/20 text-teal-300">
-                <Bot className="h-3.5 w-3.5" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white">
+                <Bot className="h-4 w-4" />
               </div>
-              <span className="text-xs font-semibold text-slate-200">
-                MediTouch AI Assistant
-              </span>
+              <div>
+                <h3 className="text-xs font-bold text-white tracking-wide">
+                  MediTouch AI Assistant
+                </h3>
+                <span className="text-[10px] text-white/80 font-medium">
+                  {userRole === "ADMIN" ? "Admin Command Console" : "Clinical Assistant"}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-1 text-slate-400">
+            <div className="flex items-center gap-1 text-white/80">
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="rounded-lg p-1.5 hover:bg-slate-800 hover:text-slate-200 transition"
+                className="rounded-lg p-1.5 hover:bg-white/20 hover:text-white transition"
                 title={isExpanded ? "Collapse width" : "Expand width"}
               >
                 {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded-lg p-1.5 hover:bg-slate-800 hover:text-rose-400 transition"
+                className="rounded-lg p-1.5 hover:bg-white/20 hover:text-white transition"
                 title="Close AI Assistant"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          {/* Main Embedded Chat Canvas with MessageScroller */}
+          {/* Embedded Chat Canvas */}
           <div className="flex-1 overflow-hidden">
             <AIChatInterface
               defaultSessionType={userRole === "ADMIN" ? "ADMIN" : "USER"}
-              isDrawerMode={true}
             />
           </div>
         </div>

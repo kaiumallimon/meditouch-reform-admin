@@ -10,18 +10,18 @@ import {
   Plus,
   Trash2,
   Sparkles,
-  RefreshCw,
   AlertTriangle,
   CheckCircle2,
   Pill,
   Shield,
   Loader2,
   Database,
-  Search,
-  MessageSquare,
-  ChevronLeft,
-  ChevronRight,
   History,
+  ChevronLeft,
+  X,
+  Stethoscope,
+  Cloud,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -71,10 +71,8 @@ interface Session {
 
 export function AIChatInterface({
   defaultSessionType = "ADMIN",
-  isDrawerMode = false,
 }: {
   defaultSessionType?: "USER" | "ADMIN";
-  isDrawerMode?: boolean;
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -235,7 +233,7 @@ export function AIChatInterface({
     ]);
 
     setIsStreaming(true);
-    setAgentState("Connecting...");
+    setAgentState("Thinking...");
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -405,34 +403,36 @@ export function AIChatInterface({
   };
 
   return (
-    <div className="relative flex h-full w-full overflow-hidden bg-slate-950 text-slate-100">
-      {/* Session History Sliding Drawer (for compact floating side panel) */}
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#FAF8F5] text-stone-900 font-sans">
+      {/* Session History Sliding Drawer */}
       {showSessionsDrawer && (
-        <div className="absolute inset-0 z-30 flex flex-col bg-slate-900/98 p-4 backdrop-blur-xl animate-in slide-in-from-left duration-200 border-r border-slate-800">
-          <div className="mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
-              <History className="h-4 w-4 text-teal-400" />
-              <span>Conversations</span>
+        <div className="absolute inset-0 z-30 flex flex-col bg-white p-4 shadow-xl border-r border-stone-200 animate-in slide-in-from-left duration-200">
+          <div className="mb-4 flex items-center justify-between border-b border-stone-100 pb-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-800">
+              <History className="h-4 w-4 text-[#5b15fc]" />
+              <span>Conversation History</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={createNewSession}
-                className="flex items-center gap-1 rounded-lg bg-teal-500/20 px-2 py-1 text-[11px] font-medium text-teal-300 hover:bg-teal-500/30"
+                className="flex items-center gap-1 rounded-xl bg-[#5b15fc]/10 px-2.5 py-1.5 text-xs font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/20 transition"
               >
                 <Plus className="h-3 w-3" /> New
               </button>
               <button
                 onClick={() => setShowSessionsDrawer(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
           <div className="flex-1 space-y-1.5 overflow-y-auto pr-1">
             {sessions.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">No chat history</div>
+              <div className="py-12 text-center text-xs text-stone-400">
+                No past conversations. Start a new chat!
+              </div>
             ) : (
               sessions.map((s) => (
                 <div
@@ -441,18 +441,19 @@ export function AIChatInterface({
                     setActiveSessionId(s.id);
                     setShowSessionsDrawer(false);
                   }}
-                  className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-xs transition-all ${
+                  className={`group flex cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-xs transition-all ${
                     activeSessionId === s.id
-                      ? "bg-teal-500/15 font-medium text-teal-300 border border-teal-500/30"
-                      : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                      ? "bg-[#5b15fc]/10 font-semibold text-[#5b15fc] border border-[#5b15fc]/30"
+                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 border border-transparent"
                   }`}
                 >
                   <div className="truncate pr-2">{s.title}</div>
                   <button
                     onClick={(e) => deleteSession(s.id, e)}
-                    className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+                    className="opacity-0 transition-opacity group-hover:opacity-100 text-stone-400 hover:text-rose-500"
+                    title="Delete session"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ))
@@ -461,246 +462,258 @@ export function AIChatInterface({
         </div>
       )}
 
-      {/* Main Conversation Container with MessageScroller */}
-      <div className="flex flex-1 flex-col justify-between overflow-hidden">
-        {/* Top Mini Header */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-3.5 py-2.5 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowSessionsDrawer(!showSessionsDrawer)}
-              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
-              title="View conversation history"
-            >
-              <History className="h-4 w-4 text-teal-400" />
-            </button>
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-teal-400" />
-              <span className="text-xs font-semibold text-slate-200">MediTouch AI</span>
-            </div>
-            <span className="rounded bg-teal-500/10 px-1.5 py-0.5 text-[10px] font-mono text-teal-300 border border-teal-500/20">
-              {userRole === "ADMIN" ? "ADMIN" : "PATIENT"}
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between border-b border-stone-200/80 bg-white px-4 py-3 shadow-xs">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSessionsDrawer(!showSessionsDrawer)}
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition"
+            title="View chat history"
+          >
+            <History className="h-3.5 w-3.5 text-[#5b15fc]" />
+            <span className="hidden sm:inline">History</span>
+          </button>
+          <div className="flex items-center gap-1.5 pl-1">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
+              {userRole === "ADMIN" ? "Admin Command Mode" : "Clinical Assistant"}
             </span>
           </div>
-
-          <button
-            onClick={createNewSession}
-            className="flex items-center gap-1 rounded-lg bg-teal-500/15 px-2 py-1 text-[11px] font-medium text-teal-300 hover:bg-teal-500/25 transition"
-          >
-            <Plus className="h-3 w-3" />
-            <span>New</span>
-          </button>
         </div>
 
-        {/* MessageScroller Component */}
-        <MessageScrollerProvider>
-          <MessageScroller className="flex-1">
-            <MessageScrollerViewport className="p-3.5">
-              <MessageScrollerContent>
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 shadow-md">
-                      <Bot className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-200">
-                      MediTouch Intelligent Assistant
-                    </h3>
-                    <p className="mt-1 max-w-xs text-[11px] text-slate-400">
-                      {userRole === "ADMIN"
-                        ? "Execute admin commands, query CDN metrics, or search the complete medicine catalog."
-                        : "Ask about medicines, live prices, stock, or clinical Over-The-Counter symptom guidance."}
-                    </p>
+        <button
+          onClick={createNewSession}
+          className="flex items-center gap-1 rounded-lg bg-[#5b15fc] px-2.5 py-1 text-xs font-semibold text-white shadow-xs hover:bg-[#4a0fd4] transition"
+        >
+          <Plus className="h-3 w-3" />
+          <span>New Chat</span>
+        </button>
+      </div>
 
-                    <div className="mt-4 flex flex-col gap-2 w-full max-w-xs text-left">
-                      <button
-                        onClick={() => handleSendMessage("Search Napa Extra, check pricing, stock count, and adult dosage.")}
-                        className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-[11px] text-slate-300 hover:border-teal-500/40 hover:bg-slate-900 transition"
-                      >
-                        💊 Check Napa Extra pricing & monograph
-                      </button>
-                      {userRole === "ADMIN" ? (
-                        <button
-                          onClick={() => handleSendMessage("Show me current Cloudinary CDN storage metrics and folder breakdown.")}
-                          className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-[11px] text-slate-300 hover:border-teal-500/40 hover:bg-slate-900 transition"
-                        >
-                          ☁️ Query CDN Storage Breakdown
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleSendMessage("I have a mild headache and fever. What OTC medicine can I take?")}
-                          className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-[11px] text-slate-300 hover:border-teal-500/40 hover:bg-slate-900 transition"
-                        >
-                          🩺 OTC Symptom Guidance
-                        </button>
-                      )}
-                    </div>
+      {/* Main Conversation Container with MessageScroller */}
+      <MessageScrollerProvider>
+        <MessageScroller className="flex-1">
+          <MessageScrollerViewport className="p-4">
+            <MessageScrollerContent>
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5b15fc]/10 text-[#5b15fc] shadow-xs border border-[#5b15fc]/20">
+                    <Bot className="h-7 w-7" />
                   </div>
-                ) : (
-                  messages.map((m) => (
-                    <MessageScrollerItem key={m.id} messageId={m.id} scrollAnchor={m.role === "user"}>
-                      <div className={`flex gap-2.5 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                        {m.role === "assistant" && (
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                            <Bot className="h-3.5 w-3.5" />
+                  <h3 className="text-base font-bold text-stone-900">
+                    How can MediTouch AI assist you?
+                  </h3>
+                  <p className="mt-1 max-w-xs text-xs text-stone-500 leading-relaxed">
+                    {userRole === "ADMIN"
+                      ? "Execute platform management commands, look up Cloudinary CDN metrics, or search the complete catalog."
+                      : "Search medicines, check live inventory & pricing, or ask for Over-The-Counter symptom guidance."}
+                  </p>
+
+                  <div className="mt-5 flex flex-col gap-2 w-full max-w-xs text-left">
+                    <button
+                      onClick={() => handleSendMessage("Search Napa Extra, check pricing, stock count, and adult dosage.")}
+                      className="neo-button flex items-center gap-2 rounded-xl bg-white p-3 text-xs text-stone-800 hover:border-[#5b15fc]/50 hover:bg-stone-50 transition"
+                    >
+                      <Pill className="h-4 w-4 text-[#5b15fc] shrink-0" />
+                      <span className="font-medium">Check Napa Extra pricing & stock</span>
+                    </button>
+                    {userRole === "ADMIN" ? (
+                      <button
+                        onClick={() => handleSendMessage("Show me current Cloudinary CDN storage metrics and folder breakdown.")}
+                        className="neo-button flex items-center gap-2 rounded-xl bg-white p-3 text-xs text-stone-800 hover:border-[#5b15fc]/50 hover:bg-stone-50 transition"
+                      >
+                        <Cloud className="h-4 w-4 text-sky-600 shrink-0" />
+                        <span className="font-medium">Query CDN Storage Breakdown</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSendMessage("I have a mild headache and fever. What OTC medicine can I take?")}
+                        className="neo-button flex items-center gap-2 rounded-xl bg-white p-3 text-xs text-stone-800 hover:border-[#5b15fc]/50 hover:bg-stone-50 transition"
+                      >
+                        <Stethoscope className="h-4 w-4 text-emerald-600 shrink-0" />
+                        <span className="font-medium">OTC Symptom Guidance</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                messages.map((m) => (
+                  <MessageScrollerItem key={m.id} messageId={m.id} scrollAnchor={m.role === "user"}>
+                    <div className={`flex gap-2.5 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                      {m.role === "assistant" && (
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/20 shadow-xs">
+                          <Bot className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+
+                      <div
+                        className={`max-w-[85%] space-y-2.5 rounded-2xl px-3.5 py-3 text-xs leading-relaxed ${
+                          m.role === "user"
+                            ? "bg-[#5b15fc] text-white rounded-br-xs shadow-sm font-medium"
+                            : "bg-white text-stone-800 border border-stone-200/90 rounded-bl-xs shadow-xs"
+                        }`}
+                      >
+                        {/* Tool Timeline Badges */}
+                        {m.toolCalls && m.toolCalls.length > 0 && (
+                          <div className="space-y-1 border-b border-stone-100 pb-2">
+                            {m.toolCalls.map((tc, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-1.5 rounded-lg bg-stone-50 px-2.5 py-1 font-mono text-[11px] text-stone-700 border border-stone-200"
+                              >
+                                <Database className="h-3 w-3 text-[#5b15fc] shrink-0" />
+                                <span className="font-semibold">{tc.tool}</span>
+                                <span className="ml-auto flex items-center">
+                                  {tc.status === "RUNNING" ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+                                  ) : (
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                  )}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         )}
 
-                        <div
-                          className={`max-w-[85%] space-y-2.5 rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
-                            m.role === "user"
-                              ? "bg-teal-600 text-white rounded-br-none shadow-md"
-                              : "bg-slate-900/90 text-slate-200 border border-slate-800/80 rounded-bl-none shadow-sm"
-                          }`}
-                        >
-                          {/* Tool Timeline Badges */}
-                          {m.toolCalls && m.toolCalls.length > 0 && (
-                            <div className="space-y-1 border-b border-slate-800 pb-2">
-                              {m.toolCalls.map((tc, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center gap-1.5 rounded-md bg-slate-950/80 px-2 py-1 font-mono text-[10px] text-teal-300 border border-slate-800/60"
-                                >
-                                  <Database className="h-2.5 w-2.5 text-teal-400 shrink-0" />
-                                  <span className="font-semibold">{tc.tool}</span>
-                                  <span className="ml-auto">
-                                    {tc.status === "RUNNING" ? (
-                                      <Loader2 className="h-2.5 w-2.5 animate-spin text-amber-400" />
-                                    ) : (
-                                      <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" />
-                                    )}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Markdown text body */}
-                          <div className="whitespace-pre-wrap font-sans text-xs">
-                            {m.content}
-                            {m.isStreaming && (
-                              <span className="ml-1 inline-block h-3.5 w-1.5 animate-pulse bg-teal-400" />
-                            )}
-                          </div>
-
-                          {/* Visual Medicine Cards */}
-                          {m.medicineCards && m.medicineCards.length > 0 && (
-                            <div className="grid grid-cols-1 gap-2 pt-1">
-                              {m.medicineCards.map((med, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-start gap-2 rounded-xl border border-slate-800 bg-slate-950 p-2.5"
-                                >
-                                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-900 border border-slate-800">
-                                    {med.image ? (
-                                      <Image src={med.image} alt={med.brand} fill className="object-cover" />
-                                    ) : (
-                                      <div className="flex h-full w-full items-center justify-center text-teal-400">
-                                        <Pill className="h-4 w-4" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="font-semibold text-slate-100 truncate text-[11px]">
-                                        {med.brand}
-                                      </h4>
-                                      <span className="font-semibold text-teal-300 text-[11px]">
-                                        ৳ {med.unit_price?.toFixed(2)}
-                                      </span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 truncate">
-                                      {med.generic_name} ({med.strength})
-                                    </p>
-                                    <div className="mt-1 flex items-center justify-between text-[9px]">
-                                      <span className="rounded bg-teal-500/10 px-1 py-0.2 text-teal-300">
-                                        {med.dosage_form || "Tablet"}
-                                      </span>
-                                      <span className={med.in_stock !== false ? "text-emerald-400" : "text-rose-400"}>
-                                        {med.in_stock !== false ? `In Stock (${med.stock_count || 100})` : "Out of Stock"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* 2-Step Confirmation Pill */}
-                          {m.confirmationPrompt && (
-                            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-2.5 text-amber-200">
-                              <div className="flex items-center gap-1.5 font-medium text-[11px] text-amber-300">
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-                                <span>Action Confirmation</span>
-                              </div>
-                              <p className="mt-1 text-[10px] text-amber-100/90 leading-relaxed">
-                                {m.confirmationPrompt.prompt}
-                              </p>
-                              <div className="mt-2 flex items-center gap-2">
-                                <button
-                                  onClick={() => handleConfirmAction(m.confirmationPrompt!.token, true)}
-                                  className="rounded-lg bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-slate-950 hover:bg-amber-400"
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  onClick={() => handleConfirmAction(m.confirmationPrompt!.token, false)}
-                                  className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-300 hover:bg-slate-800"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
+                        {/* Text Content */}
+                        <div className="whitespace-pre-wrap text-xs">
+                          {m.content}
+                          {m.isStreaming && (
+                            <span className="ml-1 inline-block h-3.5 w-1.5 animate-pulse bg-[#5b15fc]" />
                           )}
                         </div>
 
-                        {m.role === "user" && (
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-teal-600/20 border border-teal-500/30 text-teal-300">
-                            <User className="h-3.5 w-3.5" />
+                        {/* Interactive Medicine Cards */}
+                        {m.medicineCards && m.medicineCards.length > 0 && (
+                          <div className="grid grid-cols-1 gap-2 pt-1">
+                            {m.medicineCards.map((med, idx) => (
+                              <div
+                                key={idx}
+                                className="neo-card flex items-start gap-2.5 rounded-xl p-2.5 bg-white border border-stone-200"
+                              >
+                                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-stone-50 border border-stone-200">
+                                  {med.image ? (
+                                    <Image src={med.image} alt={med.brand} fill className="object-cover" />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-[#5b15fc]">
+                                      <Pill className="h-5 w-5" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-stone-900 truncate text-xs">
+                                      {med.brand}
+                                    </h4>
+                                    <span className="font-bold text-[#5b15fc] text-xs">
+                                      ৳ {med.unit_price?.toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-stone-500 truncate">
+                                    {med.generic_name} ({med.strength})
+                                  </p>
+                                  <div className="mt-1 flex items-center justify-between text-[10px]">
+                                    <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-600">
+                                      {med.dosage_form || "Tablet"}
+                                    </span>
+                                    <span
+                                      className={`font-semibold ${
+                                        med.in_stock !== false ? "text-emerald-600" : "text-rose-600"
+                                      }`}
+                                    >
+                                      {med.in_stock !== false ? `In Stock (${med.stock_count || 100})` : "Out of Stock"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 2-Step Confirmation Alert Pill */}
+                        {m.confirmationPrompt && (
+                          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                            <div className="flex items-center gap-1.5 font-bold text-xs text-amber-800">
+                              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                              <span>Action Confirmation Required</span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-amber-800/90 leading-relaxed">
+                              {m.confirmationPrompt.prompt}
+                            </p>
+                            <div className="mt-2.5 flex items-center gap-2">
+                              <button
+                                onClick={() => handleConfirmAction(m.confirmationPrompt!.token, true)}
+                                className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 shadow-xs transition"
+                              >
+                                Confirm Action
+                              </button>
+                              <button
+                                onClick={() => handleConfirmAction(m.confirmationPrompt!.token, false)}
+                                className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
-                    </MessageScrollerItem>
-                  ))
-                )}
-              </MessageScrollerContent>
-            </MessageScrollerViewport>
-            <MessageScrollerButton />
-          </MessageScroller>
-        </MessageScrollerProvider>
 
-        {/* State Status Bar */}
-        {agentState && (
-          <div className="flex items-center gap-1.5 border-t border-slate-900 bg-slate-950 px-4 py-1 text-[10px] text-teal-400 font-mono">
-            <Loader2 className="h-2.5 w-2.5 animate-spin" />
-            <span>Agent: {agentState}</span>
-          </div>
-        )}
+                      {m.role === "user" && (
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#5b15fc]/20 text-[#5b15fc] border border-[#5b15fc]/30">
+                          <User className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                    </div>
+                  </MessageScrollerItem>
+                ))
+              )}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
-        {/* Prompt Input Area */}
-        <div className="border-t border-slate-800/80 bg-slate-900/50 p-2.5">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-1.5 focus-within:border-teal-500/50"
-          >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={userRole === "ADMIN" ? "Ask or execute admin commands..." : "Search medicines or ask symptoms..."}
-              disabled={isStreaming}
-              className="flex-1 bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={isStreaming || !input.trim()}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500 text-slate-950 transition hover:bg-teal-400 disabled:opacity-40"
-            >
-              {isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            </button>
-          </form>
+      {/* State Progress Banner */}
+      {agentState && (
+        <div className="flex items-center gap-1.5 border-t border-stone-200 bg-white px-4 py-1.5 text-[11px] font-mono text-[#5b15fc]">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          <span>Status: {agentState}</span>
         </div>
+      )}
+
+      {/* Prompt Input Box */}
+      <div className="border-t border-stone-200 bg-white p-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+          className="flex items-center gap-2 rounded-xl border border-stone-200 bg-[#FAF8F5] px-3 py-2 focus-within:border-[#5b15fc] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#5b15fc]/15 transition"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={
+              userRole === "ADMIN"
+                ? "Enter admin command or ask questions..."
+                : "Search medicines, check pricing, symptoms..."
+            }
+            disabled={isStreaming}
+            className="flex-1 bg-transparent text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={isStreaming || !input.trim()}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5b15fc] text-white shadow-xs hover:bg-[#4a0fd4] transition disabled:opacity-40"
+          >
+            {isStreaming ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
