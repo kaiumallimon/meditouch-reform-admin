@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useState, useEffect, useMemo } from "react";
-import { getSession } from "@/lib/auth";
+import { getSession, clearSession } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 import {
   Code2,
   Copy,
@@ -11,12 +12,10 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
-  Radio,
   Play,
   Terminal,
   FileCode,
   Layers,
-  Sparkles,
   Server,
   Lock,
   Globe,
@@ -30,15 +29,18 @@ import {
   Activity,
   UserCheck,
   RefreshCw,
-  Eye,
-  KeyRound,
-  Send,
-  AlertTriangle,
-  Info
+  LogOut,
+  Radio,
+  BookOpen,
+  ArrowRight,
+  Sparkles,
+  HelpCircle,
+  Hash,
+  Share2
 } from "lucide-react";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -73,28 +75,20 @@ interface EndpointDoc {
 }
 
 export default function DeveloperDocsPage() {
+  const router = useRouter();
   const [session, setSession] = useState<any>(null);
   const [token, setToken] = useState<string>("");
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Filters
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [selectedMethod, setSelectedMethod] = useState<string>("ALL");
-  const [globalLang, setGlobalLang] = useState<SdkLang>("nextjs");
-
-  // Expanded cards
-  const [expandedEndpoints, setExpandedEndpoints] = useState<Record<string, boolean>>({
-    "auth-login": true,
-    "pharmacy-stream": true,
-  });
+  // Active Navigation & Section
+  const [activeSection, setActiveSection] = useState<string>("intro");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLang, setSelectedLang] = useState<SdkLang>("nextjs");
 
   // Live Console Testing states
-  const [testingEndpointId, setTestingEndpointId] = useState<string | null>(null);
   const [liveTestLoading, setLiveTestLoading] = useState(false);
   const [liveTestResult, setLiveTestResult] = useState<{
-    endpointId: string;
     status: number;
     latencyMs: number;
     headers: Record<string, string>;
@@ -121,7 +115,7 @@ export default function DeveloperDocsPage() {
 
   const handleCopyToken = () => {
     if (!token) {
-      toast.error("No active session token found. Please sign in.");
+      toast.error("No active session token found.");
       return;
     }
     navigator.clipboard.writeText(token);
@@ -130,14 +124,15 @@ export default function DeveloperDocsPage() {
     setTimeout(() => setCopiedToken(false), 2000);
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedEndpoints((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleSignOut = () => {
+    clearSession();
+    toast.success("Signed out successfully");
+    router.push("/login");
   };
 
-  // Endpoint Definitions
+  // Endpoints Definitions
   const endpoints: EndpointDoc[] = useMemo(
     () => [
-      // 1. AUTHENTICATION
       {
         id: "auth-login",
         category: "auth",
@@ -148,22 +143,8 @@ export default function DeveloperDocsPage() {
           "Authenticates a user, doctor, nurse, administrator, or developer via their registered phone number or email address and returns a signed JWT access token and refresh token.",
         authRequired: false,
         params: [
-          {
-            name: "identifier",
-            in: "body",
-            type: "string",
-            required: true,
-            description: "Phone number (e.g. 01711223344) or Email (e.g. dev@meditouch.com)",
-            example: "01711223344"
-          },
-          {
-            name: "password",
-            in: "body",
-            type: "string",
-            required: true,
-            description: "Account secret passphrase or password",
-            example: "CorrectHorseBatteryStaple"
-          }
+          { name: "identifier", in: "body", type: "string", required: true, description: "Phone number (e.g. 01711223344) or Email (e.g. dev@meditouch.com)", example: "01711223344" },
+          { name: "password", in: "body", type: "string", required: true, description: "Account secret passphrase or password", example: "CorrectHorseBatteryStaple" }
         ],
         requestBody: {
           identifier: "dev@meditouch.com",
@@ -195,7 +176,6 @@ export async function loginUser(identifier: string, password: string) {
     throw new Error(error.detail || "Authentication failed");
   }
   const result = await res.json();
-  // Store result.data.access_token securely
   return result.data;
 }`,
         flutterSnippet: `// Flutter / Dart (package:http)
@@ -210,10 +190,7 @@ Future<Map<String, dynamic>> login({
   final response = await http.post(
     url,
     headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'identifier': identifier,
-      'password': password,
-    }),
+    body: jsonEncode({'identifier': identifier, 'password': password}),
   );
 
   if (response.statusCode == 200) {
@@ -279,7 +256,6 @@ Future<Map<String, dynamic>> getCurrentUser(String token) async {
   -H "Authorization: Bearer <YOUR_JWT_TOKEN>"`
       },
 
-      // 2. PHARMACY CATALOG & MONOGRAPH
       {
         id: "pharmacy-medicines",
         category: "pharmacy",
@@ -292,7 +268,7 @@ Future<Map<String, dynamic>> getCurrentUser(String token) async {
           { name: "search", in: "query", type: "string", required: false, description: "Drug brand, strength, or generic name", example: "Napa" },
           { name: "category", in: "query", type: "string", required: false, description: "Dosage form category (e.g. tablet, syrup, suspension)" },
           { name: "rx_required", in: "query", type: "boolean", required: false, description: "Filter OTC (false) vs Prescription drugs (true)" },
-          { name: "sort_by", in: "query", type: "string", required: false, description: "name_asc | name_desc | price_asc | price_desc | created_desc", default: "name_asc" },
+          { name: "sort_by", in: "query", type: "string", required: false, description: "name_asc | name_desc | price_asc | price_desc", default: "name_asc" },
           { name: "page", in: "query", type: "integer", required: false, description: "1-indexed pagination page", default: "1" },
           { name: "limit", in: "query", type: "integer", required: false, description: "Number of items per page (1 - 100)", default: "24" }
         ],
@@ -336,7 +312,7 @@ export async function getMedicineCatalog(params: {
   if (params.limit) qs.append("limit", String(params.limit));
 
   const res = await fetch(\`${API_BASE}/pharmacy/medicines?\${qs.toString()}\`, {
-    next: { revalidate: 60 }, // Cache in Next.js ISR
+    next: { revalidate: 60 },
   });
   return res.json();
 }`,
@@ -419,7 +395,6 @@ Future<Map<String, dynamic>> getMedicineDetail(String slugOrId) async {
         curlSnippet: `curl -X GET "${API_BASE}/pharmacy/medicines/ace-500-mg-tablet"`
       },
 
-      // 3. REAL-TIME SSE STREAM
       {
         id: "pharmacy-stream",
         category: "sse",
@@ -440,7 +415,7 @@ Future<Map<String, dynamic>> getMedicineDetail(String slugOrId) async {
             total_ingested_session: 348
           }
         },
-        nextjsSnippet: `// Next.js 15 / React SSE Stream Client (Browser / React Hook)
+        nextjsSnippet: `// Next.js 15 / React SSE Stream Client Hook
 import { useEffect, useState } from "react";
 
 export function useCrawlerStream() {
@@ -463,7 +438,6 @@ export function useCrawlerStream() {
 
     eventSource.onerror = () => {
       setConnected(false);
-      // Auto-reconnects by default in browser EventSource
     };
 
     return () => eventSource.close();
@@ -471,7 +445,7 @@ export function useCrawlerStream() {
 
   return { logs, connected };
 }`,
-        flutterSnippet: `// Flutter / Dart (using package:eventsource or sse_channel)
+        flutterSnippet: `// Flutter / Dart (package:eventsource)
 import 'dart:convert';
 import 'package:eventsource/eventsource.dart';
 
@@ -480,15 +454,13 @@ Stream<Map<String, dynamic>> listenToCrawlerEvents() async* {
 
   await for (final event in eventSource) {
     if (event.data != null && event.data!.isNotEmpty) {
-      final decoded = jsonDecode(event.data!);
-      yield decoded;
+      yield jsonDecode(event.data!);
     }
   }
 }`,
         curlSnippet: `curl -N -H "Accept: text/event-stream" "${API_BASE}/pharmacy/crawler/stream"`
       },
 
-      // 4. CLOUDINARY CDN & MEDIA
       {
         id: "media-upload",
         category: "media",
@@ -499,8 +471,8 @@ Stream<Map<String, dynamic>> listenToCrawlerEvents() async* {
         authRequired: true,
         rolesAllowed: ["ADMIN", "DEVELOPER", "DOCTOR", "USER"],
         params: [
-          { name: "file", in: "body", type: "binary", required: true, description: "Image (PNG, JPG, WEBP, SVG) or Document (PDF, DOCX) up to 20 MB" },
-          { name: "folder", in: "query", type: "string", required: false, description: "Cloudinary folder path (e.g. meditouch/general, meditouch/prescriptions)", default: "meditouch/general" }
+          { name: "file", in: "body", type: "binary", required: true, description: "Image (PNG, JPG, WEBP) or Document (PDF) up to 20 MB" },
+          { name: "folder", in: "query", type: "string", required: false, description: "Cloudinary folder path (e.g. meditouch/general)", default: "meditouch/general" }
         ],
         responseExample: {
           success: true,
@@ -523,9 +495,7 @@ export async function uploadAsset(file: File, folder = "meditouch/general", toke
 
   const res = await fetch(\`${API_BASE}/media/upload?folder=\${encodeURIComponent(folder)}\`, {
     method: "POST",
-    headers: {
-      "Authorization": \`Bearer \${token}\`
-    },
+    headers: { "Authorization": \`Bearer \${token}\` },
     body: formData
   });
   return res.json();
@@ -552,7 +522,6 @@ Future<Map<String, dynamic>> uploadMediaFile({
   -F "file=@/path/to/prescription.pdf"`
       },
 
-      // 5. DOCTORS & TELEMEDICINE
       {
         id: "doctors-list",
         category: "telemedicine",
@@ -609,7 +578,6 @@ Future<List<dynamic>> fetchDoctors({String? specialty}) async {
         curlSnippet: `curl -X GET "${API_BASE}/doctors?specialty=Cardiology"`
       },
 
-      // 6. AUDIT LOGS
       {
         id: "admin-audit-logs",
         category: "audit",
@@ -622,7 +590,6 @@ Future<List<dynamic>> fetchDoctors({String? specialty}) async {
         params: [
           { name: "search", in: "query", type: "string", required: false, description: "Text search in event message or user ID" },
           { name: "action", in: "query", type: "string", required: false, description: "USER_LOGIN, CRAWLER_STARTED, DRUG_CREATED, USER_UPDATED, etc." },
-          { name: "target_type", in: "query", type: "string", required: false, description: "USER, DOCTOR, MEDICINE, ORDER, SYSTEM" },
           { name: "page", in: "query", type: "integer", required: false, default: "1" },
           { name: "limit", in: "query", type: "integer", required: false, default: "25" }
         ],
@@ -645,8 +612,7 @@ Future<List<dynamic>> fetchDoctors({String? specialty}) async {
             ],
             total: 4180,
             page: 1,
-            limit: 25,
-            total_pages: 168
+            limit: 25
           }
         },
         nextjsSnippet: `// Next.js 15 / React TypeScript Fetch
@@ -674,23 +640,13 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
     []
   );
 
-  // Filtered endpoints
-  const filteredEndpoints = useMemo(() => {
-    return endpoints.filter((ep) => {
-      const matchCat = selectedCategory === "ALL" || ep.category === selectedCategory;
-      const matchMethod = selectedMethod === "ALL" || ep.method === selectedMethod;
-      const matchSearch =
-        !search.trim() ||
-        ep.title.toLowerCase().includes(search.toLowerCase()) ||
-        ep.path.toLowerCase().includes(search.toLowerCase()) ||
-        ep.description.toLowerCase().includes(search.toLowerCase());
-      return matchCat && matchMethod && matchSearch;
-    });
-  }, [endpoints, selectedCategory, selectedMethod, search]);
+  // Active endpoint if selected
+  const activeEndpoint = useMemo(() => {
+    return endpoints.find((ep) => ep.id === activeSection) || null;
+  }, [endpoints, activeSection]);
 
   // Execute Live Test Endpoint
   const executeLiveTest = async (ep: EndpointDoc) => {
-    setTestingEndpointId(ep.id);
     setLiveTestLoading(true);
     setLiveTestResult(null);
 
@@ -731,7 +687,7 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
         responseData = await res.json();
       } else {
         const text = await res.text();
-        responseData = text.slice(0, 1000) || { message: `Stream probe response (${res.status})` };
+        responseData = text.slice(0, 1000) || { message: `Stream response status (${res.status})` };
       }
 
       const headerObj: Record<string, string> = {};
@@ -740,7 +696,6 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
       });
 
       setLiveTestResult({
-        endpointId: ep.id,
         status: res.status,
         latencyMs,
         headers: headerObj,
@@ -755,7 +710,6 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
     } catch (err: any) {
       const endTime = performance.now();
       setLiveTestResult({
-        endpointId: ep.id,
         status: 0,
         latencyMs: Math.round(endTime - startTime),
         headers: {},
@@ -768,408 +722,512 @@ Future<Map<String, dynamic>> getAuditLogs(String token, {int page = 1}) async {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* 1. Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-4">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="font-heading text-2xl sm:text-3xl font-normal tracking-tight text-stone-900">
-              MediTouch API Reference & Developer SDK Portal
-            </h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 font-mono">
-              <Code2 className="size-3" />
-              v1.0-STABLE
+    <div className="flex h-full w-full bg-white text-stone-900 overflow-hidden font-sans">
+      {/* 1. Left Documentation Navigation Sidebar (Exact Documentation Style) */}
+      <aside className="w-64 sm:w-72 border-r border-stone-200/80 bg-stone-50/50 flex flex-col shrink-0 h-full">
+        {/* Docs Header */}
+        <div className="p-4 border-b border-stone-200/80 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-[#5b15fc] text-white shadow-xs">
+                <Code2 className="size-4" />
+              </div>
+              <span className="font-heading text-lg font-bold tracking-tight text-stone-900">
+                Docs
+              </span>
+            </div>
+            <span className="rounded-full bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold text-indigo-700 font-mono">
+              v1.0
             </span>
           </div>
-          <p className="text-xs text-stone-500 mt-1">
-            Complete OpenAPI 3.1 specifications, real-time SSE stream protocols, and production code generators for Next.js, React, and Flutter.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <a
-            href={`${API_BASE.replace('/api/v1', '')}/docs`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs transition-all cursor-pointer"
-          >
-            <ExternalLink className="size-3.5 text-stone-500" />
-            <span>FastAPI Swagger UI</span>
-          </a>
-        </div>
-      </div>
-
-      {/* 2. Active Session Auth Bar */}
-      <div className="neo-card rounded-2xl bg-gradient-to-r from-stone-900 to-stone-800 text-white p-4 sm:p-5 shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="size-4 text-emerald-400" />
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
-                Active Developer Session & JWT Authorization
-              </span>
-              <span className="rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.2 text-[9px] font-mono font-bold">
-                {session?.role || "DEVELOPER"}
-              </span>
-            </div>
-            <p className="text-[11px] text-stone-400 font-mono break-all max-w-2xl">
-              {token ? `Bearer ${token.slice(0, 36)}...${token.slice(-16)}` : "No active JWT token loaded."}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleCopyToken}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-all cursor-pointer"
-            >
-              {copiedToken ? (
-                <>
-                  <Check className="size-3.5 text-emerald-400" />
-                  <span className="text-emerald-300 font-bold">Copied JWT!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="size-3.5 text-stone-300" />
-                  <span>Copy Bearer Token</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Top Architecture Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Endpoints</span>
-          <p className="font-heading text-2xl font-bold text-stone-900">28</p>
-          <p className="text-[10px] text-stone-400 font-medium">REST & RPC routes</p>
-        </div>
-
-        <div className="neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">SSE Stream</span>
-          <p className="font-heading text-2xl font-bold text-purple-600">Active</p>
-          <p className="text-[10px] text-stone-400 font-medium">Crawler event bus</p>
-        </div>
-
-        <div className="neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">SDK Targets</span>
-          <p className="font-heading text-2xl font-bold text-[#5b15fc]">3 SDKs</p>
-          <p className="text-[10px] text-stone-400 font-medium">Next.js, Flutter, cURL</p>
-        </div>
-
-        <div className="neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Rate Limit</span>
-          <p className="font-heading text-2xl font-bold text-emerald-600">120/min</p>
-          <p className="text-[10px] text-stone-400 font-medium">Per IP token window</p>
-        </div>
-
-        <div className="neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Security</span>
-          <p className="font-heading text-2xl font-bold text-blue-600">JWT + SSL</p>
-          <p className="text-[10px] text-stone-400 font-medium">256-bit encrypted</p>
-        </div>
-
-        <div className="neo-card rounded-2xl bg-white p-4 border border-stone-200 shadow-xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Response</span>
-          <p className="font-heading text-2xl font-bold text-amber-600">JSON</p>
-          <p className="text-[10px] text-stone-400 font-medium">Standard envelope</p>
-        </div>
-      </div>
-
-      {/* 4. Controls: Global SDK Selector, Search, Method, Category */}
-      <div className="neo-card rounded-[24px] bg-white p-4 sm:p-5 border border-stone-200 shadow-xs space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-stone-400" />
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
             <input
               type="text"
-              placeholder="Filter by route path, keyword, or action..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 rounded-xl border border-stone-200 bg-stone-50/60 pl-10 pr-4 text-xs font-semibold text-stone-900 neo-input outline-hidden placeholder:text-stone-400 focus:bg-white"
+              placeholder="Search docs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-8 rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 outline-hidden placeholder:text-stone-400 focus:border-[#5b15fc]"
             />
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* HTTP Method Filter */}
-            <select
-              value={selectedMethod}
-              onChange={(e) => setSelectedMethod(e.target.value)}
-              className="h-10 rounded-xl border border-stone-200 bg-stone-50 px-3 text-xs font-semibold text-stone-800 shadow-xs outline-hidden cursor-pointer"
-            >
-              <option value="ALL">All HTTP Methods</option>
-              <option value="GET">GET</option>
-              <option value="POST">POST</option>
-              <option value="PATCH">PATCH</option>
-              <option value="DELETE">DELETE</option>
-              <option value="SSE">SSE (Streams)</option>
-            </select>
-
-            {/* Language Switcher Tabs */}
-            <div className="inline-flex rounded-xl border border-stone-200 bg-stone-50 p-1 shadow-xs">
-              <button
-                onClick={() => setGlobalLang("nextjs")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                  globalLang === "nextjs" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                <span>⚛️ Next.js / React</span>
-              </button>
-              <button
-                onClick={() => setGlobalLang("flutter")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                  globalLang === "flutter" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                <span>🎯 Flutter / Dart</span>
-              </button>
-              <button
-                onClick={() => setGlobalLang("curl")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                  globalLang === "curl" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
-                }`}
-              >
-                <span>💻 cURL / CLI</span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-stone-100">
-          {[
-            { id: "ALL", label: "All Modules" },
-            { id: "auth", label: "🔑 Auth & JWT" },
-            { id: "pharmacy", label: "💊 E-Pharmacy & MedEasy" },
-            { id: "sse", label: "⚡ Real-Time SSE Stream" },
-            { id: "media", label: "☁️ Cloudinary CDN" },
-            { id: "telemedicine", label: "🩺 Doctors & Clinical" },
-            { id: "audit", label: "🛡️ Audit Trails" },
-          ].map((cat) => (
+        {/* Navigation Tree */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-6 text-xs">
+          {/* Section: Overview */}
+          <div className="space-y-1">
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+              Overview
+            </p>
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                selectedCategory === cat.id
-                  ? "bg-[#5b15fc] text-white shadow-xs"
-                  : "bg-stone-50 border border-stone-200 text-stone-600 hover:bg-stone-100"
+              onClick={() => setActiveSection("intro")}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                activeSection === "intro"
+                  ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold"
+                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
               }`}
             >
-              {cat.label}
+              <BookOpen className="size-3.5" />
+              <span>Introduction</span>
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 5. Endpoints Documentation Accordion */}
-      <div className="space-y-4">
-        {filteredEndpoints.length === 0 ? (
-          <div className="neo-card rounded-2xl bg-white p-12 text-center border border-stone-200">
-            <Code2 className="size-8 text-stone-400 mx-auto mb-2" />
-            <p className="text-base font-bold text-stone-900">No Endpoints Match Your Filter</p>
-            <p className="text-xs text-stone-500 mt-1">Try clearing your search keyword or method filter.</p>
+            <button
+              onClick={() => setActiveSection("auth-guide")}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                activeSection === "auth-guide"
+                  ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold"
+                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+              }`}
+            >
+              <Lock className="size-3.5" />
+              <span>Authentication & JWT</span>
+            </button>
+            <button
+              onClick={() => setActiveSection("sse-guide")}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                activeSection === "sse-guide"
+                  ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold"
+                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+              }`}
+            >
+              <Radio className="size-3.5 text-purple-600" />
+              <span>Real-Time SSE Streams</span>
+            </button>
           </div>
-        ) : (
-          filteredEndpoints.map((ep) => {
-            const isExpanded = expandedEndpoints[ep.id] ?? false;
 
-            const methodColor =
-              ep.method === "GET"
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : ep.method === "POST"
-                ? "bg-blue-50 text-blue-700 border-blue-200"
-                : ep.method === "PATCH"
-                ? "bg-amber-50 text-amber-700 border-amber-200"
-                : ep.method === "DELETE"
-                ? "bg-rose-50 text-rose-700 border-rose-200"
-                : "bg-purple-50 text-[#5b15fc] border-purple-200 animate-pulse";
+          {/* Section: REST Endpoints */}
+          <div className="space-y-1">
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+              REST Endpoints
+            </p>
+            {endpoints.map((ep) => {
+              const isActive = activeSection === ep.id;
+              const badgeColor =
+                ep.method === "GET"
+                  ? "text-emerald-700 bg-emerald-50"
+                  : ep.method === "POST"
+                  ? "text-blue-700 bg-blue-50"
+                  : "text-purple-700 bg-purple-50";
 
-            const codeSnippet =
-              globalLang === "nextjs"
-                ? ep.nextjsSnippet
-                : globalLang === "flutter"
-                ? ep.flutterSnippet
-                : ep.curlSnippet;
-
-            const isCurrentTest = testingEndpointId === ep.id && liveTestResult;
-
-            return (
-              <div
-                key={ep.id}
-                className="neo-card rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-xs transition-all hover:border-stone-300"
-              >
-                {/* Header Bar */}
-                <div
-                  onClick={() => toggleExpand(ep.id)}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 bg-stone-50/40 cursor-pointer hover:bg-stone-50/80 transition-colors"
+              return (
+                <button
+                  key={ep.id}
+                  onClick={() => setActiveSection(ep.id)}
+                  className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 font-medium transition-colors cursor-pointer text-left ${
+                    isActive
+                      ? "bg-[#5b15fc]/10 text-[#5b15fc] font-bold"
+                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-mono font-bold border ${methodColor}`}>
-                      {ep.method}
-                    </span>
-                    <span className="font-mono text-xs sm:text-sm font-bold text-stone-900 truncate">
-                      {ep.path}
-                    </span>
-                    <span className="text-xs text-stone-500 hidden md:inline truncate">
-                      — {ep.title}
-                    </span>
-                  </div>
+                  <span className="truncate pr-1">{ep.title}</span>
+                  <span className={`rounded px-1.5 py-0.2 text-[9px] font-mono font-bold shrink-0 ${badgeColor}`}>
+                    {ep.method}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {ep.authRequired ? (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                        <Lock className="size-2.5" />
-                        Bearer Token
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                        <Globe className="size-2.5" />
-                        Public
-                      </span>
-                    )}
+          {/* Section: Resources */}
+          <div className="space-y-1">
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+              Resources
+            </p>
+            <a
+              href={`${API_BASE.replace('/api/v1', '')}/docs`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <ExternalLink className="size-3.5 text-stone-400" />
+                <span>Swagger Interactive UI</span>
+              </div>
+            </a>
+          </div>
+        </div>
 
-                    <div className="p-1 text-stone-400 hover:text-stone-700">
-                      {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-                    </div>
-                  </div>
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-stone-200/80 bg-white space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-stone-500">
+            <span className="truncate font-medium">{session?.name || "Developer"}</span>
+            <span className="font-mono text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+              {session?.role || "DEV"}
+            </span>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+          >
+            <LogOut className="size-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* 2. Main Documentation Viewport */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
+        {/* Top Sticky Tool Bar */}
+        <div className="h-13 border-b border-stone-200/80 px-6 flex items-center justify-between gap-4 bg-white/80 backdrop-blur-xs shrink-0 z-10">
+          <div className="flex items-center gap-2 text-xs text-stone-500 min-w-0">
+            <span>Docs</span>
+            <span>/</span>
+            <span className="font-semibold text-stone-900 truncate">
+              {activeSection === "intro"
+                ? "Introduction"
+                : activeSection === "auth-guide"
+                ? "Authentication Guide"
+                : activeSection === "sse-guide"
+                ? "Real-Time SSE Streams"
+                : activeEndpoint?.title || "API Reference"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Language Selector */}
+            <div className="inline-flex rounded-lg border border-stone-200 bg-stone-50 p-0.5 text-xs">
+              <button
+                onClick={() => setSelectedLang("nextjs")}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                  selectedLang === "nextjs" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                Next.js / React
+              </button>
+              <button
+                onClick={() => setSelectedLang("flutter")}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                  selectedLang === "flutter" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                Flutter
+              </button>
+              <button
+                onClick={() => setSelectedLang("curl")}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                  selectedLang === "curl" ? "bg-white text-[#5b15fc] shadow-xs" : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                cURL
+              </button>
+            </div>
+
+            {/* Token Quick Copy */}
+            <button
+              onClick={handleCopyToken}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs cursor-pointer"
+            >
+              {copiedToken ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5 text-stone-400" />}
+              <span>{copiedToken ? "Copied JWT" : "Copy Token"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 max-w-5xl space-y-10">
+          {/* VIEW 1: INTRODUCTION */}
+          {activeSection === "intro" && (
+            <div className="space-y-8 animate-in fade-in">
+              <div>
+                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                  Introduction
+                </h1>
+                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                  Welcome to the MediTouch Developer Platform API documentation. This reference provides complete specifications, real-time Server-Sent Events (SSE) protocols, and production code snippets for building modern web (Next.js 15 / React) and mobile (Flutter / Dart) healthcare clients.
+                </p>
+              </div>
+
+              {/* Base URL Box */}
+              <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  Default API Base Endpoint
+                </span>
+                <div className="flex items-center justify-between font-mono text-xs font-bold text-[#5b15fc]">
+                  <span>{API_BASE}</span>
+                  <button
+                    onClick={() => handleCopy(API_BASE, "base-url")}
+                    className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  >
+                    {copiedId === "base-url" ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                  </button>
                 </div>
+              </div>
 
-                {/* Body Content */}
-                {isExpanded && (
-                  <div className="p-5 space-y-5 border-t border-stone-100">
-                    {/* Description */}
-                    <div>
-                      <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">{ep.description}</p>
-                    </div>
+              {/* Quick Description */}
+              <div className="space-y-3">
+                <h2 className="font-heading text-xl font-normal text-stone-900">Standard API Response Envelope</h2>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                  All REST endpoints return standardized JSON payloads wrapped in the uniform envelope format:
+                </p>
+                <pre className="rounded-xl bg-stone-900 text-stone-100 p-4 text-xs font-mono overflow-x-auto">
+                  <code>{`{
+  "success": true,
+  "message": "Human readable status description",
+  "data": { ... }
+}`}</code>
+                </pre>
+              </div>
 
-                    {/* Parameters Table */}
-                    {ep.params && ep.params.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                          Parameters & Query Fields
-                        </h4>
-                        <div className="overflow-x-auto rounded-xl border border-stone-200">
-                          <table className="w-full text-left text-xs">
-                            <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                              <tr>
-                                <th className="py-2.5 px-3">Field</th>
-                                <th className="py-2.5 px-3">Type</th>
-                                <th className="py-2.5 px-3">In</th>
-                                <th className="py-2.5 px-3">Required</th>
-                                <th className="py-2.5 px-3">Description</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100 bg-white">
-                              {ep.params.map((param) => (
-                                <tr key={param.name}>
-                                  <td className="py-2.5 px-3 font-mono font-bold text-stone-900">
-                                    {param.name}
-                                  </td>
-                                  <td className="py-2.5 px-3 font-mono text-purple-700">{param.type}</td>
-                                  <td className="py-2.5 px-3 font-mono text-stone-500 uppercase text-[10px]">
-                                    {param.in}
-                                  </td>
-                                  <td className="py-2.5 px-3">
-                                    {param.required ? (
-                                      <span className="text-rose-600 font-bold">Yes</span>
-                                    ) : (
-                                      <span className="text-stone-400 font-medium">Optional</span>
-                                    )}
-                                  </td>
-                                  <td className="py-2.5 px-3 text-stone-600">{param.description}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Code Snippet & Live Console Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                      {/* Left: Multi-SDK Code Generator */}
-                      <div className="lg:col-span-7 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <FileCode className="size-3.5 text-stone-500" />
-                            <span className="text-xs font-bold uppercase tracking-wider text-stone-600">
-                              {globalLang === "nextjs"
-                                ? "Next.js 15 TypeScript SDK"
-                                : globalLang === "flutter"
-                                ? "Flutter Dart HTTP Client"
-                                : "cURL Terminal Command"}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => handleCopy(codeSnippet, `code-${ep.id}`)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[10px] font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"
-                          >
-                            {copiedId === `code-${ep.id}` ? (
-                              <>
-                                <Check className="size-3 text-emerald-600" />
-                                <span className="text-emerald-600">Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="size-3 text-stone-500" />
-                                <span>Copy Code</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <pre className="rounded-xl bg-stone-900 text-stone-100 p-3.5 text-xs font-mono overflow-x-auto leading-relaxed border border-stone-800">
-                          <code>{codeSnippet}</code>
-                        </pre>
-                      </div>
-
-                      {/* Right: Response Example & Live Tester */}
-                      <div className="lg:col-span-5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider text-stone-600">
-                            200 OK JSON Schema
-                          </span>
-                          <button
-                            onClick={() => executeLiveTest(ep)}
-                            disabled={liveTestLoading}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[#5b15fc] text-white px-2.5 py-1 text-[11px] font-bold shadow-xs hover:bg-[#4d0ee0] cursor-pointer disabled:opacity-50"
-                          >
-                            {liveTestLoading && testingEndpointId === ep.id ? (
-                              <Spinner className="size-3 text-white" />
-                            ) : (
-                              <Play className="size-3 fill-white" />
-                            )}
-                            <span>Test Endpoint</span>
-                          </button>
-                        </div>
-
-                        {/* Live Response Result if tested */}
-                        {isCurrentTest ? (
-                          <div className="space-y-1.5 animate-in fade-in">
-                            <div className="flex items-center justify-between text-[11px] font-mono px-2 py-1 rounded bg-stone-100 border border-stone-200">
-                              <span className={liveTestResult.status < 400 ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}>
-                                Status: {liveTestResult.status} {liveTestResult.status === 200 ? "OK" : ""}
-                              </span>
-                              <span className="text-stone-500">{liveTestResult.latencyMs} ms</span>
-                            </div>
-                            <pre className="rounded-xl bg-stone-950 text-emerald-400 p-3 text-[11px] font-mono overflow-x-auto max-h-56 leading-snug border border-stone-800">
-                              <code>{JSON.stringify(liveTestResult.data, null, 2)}</code>
-                            </pre>
-                          </div>
-                        ) : (
-                          <pre className="rounded-xl bg-stone-900 text-stone-200 p-3 text-[11px] font-mono overflow-x-auto max-h-56 leading-snug border border-stone-800">
-                            <code>{JSON.stringify(ep.responseExample, null, 2)}</code>
-                          </pre>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+              {/* Quickstart Code */}
+              <div className="space-y-3">
+                <h2 className="font-heading text-xl font-normal text-stone-900">Quickstart Installation & Setup</h2>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                  Set up your client package environment with dependencies:
+                </p>
+                {selectedLang === "nextjs" && (
+                  <pre className="rounded-xl bg-stone-900 text-stone-100 p-4 text-xs font-mono">
+                    <code>{`# Install Next.js 15 Fetch & State utilities
+npm install axios swr @tanstack/react-query`}</code>
+                  </pre>
+                )}
+                {selectedLang === "flutter" && (
+                  <pre className="rounded-xl bg-stone-900 text-stone-100 p-4 text-xs font-mono">
+                    <code>{`# In pubspec.yaml dependencies
+dependencies:
+  http: ^1.2.0
+  eventsource: ^0.4.0`}</code>
+                  </pre>
+                )}
+                {selectedLang === "curl" && (
+                  <pre className="rounded-xl bg-stone-900 text-stone-100 p-4 text-xs font-mono">
+                    <code>{`# Health check query
+curl -X GET "${API_BASE.replace('/api/v1', '')}/health"`}</code>
+                  </pre>
                 )}
               </div>
-            );
-          })
-        )}
+            </div>
+          )}
+
+          {/* VIEW 2: AUTHENTICATION GUIDE */}
+          {activeSection === "auth-guide" && (
+            <div className="space-y-8 animate-in fade-in">
+              <div>
+                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                  Authentication & JWT Tokens
+                </h1>
+                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                  MediTouch utilizes stateless Bearer JSON Web Tokens (JWT) signed with HMAC SHA-256 for all protected administrative, clinical, and developer endpoints.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-2">
+                <h3 className="text-xs font-bold text-indigo-900">Authorization Request Header</h3>
+                <p className="text-xs text-indigo-700 font-mono">
+                  Authorization: Bearer &lt;YOUR_ACCESS_TOKEN&gt;
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="font-heading text-xl font-normal text-stone-900">Your Active Developer Token</h2>
+                <div className="relative">
+                  <pre className="rounded-xl bg-stone-900 text-emerald-400 p-4 text-xs font-mono break-all leading-relaxed max-h-40 overflow-y-auto">
+                    <code>{token || "No active token found. Please sign in."}</code>
+                  </pre>
+                  <button
+                    onClick={handleCopyToken}
+                    className="absolute top-3 right-3 rounded bg-white/10 hover:bg-white/20 px-2 py-1 text-[10px] font-bold text-white transition-all cursor-pointer"
+                  >
+                    Copy Token
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 3: REAL-TIME SSE STREAM GUIDE */}
+          {activeSection === "sse-guide" && (
+            <div className="space-y-8 animate-in fade-in">
+              <div>
+                <h1 className="font-heading text-3xl sm:text-4xl font-normal text-stone-900 tracking-tight">
+                  Real-Time Server-Sent Events (SSE)
+                </h1>
+                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                  The MediTouch crawler engine broadcasts continuous real-time progress events over persistent HTTP streams using Server-Sent Events (SSE).
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="font-heading text-xl font-normal text-stone-900">Stream Event Types</h2>
+                <div className="overflow-x-auto rounded-xl border border-stone-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                      <tr>
+                        <th className="py-2.5 px-3">Event Name</th>
+                        <th className="py-2.5 px-3">Payload Structure</th>
+                        <th className="py-2.5 px-3">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 bg-white">
+                      <tr>
+                        <td className="py-2.5 px-3 font-mono font-bold text-purple-700">CONNECTED</td>
+                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ timestamp, status }"}</td>
+                        <td className="py-2.5 px-3 text-stone-600">Initial stream handshake</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 px-3 font-mono font-bold text-blue-700">PAGE_SCRAPED</td>
+                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ page, items_found }"}</td>
+                        <td className="py-2.5 px-3 text-stone-600">Dispatched per catalog page crawl</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">DRUG_INGESTED</td>
+                        <td className="py-2.5 px-3 font-mono text-stone-600">{"{ drug_name, generic_name }"}</td>
+                        <td className="py-2.5 px-3 text-stone-600">Dispatched per medicine upsert</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 4: ACTIVE ENDPOINT DETAIL */}
+          {activeEndpoint && (
+            <div className="space-y-8 animate-in fade-in">
+              {/* Endpoint Header */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`rounded-lg px-2.5 py-1 text-xs font-mono font-bold ${
+                      activeEndpoint.method === "GET"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : activeEndpoint.method === "POST"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "bg-purple-50 text-purple-700 border border-purple-200"
+                    }`}
+                  >
+                    {activeEndpoint.method}
+                  </span>
+                  <span className="font-mono text-base font-bold text-stone-900">{activeEndpoint.path}</span>
+                </div>
+                <h1 className="font-heading text-2xl sm:text-3xl font-normal text-stone-900">
+                  {activeEndpoint.title}
+                </h1>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                  {activeEndpoint.description}
+                </p>
+              </div>
+
+              {/* Parameters Table */}
+              {activeEndpoint.params && activeEndpoint.params.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-heading text-lg font-normal text-stone-900">Parameters</h3>
+                  <div className="overflow-x-auto rounded-xl border border-stone-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                        <tr>
+                          <th className="py-2.5 px-3">Field</th>
+                          <th className="py-2.5 px-3">Type</th>
+                          <th className="py-2.5 px-3">In</th>
+                          <th className="py-2.5 px-3">Required</th>
+                          <th className="py-2.5 px-3">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100 bg-white">
+                        {activeEndpoint.params.map((p) => (
+                          <tr key={p.name}>
+                            <td className="py-2.5 px-3 font-mono font-bold text-stone-900">{p.name}</td>
+                            <td className="py-2.5 px-3 font-mono text-purple-700">{p.type}</td>
+                            <td className="py-2.5 px-3 font-mono uppercase text-[10px] text-stone-500">{p.in}</td>
+                            <td className="py-2.5 px-3">
+                              {p.required ? (
+                                <span className="font-bold text-rose-600">Yes</span>
+                              ) : (
+                                <span className="text-stone-400">No</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-stone-600">{p.description}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Code Snippets & Response */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-lg font-normal text-stone-900">
+                    {selectedLang === "nextjs"
+                      ? "Next.js / TypeScript SDK"
+                      : selectedLang === "flutter"
+                      ? "Flutter Dart Implementation"
+                      : "cURL Terminal Request"}
+                  </h3>
+                  <button
+                    onClick={() =>
+                      handleCopy(
+                        selectedLang === "nextjs"
+                          ? activeEndpoint.nextjsSnippet
+                          : selectedLang === "flutter"
+                          ? activeEndpoint.flutterSnippet
+                          : activeEndpoint.curlSnippet,
+                        `code-${activeEndpoint.id}`
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  >
+                    {copiedId === `code-${activeEndpoint.id}` ? (
+                      <>
+                        <Check className="size-3 text-emerald-600" />
+                        <span className="text-emerald-600">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3 text-stone-400" />
+                        <span>Copy Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <pre className="rounded-xl bg-stone-900 text-stone-100 p-4 text-xs font-mono overflow-x-auto leading-relaxed border border-stone-800">
+                  <code>
+                    {selectedLang === "nextjs"
+                      ? activeEndpoint.nextjsSnippet
+                      : selectedLang === "flutter"
+                      ? activeEndpoint.flutterSnippet
+                      : activeEndpoint.curlSnippet}
+                  </code>
+                </pre>
+              </div>
+
+              {/* Response Schema & Live Testing */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-lg font-normal text-stone-900">200 OK Response Schema</h3>
+                  <button
+                    onClick={() => executeLiveTest(activeEndpoint)}
+                    disabled={liveTestLoading}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#5b15fc] text-white px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-[#4d0ee0] cursor-pointer disabled:opacity-50"
+                  >
+                    {liveTestLoading ? <Spinner className="size-3.5 text-white" /> : <Play className="size-3.5 fill-white" />}
+                    <span>Send Live Request</span>
+                  </button>
+                </div>
+
+                {liveTestResult ? (
+                  <div className="space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs font-mono px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
+                      <span className={liveTestResult.status < 400 ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}>
+                        HTTP {liveTestResult.status} {liveTestResult.status === 200 ? "OK" : ""}
+                      </span>
+                      <span className="text-stone-500">{liveTestResult.latencyMs} ms latency</span>
+                    </div>
+                    <pre className="rounded-xl bg-stone-950 text-emerald-400 p-4 text-xs font-mono overflow-x-auto max-h-72 border border-stone-800 leading-snug">
+                      <code>{JSON.stringify(liveTestResult.data, null, 2)}</code>
+                    </pre>
+                  </div>
+                ) : (
+                  <pre className="rounded-xl bg-stone-900 text-stone-200 p-4 text-xs font-mono overflow-x-auto max-h-72 border border-stone-800 leading-snug">
+                    <code>{JSON.stringify(activeEndpoint.responseExample, null, 2)}</code>
+                  </pre>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

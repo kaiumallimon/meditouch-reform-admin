@@ -44,6 +44,8 @@ export default function DashboardLayout({
     );
   }
 
+  const isDocsPage = pathname === "/admin/docs" || isDeveloper();
+
   return (
     <div className="flex h-screen flex-col bg-[#F7F4EE] p-3">
       {/* Top Navigation Header */}
@@ -51,13 +53,15 @@ export default function DashboardLayout({
 
       {/* Main Workspace Canvas */}
       <div className="flex flex-1 gap-3 overflow-hidden pt-3">
-        {/* Left Sidebar */}
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+        {/* Left Sidebar - Hidden on docs page or for Developer */}
+        {!isDocsPage && (
+          <div className="hidden md:block">
+            <Sidebar />
+          </div>
+        )}
 
         {/* Central Card Canvas */}
-        <main className="flex-1 overflow-y-auto neo-card rounded-[22px] bg-white p-6 sm:p-8">
+        <main className={`flex-1 overflow-hidden neo-card rounded-[22px] bg-white ${isDocsPage ? "p-0 flex flex-col" : "p-6 sm:p-8 overflow-y-auto"}`}>
           {children}
         </main>
       </div>
