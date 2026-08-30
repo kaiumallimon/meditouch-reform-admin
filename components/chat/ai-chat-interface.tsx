@@ -34,6 +34,18 @@ import {
 } from "@/components/ui/message-scroller";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
 import { ThinkingIndicator } from "@/components/chat/thinking-indicator";
+import {
+  Questionnaire,
+  QuestionnaireHeader,
+  QuestionnaireTitle,
+  QuestionnaireDescription,
+  QuestionnaireItem,
+  QuestionnaireChoices,
+  QuestionnaireChoice,
+  QuestionnaireActions,
+  QuestionnaireSubmit,
+  QuestionnaireCancel,
+} from "@/components/ui/questionnaire";
 
 interface MedicineCard {
   id?: string;
@@ -629,31 +641,57 @@ export function AIChatInterface({
                           </div>
                         )}
 
-                        {/* 2-Step Confirmation Alert Pill */}
+                        {/* 2-Step Confirmation Questionnaire */}
                         {m.confirmationPrompt && (
-                          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-900">
-                            <div className="flex items-center gap-1.5 font-bold text-xs text-amber-800">
-                              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-                              <span>Action Confirmation Required</span>
-                            </div>
-                            <p className="mt-1 text-[11px] text-amber-800/90 leading-relaxed">
-                              {m.confirmationPrompt.prompt}
-                            </p>
-                            <div className="mt-2.5 flex items-center gap-2">
-                              <button
-                                onClick={() => handleConfirmAction(m.confirmationPrompt!.token, true)}
-                                className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 shadow-xs transition"
-                              >
-                                Confirm Action
-                              </button>
-                              <button
-                                onClick={() => handleConfirmAction(m.confirmationPrompt!.token, false)}
-                                className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
+                          <Questionnaire
+                            onConfirm={() => handleConfirmAction(m.confirmationPrompt!.token, true)}
+                            onCancel={() => handleConfirmAction(m.confirmationPrompt!.token, false)}
+                            className="mt-2.5 border-2 border-stone-800 bg-white"
+                          >
+                            <QuestionnaireHeader>
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-300 shadow-xs">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <QuestionnaireTitle>
+                                  {m.confirmationPrompt.prompt.includes("DESTRUCTIVE")
+                                    ? "Critical Mutation Approval"
+                                    : "Administrative Confirmation"}
+                                </QuestionnaireTitle>
+                                <QuestionnaireDescription>
+                                  {m.confirmationPrompt.prompt}
+                                </QuestionnaireDescription>
+                              </div>
+                            </QuestionnaireHeader>
+
+                            <QuestionnaireItem>
+                              <QuestionnaireChoices>
+                                <QuestionnaireChoice
+                                  value="confirm"
+                                  title="Approve & execute database change"
+                                  description="Applies change to MongoDB domain service and commits audit log"
+                                  isDestructive={m.confirmationPrompt.prompt.includes("DESTRUCTIVE")}
+                                />
+                                <QuestionnaireChoice
+                                  value="cancel"
+                                  title="Cancel operation"
+                                  description="Aborts this action without altering records"
+                                />
+                              </QuestionnaireChoices>
+                            </QuestionnaireItem>
+
+                            <QuestionnaireActions>
+                              <QuestionnaireCancel label="Dismiss" />
+                              <QuestionnaireSubmit
+                                label={
+                                  m.confirmationPrompt.prompt.includes("DESTRUCTIVE")
+                                    ? "Confirm & Delete"
+                                    : "Confirm & Apply"
+                                }
+                                isDestructive={m.confirmationPrompt.prompt.includes("DESTRUCTIVE")}
+                              />
+                            </QuestionnaireActions>
+                          </Questionnaire>
                         )}
                       </div>
                     </div>
