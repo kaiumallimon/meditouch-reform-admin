@@ -90,7 +90,6 @@ export function AIChatInterface({
   defaultSessionType?: "USER" | "ADMIN";
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("meditouch_active_chat_session") || null;
@@ -119,8 +118,6 @@ export function AIChatInterface({
   }, []);
 
   useEffect(() => {
-    if (activeSessionId && !isStreamingRef.current) {
-      fetchMessages(activeSessionId);
     if (activeSessionId) {
       localStorage.setItem("meditouch_active_chat_session", activeSessionId);
       if (!isStreamingRef.current) {
