@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { getAccessToken, getSession } from "@/lib/auth";
+import { getValidAccessToken, getAccessToken, getSession } from "@/lib/auth";
 import {
   Bot,
   User,
@@ -129,7 +129,7 @@ export function AIChatInterface({
   }, [activeSessionId]);
 
   const fetchSessions = async () => {
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
@@ -152,7 +152,7 @@ export function AIChatInterface({
 
   const fetchMessages = async (sessionId: string) => {
     if (isStreamingRef.current) return;
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
@@ -174,7 +174,7 @@ export function AIChatInterface({
   };
 
   const createNewSession = async () => {
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
@@ -201,7 +201,7 @@ export function AIChatInterface({
 
   const deleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
@@ -236,7 +236,7 @@ export function AIChatInterface({
       setInput("");
     }
 
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     const reqHeaders: Record<string, string> = {
       "Content-Type": "application/json",
     };
