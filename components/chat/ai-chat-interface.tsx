@@ -73,6 +73,7 @@ interface Message {
     prompt: string;
     details: any;
   };
+  modelName?: string;
   isStreaming?: boolean;
 }
 
@@ -359,6 +360,14 @@ export function AIChatInterface({
                       : msg
                   )
                 );
+              } else if (currentEvent === "model_info") {
+                if (data.tag) {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId ? { ...msg, modelName: data.tag } : msg
+                    )
+                  );
+                }
               } else if (currentEvent === "token") {
                 if (data.delta) {
                   setMessages((prev) =>
@@ -372,7 +381,13 @@ export function AIChatInterface({
               } else if (currentEvent === "done") {
                 setMessages((prev) =>
                   prev.map((msg) =>
-                    msg.id === assistantMsgId ? { ...msg, isStreaming: false } : msg
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          isStreaming: false,
+                          modelName: data.model_name || msg.modelName,
+                        }
+                      : msg
                   )
                 );
                 setAgentState(null);
@@ -693,6 +708,16 @@ export function AIChatInterface({
                               />
                             </QuestionnaireActions>
                           </Questionnaire>
+                        )}
+
+                        {/* Greyed Model Attribution Footer */}
+                        {m.role === "assistant" && m.modelName && !m.isStreaming && (
+                          <div className="mt-2 pt-1.5 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-400 font-mono select-none">
+                            <span className="flex items-center gap-1">
+                              <Sparkles className="h-2.5 w-2.5 text-stone-400" />
+                              <span>{m.modelName}</span>
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
