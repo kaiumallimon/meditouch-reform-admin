@@ -6,8 +6,23 @@ export interface UserSession {
   role: string;
 }
 
+export function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return false;
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+}
+
 export function getSession(): UserSession | null {
   if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("meditouch_access_token");
+  if (!token || isTokenExpired(token)) return null;
   const userJson = localStorage.getItem("meditouch_user");
   if (!userJson) return null;
   try {
@@ -19,7 +34,9 @@ export function getSession(): UserSession | null {
 
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("meditouch_access_token");
+  const token = localStorage.getItem("meditouch_access_token");
+  if (!token || isTokenExpired(token)) return null;
+  return token;
 }
 
 export function getRefreshToken(): string | null {

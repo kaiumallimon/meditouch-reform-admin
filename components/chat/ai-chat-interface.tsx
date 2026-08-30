@@ -90,13 +90,17 @@ export function AIChatInterface({
   defaultSessionType?: "USER" | "ADMIN";
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("meditouch_active_chat_session") || null;
+  });
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [agentState, setAgentState] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("USER");
   const [showSessionsDrawer, setShowSessionsDrawer] = useState(false);
+  const isStreamingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -107,11 +111,20 @@ export function AIChatInterface({
       setUserRole(session.role);
     }
     fetchSessions();
+    const saved = localStorage.getItem("meditouch_active_chat_session");
+    if (saved) {
+      fetchMessages(saved);
+    }
   }, []);
 
   useEffect(() => {
     if (activeSessionId) {
-      fetchMessages(activeSessionId);
+      localStorage.setItem("meditouch_active_chat_session", activeSessionId);
+      if (!isStreamingRef.current) {
+        fetchMessages(activeSessionId);
+      }
+    } else {
+      localStorage.removeItem("meditouch_active_chat_session");
     }
   }, [activeSessionId]);
 
@@ -128,7 +141,7 @@ export function AIChatInterface({
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setSessions(data.data);
-        if (data.data.length > 0 && !activeSessionId) {
+        if (data.data.length > 0 && !activeSessionId && !isStreamingRef.current) {
           setActiveSessionId(data.data[0].id);
         }
       }
@@ -138,6 +151,7 @@ export function AIChatInterface({
   };
 
   const fetchMessages = async (sessionId: string) => {
+    if (isStreamingRef.current) return;
     const token = getAccessToken();
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -145,7 +159,7 @@ export function AIChatInterface({
       const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, { headers });
       if (res.status === 401) return;
       const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
+      if (data.success && Array.isArray(data.data) && !isStreamingRef.current) {
         const loaded: Message[] = data.data.map((m: any) => ({
           id: m.id,
           role: m.role,
@@ -252,6 +266,7 @@ export function AIChatInterface({
     ]);
 
     setIsStreaming(true);
+    isStreamingRef.current = true;
     setAgentState("Thinking...");
 
     const abortController = new AbortController();
@@ -304,7 +319,6 @@ export function AIChatInterface({
               if (currentEvent === "session") {
                 if (data.session_id) {
                   setActiveSessionId(data.session_id);
-                  fetchSessions();
                 }
               } else if (currentEvent === "state") {
                 setAgentState(data.state);
@@ -392,6 +406,7 @@ export function AIChatInterface({
                 );
                 setAgentState(null);
                 setIsStreaming(false);
+                isStreamingRef.current = false;
               }
             } catch (jsonErr) {}
           }
@@ -414,6 +429,7 @@ export function AIChatInterface({
       }
     } finally {
       setIsStreaming(false);
+      isStreamingRef.current = false;
       setAgentState(null);
     }
   };
