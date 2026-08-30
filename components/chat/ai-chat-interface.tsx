@@ -24,7 +24,10 @@ import {
   Cloud,
   FileText,
   ExternalLink,
+  Search,
+  MessageSquare,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import {
   MessageScrollerProvider,
@@ -293,16 +296,72 @@ function ClarificationCard({ clarification, onSubmit, onCancel, disabled }: Clar
   );
 }
 
+function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+function groupSessionsByDate(sessionList: Session[]) {
+  const groups: { [key: string]: Session[] } = {
+    Today: [],
+    Yesterday: [],
+    "Previous 7 Days": [],
+    Older: [],
+  };
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  for (const s of sessionList) {
+    const sDate = new Date(s.updated_at || s.created_at || Date.now());
+    const sessionDay = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+
+    if (sessionDay.getTime() === today.getTime()) {
+      groups["Today"].push(s);
+    } else if (sessionDay.getTime() === yesterday.getTime()) {
+      groups["Yesterday"].push(s);
+    } else if (sessionDay >= sevenDaysAgo) {
+      groups["Previous 7 Days"].push(s);
+    } else {
+      groups["Older"].push(s);
+    }
+  }
+
+  return groups;
+}
+
 export function AIChatInterface({
   defaultSessionType = "ADMIN",
 }: {
   defaultSessionType?: "USER" | "ADMIN";
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionSearchQuery, setSessionSearchQuery] = useState("");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("meditouch_active_chat_session") || null;
   });
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -320,10 +379,6 @@ export function AIChatInterface({
       setUserRole(session.role);
     }
     fetchSessions();
-    const saved = localStorage.getItem("meditouch_active_chat_session");
-    if (saved) {
-      fetchMessages(saved);
-    }
   }, []);
 
   useEffect(() => {
@@ -350,8 +405,18 @@ export function AIChatInterface({
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setSessions(data.data);
-        if (data.data.length > 0 && !activeSessionId && !isStreamingRef.current) {
-          setActiveSessionId(data.data[0].id);
+        const saved = localStorage.getItem("meditouch_active_chat_session");
+        // Only restore saved session if it actually exists in the persisted sessions list
+        if (saved && data.data.some((s: any) => s.id === saved)) {
+          setActiveSessionId(saved);
+          if (!isStreamingRef.current) {
+            fetchMessages(saved);
+          }
+        } else {
+          // Otherwise start in clean client-side draft mode
+          setActiveSessionId(null);
+          setMessages([]);
+          localStorage.removeItem("meditouch_active_chat_session");
         }
       }
     } catch (e) {
@@ -377,37 +442,24 @@ export function AIChatInterface({
           medicineCards: m.tool_results_metadata?.medicine_cards || [],
         }));
         setMessages(loaded);
-
       }
     } catch (e) {
       console.error("Failed to fetch messages", e);
     }
   };
 
-  const createNewSession = async () => {
-    const token = await getValidAccessToken();
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    try {
-      const res = await fetch(`${API_BASE}/chat/sessions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          title: "New Conversation",
-          session_type: defaultSessionType,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSessions([data.data, ...sessions]);
-        setActiveSessionId(data.data.id);
-        setMessages([]);
-        setShowSessionsDrawer(false);
-        toast.success("New chat session started");
-      }
-    } catch (e) {
-      toast.error("Failed to create session");
+  const createNewSession = () => {
+    if (isStreamingRef.current) return;
+    if (activeSessionId === null && messages.length === 0) {
+      setShowSessionsDrawer(false);
+      return;
     }
+    // Client-side reset only — zero database inserts!
+    setActiveSessionId(null);
+    setMessages([]);
+    setInput("");
+    setShowSessionsDrawer(false);
+    localStorage.removeItem("meditouch_active_chat_session");
   };
 
   const deleteSession = async (sessionId: string, e: React.MouseEvent) => {
@@ -425,12 +477,9 @@ export function AIChatInterface({
         const remaining = sessions.filter((s) => s.id !== sessionId);
         setSessions(remaining);
         if (activeSessionId === sessionId) {
-          if (remaining.length > 0) {
-            setActiveSessionId(remaining[0].id);
-          } else {
-            setActiveSessionId(null);
-            setMessages([]);
-          }
+          setActiveSessionId(null);
+          setMessages([]);
+          localStorage.removeItem("meditouch_active_chat_session");
         }
         toast.success("Session deleted");
       }
@@ -438,6 +487,7 @@ export function AIChatInterface({
       toast.error("Failed to delete session");
     }
   };
+
 
   const handleSendMessage = async (textToSend?: string, confirmationToken?: string) => {
     const query = textToSend || input.trim();
@@ -530,8 +580,25 @@ export function AIChatInterface({
               if (currentEvent === "session") {
                 if (data.session_id) {
                   setActiveSessionId(data.session_id);
+                  localStorage.setItem("meditouch_active_chat_session", data.session_id);
+                  setSessions((prev) => {
+                    if (prev.some((s) => s.id === data.session_id)) return prev;
+                    return [
+                      {
+                        id: data.session_id,
+                        title: data.title || (query ? query.slice(0, 32) : "Conversation"),
+                        session_type: defaultSessionType,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        is_archived: false,
+                        message_count: 1,
+                      },
+                      ...prev,
+                    ];
+                  });
                 }
               } else if (currentEvent === "state") {
+
                 setAgentState(data.state);
               } else if (currentEvent === "tool_call") {
                 setMessages((prev) =>
@@ -757,8 +824,10 @@ export function AIChatInterface({
               if (currentEvent === "session") {
                 if (data.session_id) {
                   setActiveSessionId(data.session_id);
+                  localStorage.setItem("meditouch_active_chat_session", data.session_id);
                 }
               } else if (currentEvent === "state") {
+
                 setAgentState(data.state);
               } else if (currentEvent === "tool_call") {
                 setMessages((prev) =>
@@ -898,89 +967,226 @@ export function AIChatInterface({
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#FAF8F5] text-stone-900 font-sans">
       {/* Session History Sliding Drawer */}
       {showSessionsDrawer && (
-        <div className="absolute inset-0 z-30 flex flex-col bg-white p-4 shadow-xl border-r border-stone-200 animate-in slide-in-from-left duration-200">
-          <div className="mb-4 flex items-center justify-between border-b border-stone-100 pb-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-800">
-              <History className="h-4 w-4 text-[#5b15fc]" />
-              <span>Conversation History</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={createNewSession}
-                className="flex items-center gap-1 rounded-xl bg-[#5b15fc]/10 px-2.5 py-1.5 text-xs font-semibold text-[#5b15fc] hover:bg-[#5b15fc]/20 transition"
-              >
-                <Plus className="h-3 w-3" /> New
-              </button>
-              <button
-                onClick={() => setShowSessionsDrawer(false)}
-                className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-1.5 overflow-y-auto pr-1">
-            {sessions.length === 0 ? (
-              <div className="py-12 text-center text-xs text-stone-400">
-                No past conversations. Start a new chat!
-              </div>
-            ) : (
-              sessions.map((s) => (
-                <div
-                  key={s.id}
-                  onClick={() => {
-                    setActiveSessionId(s.id);
-                    setShowSessionsDrawer(false);
-                  }}
-                  className={`group flex cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-xs transition-all ${
-                    activeSessionId === s.id
-                      ? "bg-[#5b15fc]/10 font-semibold text-[#5b15fc] border border-[#5b15fc]/30"
-                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 border border-transparent"
-                  }`}
-                >
-                  <div className="truncate pr-2">{s.title}</div>
-                  <button
-                    onClick={(e) => deleteSession(s.id, e)}
-                    className="opacity-0 transition-opacity group-hover:opacity-100 text-stone-400 hover:text-rose-500"
-                    title="Delete session"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+        <div
+          className="absolute inset-0 z-30 flex bg-stone-950/25 backdrop-blur-[2px] animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSessionsDrawer(false);
+              setSessionSearchQuery("");
+            }
+          }}
+        >
+          <div className="flex h-full w-full max-w-sm flex-col bg-white shadow-2xl border-r border-stone-200 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-stone-100 p-4 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc]">
+                  <History className="h-4 w-4" />
                 </div>
-              ))
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    Conversations
+                  </h3>
+                  <p className="text-[10px] text-stone-400 font-medium">
+                    {sessions.length} saved {sessions.length === 1 ? "thread" : "threads"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={createNewSession}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#4a0fd4] transition"
+                  title="Start fresh conversation"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>New</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSessionsDrawer(false);
+                    setSessionSearchQuery("");
+                  }}
+                  className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Search Filter Bar (if multiple sessions exist) */}
+            {sessions.length > 1 && (
+              <div className="px-4 pt-3 pb-1">
+                <div className="relative flex items-center">
+                  <Search className="absolute left-3 h-3.5 w-3.5 text-stone-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={sessionSearchQuery}
+                    onChange={(e) => setSessionSearchQuery(e.target.value)}
+                    placeholder="Search chat history..."
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50/80 pl-8.5 pr-8 py-1.5 text-xs text-stone-800 placeholder:text-stone-400 focus:border-[#5b15fc] focus:bg-white focus:outline-none transition"
+                  />
+                  {sessionSearchQuery && (
+                    <button
+                      onClick={() => setSessionSearchQuery("")}
+                      className="absolute right-2.5 rounded-full p-0.5 text-stone-400 hover:text-stone-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
+
+            {/* Categorized Thread List */}
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 pt-2">
+              {(() => {
+                const filtered = sessionSearchQuery.trim()
+                  ? sessions.filter((s) => s.title.toLowerCase().includes(sessionSearchQuery.toLowerCase()))
+                  : sessions;
+
+                if (filtered.length === 0) {
+                  return sessionSearchQuery ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                      <Search className="h-6 w-6 text-stone-300 mb-2" />
+                      <p className="text-xs font-semibold text-stone-700">No results found</p>
+                      <p className="mt-0.5 text-[11px] text-stone-400">
+                        No conversations matching &ldquo;{sessionSearchQuery}&rdquo;
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5b15fc]/10 text-[#5b15fc] border border-[#5b15fc]/15">
+                        <MessageSquare className="h-6 w-6" />
+                      </div>
+                      <p className="text-xs font-bold text-stone-800">No conversations yet</p>
+                      <p className="mt-1 text-[11px] text-stone-400 leading-relaxed max-w-[200px]">
+                        Start a new conversation to get help with medicines, pricing, and services.
+                      </p>
+                      <button
+                        onClick={createNewSession}
+                        className="mt-4 flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#4a0fd4] transition"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Start New Chat</span>
+                      </button>
+                    </div>
+                  );
+                }
+
+                const grouped = groupSessionsByDate(filtered);
+
+                return Object.entries(grouped).map(([groupTitle, groupItems]) => {
+                  if (groupItems.length === 0) return null;
+                  return (
+                    <div key={groupTitle} className="space-y-1">
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                        {groupTitle}
+                      </div>
+                      <div className="space-y-1">
+                        {groupItems.map((s) => {
+                          const isActive = activeSessionId === s.id;
+                          return (
+                            <div
+                              key={s.id}
+                              onClick={() => {
+                                setActiveSessionId(s.id);
+                                setShowSessionsDrawer(false);
+                                setSessionSearchQuery("");
+                              }}
+                              className={`group relative flex cursor-pointer items-start justify-between rounded-xl p-2.5 text-xs transition-all border ${
+                                isActive
+                                  ? "bg-[#5b15fc]/10 border-[#5b15fc]/30 text-[#5b15fc] shadow-xs"
+                                  : "bg-white hover:bg-stone-50 hover:border-stone-200 border-stone-100/80 text-stone-700"
+                              }`}
+                            >
+                              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                <div
+                                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                    isActive
+                                      ? "bg-[#5b15fc] text-white"
+                                      : "bg-stone-100 text-stone-500 group-hover:text-[#5b15fc] group-hover:bg-[#5b15fc]/10"
+                                  }`}
+                                >
+                                  <MessageSquare className="h-3 w-3" />
+                                </div>
+                                <div className="flex-1 min-w-0 pr-1">
+                                  <h4 className={`font-semibold truncate text-xs ${isActive ? "text-[#5b15fc]" : "text-stone-800"}`}>
+                                    {s.title}
+                                  </h4>
+                                  <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-stone-400">
+                                    <span>{formatRelativeTime(s.updated_at || s.created_at)}</span>
+                                    {s.message_count ? (
+                                      <>
+                                        <span>•</span>
+                                        <span>{s.message_count} {s.message_count === 1 ? "msg" : "msgs"}</span>
+                                      </>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={(e) => deleteSession(s.id, e)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50"
+                                title="Delete thread"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           </div>
         </div>
       )}
 
+
       {/* Top Header Bar */}
       <div className="flex items-center justify-between border-b border-stone-200/80 bg-white px-4 py-3 shadow-xs">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={() => setShowSessionsDrawer(!showSessionsDrawer)}
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition shrink-0"
             title="View chat history"
           >
             <History className="h-3.5 w-3.5 text-[#5b15fc]" />
             <span className="hidden sm:inline">History</span>
+            {sessions.length > 0 && (
+              <span className="ml-0.5 rounded-full bg-[#5b15fc]/10 px-1.5 py-0.2 text-[10px] font-bold text-[#5b15fc]">
+                {sessions.length}
+              </span>
+            )}
           </button>
-          <div className="flex items-center gap-1.5 pl-1">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
-              {userRole === "ADMIN" ? "Admin Command Mode" : "Clinical Assistant"}
+          <div className="flex items-center gap-1.5 pl-1 min-w-0">
+            <span className="flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-stone-800 truncate">
+              {activeSessionId
+                ? sessions.find((s) => s.id === activeSessionId)?.title || (userRole === "ADMIN" ? "Admin Session" : "Clinical Session")
+                : "New Conversation"}
             </span>
+            {!activeSessionId && (
+              <span className="rounded bg-amber-50 border border-amber-200/60 px-1.5 py-0.2 text-[9px] font-bold uppercase text-amber-700 shrink-0">
+                Draft
+              </span>
+            )}
           </div>
         </div>
 
         <button
           onClick={createNewSession}
-          className="flex items-center gap-1 rounded-lg bg-[#5b15fc] px-2.5 py-1 text-xs font-semibold text-white shadow-xs hover:bg-[#4a0fd4] transition"
+          className="flex items-center gap-1 rounded-lg bg-[#5b15fc] px-2.5 py-1 text-xs font-semibold text-white shadow-xs hover:bg-[#4a0fd4] transition shrink-0"
         >
           <Plus className="h-3 w-3" />
           <span>New Chat</span>
         </button>
       </div>
+
 
       {/* Main Conversation Container with MessageScroller */}
       <MessageScrollerProvider>
