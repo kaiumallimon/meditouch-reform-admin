@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { getValidAccessToken, getAccessToken, getSession } from "@/lib/auth";
+import Link from "next/link";
 import {
   Bot,
   User,
@@ -22,6 +23,7 @@ import {
   Stethoscope,
   Cloud,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -49,6 +51,7 @@ import {
 
 interface MedicineCard {
   id?: string;
+  slug?: string;
   brand: string;
   generic_name?: string;
   strength?: string;
@@ -61,6 +64,7 @@ interface MedicineCard {
   image?: string;
   manufacturer?: string;
 }
+
 
 export interface ClarificationOption {
   id: string;
@@ -370,8 +374,10 @@ export function AIChatInterface({
           role: m.role,
           content: m.content,
           toolCalls: m.tool_calls,
+          medicineCards: m.tool_results_metadata?.medicine_cards || [],
         }));
         setMessages(loaded);
+
       }
     } catch (e) {
       console.error("Failed to fetch messages", e);
@@ -797,10 +803,11 @@ export function AIChatInterface({
                     msg.id === assistantMsgId
                       ? {
                           ...msg,
-                          content: data.message || msg.content || "I need a little more information before I can safely answer.",
+                          content: "",
+                          isStreaming: false,
                           clarificationPrompt: {
                             clarification_id: data.clarification_id,
-                            message: data.message,
+                            message: data.message || "I need a little more information before I can safely answer.",
                             questions: data.questions || [],
                             submission: data.submission,
                           },
@@ -849,6 +856,7 @@ export function AIChatInterface({
                           ...msg,
                           isStreaming: false,
                           modelName: data.model_name || msg.modelName,
+                          medicineCards: data.medicine_cards || msg.medicineCards,
                         }
                       : msg
                   )
@@ -1067,49 +1075,57 @@ export function AIChatInterface({
                         {/* Interactive Medicine Cards */}
                         {m.medicineCards && m.medicineCards.length > 0 && (
                           <div className="grid grid-cols-1 gap-2 pt-1">
-                            {m.medicineCards.map((med, idx) => (
-                              <div
-                                key={idx}
-                                className="neo-card flex items-start gap-2.5 rounded-xl p-2.5 bg-white border border-stone-200"
-                              >
-                                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-stone-50 border border-stone-200">
-                                  {med.image ? (
-                                    <Image src={med.image} alt={med.brand} fill className="object-cover" />
-                                  ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-[#5b15fc]">
-                                      <Pill className="h-5 w-5" />
+                            {m.medicineCards.map((med, idx) => {
+                              const publicSlug = med.slug || med.brand?.toLowerCase().replace(/\s+/g, "-") || "all";
+                              return (
+                                <Link
+                                  key={idx}
+                                  href={`/pharmacy/${publicSlug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="neo-card flex items-start gap-2.5 rounded-xl p-2.5 bg-white border border-stone-200 hover:border-[#5b15fc]/60 hover:shadow-md transition-all group cursor-pointer"
+                                >
+                                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-stone-50 border border-stone-200">
+                                    {med.image ? (
+                                      <Image src={med.image} alt={med.brand} fill className="object-cover group-hover:scale-105 transition-transform" />
+                                    ) : (
+                                      <div className="flex h-full w-full items-center justify-center text-[#5b15fc]">
+                                        <Pill className="h-5 w-5" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="font-bold text-stone-900 truncate text-xs group-hover:text-[#5b15fc] flex items-center gap-1 transition-colors">
+                                        {med.brand}
+                                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-[#5b15fc]" />
+                                      </h4>
+                                      <span className="font-bold text-[#5b15fc] text-xs">
+                                        ৳ {med.unit_price?.toFixed(2)}
+                                      </span>
                                     </div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="font-bold text-stone-900 truncate text-xs">
-                                      {med.brand}
-                                    </h4>
-                                    <span className="font-bold text-[#5b15fc] text-xs">
-                                      ৳ {med.unit_price?.toFixed(2)}
-                                    </span>
+                                    <p className="text-[11px] text-stone-500 truncate">
+                                      {med.generic_name} ({med.strength})
+                                    </p>
+                                    <div className="mt-1 flex items-center justify-between text-[10px]">
+                                      <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-600">
+                                        {med.dosage_form || "Tablet"}
+                                      </span>
+                                      <span
+                                        className={`font-semibold ${
+                                          med.in_stock !== false ? "text-emerald-600" : "text-rose-600"
+                                        }`}
+                                      >
+                                        {med.in_stock !== false ? `In Stock (${med.stock_count || 100})` : "Out of Stock"}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <p className="text-[11px] text-stone-500 truncate">
-                                    {med.generic_name} ({med.strength})
-                                  </p>
-                                  <div className="mt-1 flex items-center justify-between text-[10px]">
-                                    <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-600">
-                                      {med.dosage_form || "Tablet"}
-                                    </span>
-                                    <span
-                                      className={`font-semibold ${
-                                        med.in_stock !== false ? "text-emerald-600" : "text-rose-600"
-                                      }`}
-                                    >
-                                      {med.in_stock !== false ? `In Stock (${med.stock_count || 100})` : "Out of Stock"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                                </Link>
+                              );
+                            })}
                           </div>
                         )}
+
 
                         {/* Interactive Clarification Questionnaire */}
                         {m.clarificationPrompt && (
