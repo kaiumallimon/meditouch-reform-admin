@@ -1,4 +1,30 @@
+export interface UserSession {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  role: string;
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+export function saveSession(user: UserSession, accessToken: string, refreshToken: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("meditouch_user", JSON.stringify(user));
+  localStorage.setItem("meditouch_access_token", accessToken);
+  localStorage.setItem("meditouch_refresh_token", refreshToken);
+  // Also set cookie for server components/middleware
+  document.cookie = `meditouch_token=${accessToken}; path=/; max-age=86400; SameSite=Lax`;
+}
+
+export function clearSession(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("meditouch_user");
+  localStorage.removeItem("meditouch_access_token");
+  localStorage.removeItem("meditouch_refresh_token");
+  localStorage.removeItem("meditouch_active_chat_session");
+  document.cookie = "meditouch_token=; path=/; max-age=0";
+}
 
 export function isTokenExpired(token: string | null, bufferSeconds: number = 0): boolean {
   if (!token) return true;
