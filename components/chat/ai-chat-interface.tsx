@@ -116,11 +116,14 @@ export function AIChatInterface({
 
   const fetchSessions = async () => {
     const token = getAccessToken();
-    if (!token) return;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
-      const res = await fetch(`${API_BASE}/chat/sessions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${API_BASE}/chat/sessions`, { headers });
+      if (res.status === 401) {
+        setSessions([]);
+        return;
+      }
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setSessions(data.data);
@@ -135,11 +138,11 @@ export function AIChatInterface({
 
   const fetchMessages = async (sessionId: string) => {
     const token = getAccessToken();
-    if (!token) return;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
-      const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, { headers });
+      if (res.status === 401) return;
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         const loaded: Message[] = data.data.map((m: any) => ({
@@ -157,14 +160,12 @@ export function AIChatInterface({
 
   const createNewSession = async () => {
     const token = getAccessToken();
-    if (!token) return;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
       const res = await fetch(`${API_BASE}/chat/sessions`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           title: "New Conversation",
           session_type: defaultSessionType,
@@ -186,11 +187,12 @@ export function AIChatInterface({
   const deleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const token = getAccessToken();
-    if (!token) return;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
       const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       });
       const data = await res.json();
       if (data.success) {
@@ -220,9 +222,11 @@ export function AIChatInterface({
     }
 
     const token = getAccessToken();
-    if (!token) {
-      toast.error("Authentication required");
-      return;
+    const reqHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      reqHeaders["Authorization"] = `Bearer ${token}`;
     }
 
     const userMsgId = `user_${Date.now()}`;
@@ -255,10 +259,7 @@ export function AIChatInterface({
     try {
       const response = await fetch(`${API_BASE}/chat/stream`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: reqHeaders,
         body: JSON.stringify({
           message: query || "CONFIRM_ACTION",
           session_id: activeSessionId,
