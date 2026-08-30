@@ -118,7 +118,12 @@ interface Session {
   title: string;
   session_type: string;
   updated_at: string;
+  created_at?: string;
+  last_message_at?: string;
+  message_count?: number;
+  is_archived?: boolean;
 }
+
 
 interface ClarificationCardProps {
   clarification: ClarificationPrompt;
