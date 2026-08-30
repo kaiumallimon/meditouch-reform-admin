@@ -62,6 +62,33 @@ interface MedicineCard {
   manufacturer?: string;
 }
 
+export interface ClarificationOption {
+  id: string;
+  label: string;
+  subtitle?: string;
+}
+
+export interface ClarificationQuestion {
+  id: string;
+  type: "single_select" | "multi_select" | "text" | "free_text" | "number" | "boolean" | "date" | "entity_select";
+  question: string;
+  required?: boolean;
+  options?: ClarificationOption[];
+  allow_custom_input?: boolean;
+  placeholder?: string;
+}
+
+export interface ClarificationPrompt {
+  clarification_id: string;
+  message: string;
+  questions: ClarificationQuestion[];
+  submission?: {
+    action: string;
+    session_id: string;
+    clarification_id: string;
+  };
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant" | "system";
@@ -73,6 +100,8 @@ interface Message {
     prompt: string;
     details: any;
   };
+  clarificationPrompt?: ClarificationPrompt;
+  clarificationSubmitted?: boolean;
   modelName?: string;
   isStreaming?: boolean;
 }
@@ -82,6 +111,182 @@ interface Session {
   title: string;
   session_type: string;
   updated_at: string;
+}
+
+interface ClarificationCardProps {
+  clarification: ClarificationPrompt;
+  onSubmit: (clarificationId: string, answers: Array<{ question_id: string; value: any }>) => void;
+  onCancel: () => void;
+  disabled?: boolean;
+}
+
+function ClarificationCard({ clarification, onSubmit, onCancel, disabled }: ClarificationCardProps) {
+  const [answers, setAnswers] = useState<Record<string, any>>({});
+
+  const handleSingleSelect = (questionId: string, optionId: string) => {
+    if (disabled) return;
+    setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
+  };
+
+  const handleMultiSelectToggle = (questionId: string, optionId: string) => {
+    if (disabled) return;
+    setAnswers((prev) => {
+      const current = (prev[questionId] as string[]) || [];
+      const updated = current.includes(optionId)
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId];
+      return { ...prev, [questionId]: updated };
+    });
+  };
+
+  const handleTextChange = (questionId: string, val: string) => {
+    if (disabled) return;
+    setAnswers((prev) => ({ ...prev, [questionId]: val }));
+  };
+
+  const isFormValid = () => {
+    for (const q of clarification.questions) {
+      if (q.required) {
+        const val = answers[q.id];
+        if (val === undefined || val === null || val === "") return false;
+        if (Array.isArray(val) && val.length === 0) return false;
+      }
+    }
+    return true;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (disabled || !isFormValid()) return;
+    const formatted = Object.entries(answers).map(([question_id, value]) => ({
+      question_id,
+      value,
+    }));
+    onSubmit(clarification.clarification_id, formatted);
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={`mt-3 rounded-2xl border-2 border-stone-800 bg-white p-4 shadow-[4px_4px_0px_#000000] text-stone-900 space-y-3 ${
+        disabled ? "opacity-75 pointer-events-none" : ""
+      }`}
+    >
+      <div className="flex items-start gap-2.5 pb-2 border-b border-stone-100">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-[#5b15fc] border border-purple-200 shadow-xs">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+            Clarification Needed
+          </h4>
+          <p className="text-xs text-stone-600 leading-relaxed mt-0.5">
+            {clarification.message || "Please provide the following details so we can safely evaluate your request:"}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3 pt-1">
+        {clarification.questions.map((q) => {
+          const selectedVal = answers[q.id];
+          return (
+            <div key={q.id} className="space-y-1.5 rounded-xl bg-stone-50/80 p-3 border border-stone-200/80">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-stone-900">{q.question}</span>
+                {q.required && (
+                  <span className="text-[10px] font-medium text-rose-500 uppercase">Required</span>
+                )}
+              </div>
+
+              {q.type === "single_select" || q.type === "entity_select" ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {q.options?.map((opt) => {
+                    const isSelected = selectedVal === opt.id;
+                    return (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        disabled={disabled}
+                        onClick={() => handleSingleSelect(q.id, opt.id)}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-medium border transition ${
+                          isSelected
+                            ? "bg-[#5b15fc] text-white border-[#5b15fc] shadow-xs"
+                            : "bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                        }`}
+                      >
+                        {opt.label}
+                        {opt.subtitle && (
+                          <span className="block text-[10px] opacity-80">{opt.subtitle}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : q.type === "multi_select" ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {q.options?.map((opt) => {
+                    const selectedList = (selectedVal as string[]) || [];
+                    const isSelected = selectedList.includes(opt.id);
+                    return (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        disabled={disabled}
+                        onClick={() => handleMultiSelectToggle(q.id, opt.id)}
+                        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium border transition ${
+                          isSelected
+                            ? "bg-[#5b15fc] text-white border-[#5b15fc] shadow-xs"
+                            : "bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${
+                            isSelected ? "border-white bg-white/20" : "border-stone-400 bg-stone-100"
+                          }`}
+                        >
+                          {isSelected && <CheckCircle2 className="h-3 w-3 text-white" />}
+                        </span>
+                        <span>{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <input
+                  type={q.type === "number" ? "number" : "text"}
+                  disabled={disabled}
+                  placeholder={q.placeholder || "Type your answer..."}
+                  value={selectedVal || ""}
+                  onChange={(e) => handleTextChange(q.id, e.target.value)}
+                  className="w-full rounded-xl border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-900 placeholder:text-stone-400 focus:border-[#5b15fc] focus:outline-none"
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {!disabled && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 transition"
+          >
+            Dismiss
+          </button>
+          <button
+            type="submit"
+            disabled={!isFormValid()}
+            className="flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#4a0fd4] disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Send className="h-3.5 w-3.5" />
+            <span>Submit Answers</span>
+          </button>
+        </div>
+      )}
+    </form>
+  );
 }
 
 export function AIChatInterface({
@@ -359,6 +564,23 @@ export function AIChatInterface({
                     )
                   );
                 }
+              } else if (currentEvent === "clarification_required") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          content: data.message || msg.content || "I need a little more information before I can safely answer.",
+                          clarificationPrompt: {
+                            clarification_id: data.clarification_id,
+                            message: data.message,
+                            questions: data.questions || [],
+                            submission: data.submission,
+                          },
+                        }
+                      : msg
+                  )
+                );
               } else if (currentEvent === "confirmation_required") {
                 setMessages((prev) =>
                   prev.map((msg) =>
@@ -426,6 +648,217 @@ export function AIChatInterface({
               : msg
           )
         );
+      }
+    } finally {
+      setIsStreaming(false);
+      isStreamingRef.current = false;
+      setAgentState(null);
+    }
+  };
+
+  const handleClarificationSubmit = async (
+    clarificationId: string,
+    answers: Array<{ question_id: string; value: any }>
+  ) => {
+    if (isStreamingRef.current) return;
+
+    // Mark current clarification as submitted in state
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.clarificationPrompt?.clarification_id === clarificationId
+          ? { ...msg, clarificationSubmitted: true }
+          : msg
+      )
+    );
+
+    const token = await getValidAccessToken();
+    const reqHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      reqHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
+    const assistantMsgId = `assistant_${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: assistantMsgId,
+        role: "assistant",
+        content: "",
+        isStreaming: true,
+        toolCalls: [],
+        medicineCards: [],
+      },
+    ]);
+
+    setIsStreaming(true);
+    isStreamingRef.current = true;
+    setAgentState("Evaluating answers...");
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const endpointPrefix = userRole === "ADMIN" ? "admin/chat" : "chat";
+    const url = `${API_BASE}/${endpointPrefix}/sessions/${activeSessionId}/clarifications/${clarificationId}/submit`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: reqHeaders,
+        body: JSON.stringify({ answers }),
+        signal: abortController.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `HTTP error ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        let currentEvent = "message";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+
+          if (trimmed.startsWith("event: ")) {
+            currentEvent = trimmed.replace("event: ", "").trim();
+            continue;
+          }
+
+          if (trimmed.startsWith("data: ")) {
+            const rawData = trimmed.replace("data: ", "").trim();
+            try {
+              const data = JSON.parse(rawData);
+
+              if (currentEvent === "session") {
+                if (data.session_id) {
+                  setActiveSessionId(data.session_id);
+                }
+              } else if (currentEvent === "state") {
+                setAgentState(data.state);
+              } else if (currentEvent === "tool_call") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          toolCalls: [
+                            ...(msg.toolCalls || []),
+                            { tool: data.tool, args: data.arguments, status: "RUNNING" },
+                          ],
+                        }
+                      : msg
+                  )
+                );
+              } else if (currentEvent === "tool_result") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          toolCalls: (msg.toolCalls || []).map((tc) =>
+                            tc.tool === data.tool ? { ...tc, status: data.status } : tc
+                          ),
+                        }
+                      : msg
+                  )
+                );
+              } else if (currentEvent === "medicine_cards") {
+                if (Array.isArray(data.medicines)) {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId
+                        ? { ...msg, medicineCards: data.medicines }
+                        : msg
+                    )
+                  );
+                }
+              } else if (currentEvent === "clarification_required") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          content: data.message || msg.content || "I need a little more information before I can safely answer.",
+                          clarificationPrompt: {
+                            clarification_id: data.clarification_id,
+                            message: data.message,
+                            questions: data.questions || [],
+                            submission: data.submission,
+                          },
+                        }
+                      : msg
+                  )
+                );
+              } else if (currentEvent === "confirmation_required") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          confirmationPrompt: {
+                            token: data.token,
+                            prompt: data.prompt,
+                            details: data.details,
+                          },
+                        }
+                      : msg
+                  )
+                );
+              } else if (currentEvent === "model_info") {
+                if (data.tag) {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId ? { ...msg, modelName: data.tag } : msg
+                    )
+                  );
+                }
+              } else if (currentEvent === "token") {
+                if (data.delta) {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId
+                        ? { ...msg, content: msg.content + data.delta }
+                        : msg
+                    )
+                  );
+                }
+              } else if (currentEvent === "done") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? {
+                          ...msg,
+                          isStreaming: false,
+                          modelName: data.model_name || msg.modelName,
+                        }
+                      : msg
+                  )
+                );
+                setAgentState(null);
+                setIsStreaming(false);
+                isStreamingRef.current = false;
+              }
+            } catch (jsonErr) {}
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        toast.error(err.message || "Failed to submit clarification");
       }
     } finally {
       setIsStreaming(false);
@@ -671,6 +1104,24 @@ export function AIChatInterface({
                               </div>
                             ))}
                           </div>
+                        )}
+
+                        {/* Interactive Clarification Questionnaire */}
+                        {m.clarificationPrompt && (
+                          <ClarificationCard
+                            clarification={m.clarificationPrompt}
+                            onSubmit={handleClarificationSubmit}
+                            onCancel={() => {
+                              setMessages((prev) =>
+                                prev.map((msg) =>
+                                  msg.id === m.id
+                                    ? { ...msg, clarificationPrompt: undefined }
+                                    : msg
+                                )
+                              );
+                            }}
+                            disabled={m.clarificationSubmitted || isStreaming}
+                          />
                         )}
 
                         {/* 2-Step Confirmation Questionnaire */}
