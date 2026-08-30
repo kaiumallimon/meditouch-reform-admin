@@ -570,10 +570,14 @@ export function AIChatInterface({
                     msg.id === assistantMsgId
                       ? {
                           ...msg,
-                          content: data.message || msg.content || "I need a little more information before I can safely answer.",
+                          // content is intentionally empty: the ClarificationCard renders
+                          // the message field internally. Keeping content non-empty here
+                          // causes a duplicate text bubble above the card.
+                          content: "",
+                          isStreaming: false,
                           clarificationPrompt: {
                             clarification_id: data.clarification_id,
-                            message: data.message,
+                            message: data.message || "I need a little more information before I can safely answer.",
                             questions: data.questions || [],
                             submission: data.submission,
                           },
@@ -581,6 +585,7 @@ export function AIChatInterface({
                       : msg
                   )
                 );
+
               } else if (currentEvent === "confirmation_required") {
                 setMessages((prev) =>
                   prev.map((msg) =>
