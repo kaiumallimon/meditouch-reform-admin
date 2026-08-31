@@ -515,38 +515,7 @@ export const adminApi = {
   },
 };
 
-// 4. Orders API
-export const ordersApi = {
-  listAllOrders: async (page = 1, limit = 20, status?: string) => {
-    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (status) query.append("status", status);
-    const res = await fetchApi<PaginatedData<{
-      id: string;
-      order_number: string;
-      user_id: string;
-      user_name: string;
-      user_phone: string;
-      total_amount: number;
-      status: string;
-      created_at?: string;
-      items: Array<{
-        name: string;
-        quantity: number;
-        unit_price: number;
-        total_price: number;
-      }>;
-    }>>(`/orders/admin/all?${query.toString()}`);
-    return res.data;
-  },
-
-  updateOrderStatus: async (orderId: string, status: string, trackingNote?: string) => {
-    const res = await fetchApi(`/orders/${orderId}/status`, {
-      method: "PUT",
-      body: JSON.stringify({ status, tracking_note: trackingNote }),
-    });
-    return res.data;
-  },
-};
+// (Orders API is exported at the end of file with complete real-time OrderData types)
 
 // 5. Media & Cloudinary CDN API
 export const mediaApi = {
@@ -886,5 +855,110 @@ export const pharmacyApi = {
     });
     return res.data;
   },
+
+  updateMedicineStock: async (idOrSlug: string, stock_count: number, in_stock?: boolean) => {
+    const res = await fetchApi<MedicineItem>(`/pharmacy/admin/medicines/${idOrSlug}/stock`, {
+      method: "PUT",
+      body: JSON.stringify({ stock_count, in_stock }),
+    });
+    return res.data;
+  },
+
+  batchUpdateInventory: async (items: Array<{ medicine_id: string; stock_count: number }>) => {
+    const res = await fetchApi<{ updated_count: number }>("/pharmacy/admin/inventory/batch-update", {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    });
+    return res.data;
+  },
 };
+
+export interface OrderItem {
+  medicine_id: string;
+  name: string;
+  brand: string;
+  strength: string;
+  unit_price: number;
+  quantity: number;
+  total_price: number;
+}
+
+export interface TrackingEvent {
+  status: string;
+  note: string;
+  timestamp: string;
+}
+
+export interface AddressData {
+  id?: string;
+  label?: string;
+  recipient_name: string;
+  recipient_phone: string;
+  division?: string;
+  district?: string;
+  upazila_or_thana?: string;
+  street_address: string;
+  is_default?: boolean;
+}
+
+export interface OrderData {
+  id: string;
+  order_number: string;
+  user_id: string;
+  user_name: string;
+  user_phone: string;
+  items: OrderItem[];
+  subtotal: number;
+  delivery_fee: number;
+  total_amount: number;
+  delivery_address: AddressData;
+  status: "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  payment_id?: string | null;
+  merchant_invoice_number?: string | null;
+  payment_url?: string | null;
+  bkash_trx_id?: string | null;
+  requires_prescription?: boolean;
+  prescription_urls?: string[];
+  customer_notes?: string | null;
+  tracking_history: TrackingEvent[];
+  created_at?: string;
+}
+
+export const ordersApi = {
+  listAllOrders: async (params: { status?: string; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params.status && params.status !== "ALL") query.append("status", params.status);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+
+    const res = await fetchApi<PaginatedData<OrderData>>(`/orders/admin/all?${query.toString()}`);
+    return res.data;
+  },
+
+  getOrderDetails: async (orderId: string) => {
+    const res = await fetchApi<OrderData>(`/orders/${orderId}`);
+    return res.data;
+  },
+
+  updateOrderStatus: async (orderId: string, status: string, tracking_note?: string) => {
+    const res = await fetchApi<OrderData>(`/orders/${orderId}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status, tracking_note }),
+    });
+    return res.data;
+  },
+
+  cancelOrder: async (orderId: string, reason?: string) => {
+    const res = await fetchApi<OrderData>(`/orders/${orderId}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason: reason || "Cancelled by admin" }),
+    });
+    return res.data;
+  },
+
+  getOrdersStreamUrl: () => {
+    return `${API_BASE_URL}/orders/admin/stream`;
+  },
+};
+
 

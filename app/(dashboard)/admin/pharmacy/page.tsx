@@ -111,6 +111,50 @@ export default function PharmacyAdminPage() {
   });
   const [deleting, setDeleting] = useState(false);
 
+  // Stock Management Modal State
+  const [stockModal, setStockModal] = useState<{
+    open: boolean;
+    medicine: MedicineItem | null;
+    stockCount: number;
+  }>({
+    open: false,
+    medicine: null,
+    stockCount: 0,
+  });
+  const [updatingStock, setUpdatingStock] = useState(false);
+
+  const promptEditStock = (med: MedicineItem) => {
+    setStockModal({
+      open: true,
+      medicine: med,
+      stockCount: med.stock_count ?? (med.in_stock ? 100 : 0),
+    });
+  };
+
+  const handleSaveStock = async () => {
+    if (!stockModal.medicine) return;
+    try {
+      setUpdatingStock(true);
+      const medId = stockModal.medicine.id || stockModal.medicine.slug || "";
+      await pharmacyApi.updateMedicineStock(medId, stockModal.stockCount);
+      toast.success(
+        `Updated inventory for ${stockModal.medicine.medicine_name || stockModal.medicine.brand} to ${stockModal.stockCount} units`
+      );
+      setMedicines((prev) =>
+        prev.map((m) =>
+          m.id === medId || m.slug === medId
+            ? { ...m, stock_count: stockModal.stockCount, in_stock: stockModal.stockCount > 0 }
+            : m
+        )
+      );
+      setStockModal({ open: false, medicine: null, stockCount: 0 });
+    } catch (err: any) {
+      toast.error("Failed to update stock", { description: err.message });
+    } finally {
+      setUpdatingStock(false);
+    }
+  };
+
   // 3-State selection calculations for current page
   const currentPageIds = useMemo(
     () => medicines.map((m) => m.id || m.slug || "").filter(Boolean),
@@ -1016,10 +1060,31 @@ export default function PharmacyAdminPage() {
                   </p>
                 </div>
 
-                {/* Price & Action */}
+                {/* Stock Level & Price & Action */}
                 <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-[10px] text-stone-400 font-medium">Price</p>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold border",
+                          (med.stock_count ?? 100) > 10
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : (med.stock_count ?? 100) > 0
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-rose-50 text-rose-700 border-rose-200"
+                        )}
+                      >
+                        Stock: {med.stock_count ?? 100}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => promptEditStock(med)}
+                        title="Edit stock count"
+                        className="text-[10px] font-bold text-[#5b15fc] hover:underline cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    </div>
                     <p className="font-bold text-stone-900 text-sm">
                       {formatCurrency(med.unit_price || 0)}
                     </p>
@@ -1068,6 +1133,7 @@ export default function PharmacyAdminPage() {
                   <th className="py-3 px-4">Product Name & Formulation</th>
                   <th className="py-3 px-4">Dosage / Strength</th>
                   <th className="py-3 px-4">Manufacturer</th>
+                  <th className="py-3 px-4">Stock Level</th>
                   <th className="py-3 px-4">Unit Pricing</th>
                   <th className="py-3 px-4">Rx Required</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -1077,6 +1143,7 @@ export default function PharmacyAdminPage() {
                 {medicines.map((med) => {
                   const medKey = med.id || med.slug || "";
                   const isSelected = selectedIds.includes(medKey);
+                  const stock = med.stock_count ?? (med.in_stock ? 100 : 0);
                   return (
                     <tr
                       key={medKey}
@@ -1132,6 +1199,29 @@ export default function PharmacyAdminPage() {
                       </td>
                       <td className="py-3 px-4 text-stone-600 font-medium">
                         {med.manufacturer_name || med.manufacturer}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold border",
+                              stock > 10
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : stock > 0
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
+                            )}
+                          >
+                            {stock} units
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => promptEditStock(med)}
+                            className="text-[10px] font-bold text-[#5b15fc] hover:underline cursor-pointer"
+                          >
+                            Adjust
+                          </button>
+                        </div>
                       </td>
                       <td className="py-3 px-4 font-bold text-stone-900">
                         {formatCurrency(med.unit_price || 0)}
@@ -1499,6 +1589,127 @@ export default function PharmacyAdminPage() {
               >
                 {deleting ? <Spinner className="size-3.5 text-white" /> : <Trash2 className="size-3.5" />}
                 <span>{deleting ? "Deleting..." : "Confirm Delete"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Stock & Inventory Edit Modal */}
+      {stockModal.open && stockModal.medicine && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-[#5b15fc]/10 text-[#5b15fc]">
+                  <Package className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-base font-bold text-stone-900">
+                    Adjust Inventory Stock
+                  </h3>
+                  <p className="text-xs text-stone-500 line-clamp-1">
+                    {stockModal.medicine.medicine_name || stockModal.medicine.brand}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setStockModal({ open: false, medicine: null, stockCount: 0 })}
+                className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 py-1">
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">
+                  Available Stock Count (Units)
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStockModal((prev) => ({ ...prev, stockCount: Math.max(0, prev.stockCount - 10) }))}
+                    className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  >
+                    -10
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockModal((prev) => ({ ...prev, stockCount: Math.max(0, prev.stockCount - 1) }))}
+                    className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  >
+                    -1
+                  </button>
+                  <input
+                    type="number"
+                    min={0}
+                    value={stockModal.stockCount}
+                    onChange={(e) => setStockModal((prev) => ({ ...prev, stockCount: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-center text-sm font-bold text-stone-900 shadow-2xs outline-hidden focus:border-[#5b15fc]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStockModal((prev) => ({ ...prev, stockCount: prev.stockCount + 1 }))}
+                    className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  >
+                    +1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockModal((prev) => ({ ...prev, stockCount: prev.stockCount + 10 }))}
+                    className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  >
+                    +10
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockModal((prev) => ({ ...prev, stockCount: prev.stockCount + 50 }))}
+                    className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                  >
+                    +50
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-stone-50 border border-stone-200/80 p-3 text-xs text-stone-600 flex items-center justify-between">
+                <span>Inventory Status:</span>
+                <span
+                  className={cn(
+                    "font-bold px-2 py-0.5 rounded-md",
+                    stockModal.stockCount > 10
+                      ? "bg-emerald-100 text-emerald-800"
+                      : stockModal.stockCount > 0
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-rose-100 text-rose-800"
+                  )}
+                >
+                  {stockModal.stockCount > 10
+                    ? "In Stock"
+                    : stockModal.stockCount > 0
+                    ? "Low Stock"
+                    : "Out of Stock"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                disabled={updatingStock}
+                onClick={() => setStockModal({ open: false, medicine: null, stockCount: 0 })}
+                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={updatingStock}
+                onClick={handleSaveStock}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#5b15fc] px-4 py-2 text-xs font-bold text-white hover:bg-[#4d0ee0] shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {updatingStock ? <Spinner className="size-3.5 text-white" /> : <Check className="size-3.5" />}
+                <span>{updatingStock ? "Saving..." : "Save Stock Count"}</span>
               </button>
             </div>
           </div>
